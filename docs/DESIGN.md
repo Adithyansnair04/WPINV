@@ -61,27 +61,35 @@ Every decision carries a `trace`: query, status, scores, candidates and problems
 | Accidental live writes | `ZOHO_MODE=mock` by default. Live mode is dry-run unless `INVOICE_ALLOW_LIVE_CREATE=true`. Invoices are created as drafts with `send=false`. |
 | Secrets / PII in logs | Key-based redaction, `Zoho-oauthtoken`/`Bearer` scrubbing, hashed chat/sender/message IDs, message text off by default. |
 | Model outage | Error reply ("nothing was created") for invoice-like messages; never a fallback guess. |
+| Model invents or spreads numbers | **Grounding check:** every quantity and rate must appear in the message (`5.2k`, `₹5,200` and number words are understood). One value written once cannot silently apply to several items unless the message says "both"/"all". Added after Flash-Lite copied one rate onto two items in case B05. |
+| Model supplies a "previous" rate | Ignored unless the number is in the message. Previous rates come only from a Zoho lookup the user confirms. |
 
 **Prototype vs production.** These are prototype safeguards. State is a local JSON file, not a transactional store. Idempotency relies on Zoho's `reference_number` search. Authorization is only a chat allowlist (any member of an allowed group may request), with no roles or approvals. There is no audit UI. A crash between confirming an update and finishing processing can lose that message. A production system needs a database with unique constraints on the idempotency key, an outbox for replies, per-user authorization, monitoring and alerting, and the official WhatsApp API.
 
 ## 4. Model selection
 
-| Role | Default | Why |
+| Role | Model | Status |
 |---|---|---|
-| Fast/small | `mistral:mistral-small-latest` | Small model (Mistral Small is a ~24B open-weights family): low latency and cost, and likely enough for short, structured extraction. This is the candidate for production if it matches the large model on safety metrics. |
-| Larger | `mistral:mistral-large-latest` | Mistral's flagship tier, many times larger. It should be stronger on the hard cases: Hinglish and Tamil-English, unusual word order, "one rate for two items", and deciding whether a reply answers a clarification. It is slower. |
-| Baseline | `rules` | No LLM: regex extraction plus the same matcher. Shows what the LLM adds. |
+| Fast/small (**production default**) | `gemini:gemini-3.1-flash-lite` | Fully evaluated (main + held-out). |
+| Larger | `gemini:gemini-2.5-flash` / `gemini:gemini-3-flash-preview` | **Not fully evaluated:** the free tier allows only **20 requests/day per model** (Google's 429 response: `GenerateRequestsPerDayPerProjectPerModel-FreeTier`, `quotaValue: 20`). One main-set run needs about 55. |
+| Baseline | `rules` | No LLM: regex extraction plus the same matcher and checks. Shows what the LLM adds. |
 | Upper bound | `oracle` | Labeled ideal extraction. Measures matching and decisions on their own. |
-| Optional | `gemini:<flash-lite id>`, `groq:…`, `openrouter:…`, `compat:…` (e.g. local Ollama) | The same interface; add any of them to `EVAL_MODELS` for a cross-vendor check. |
+| Also wired | `mistral:…`, `groq:…`, `openrouter:…`, `compat:…` (e.g. local Ollama) | Same interface. Mistral's free plan returned 429 on every chat call for this account; Groq keys were unavailable. |
 
 **Why this pair:**
+- **Flash-Lite** is the smallest, fastest current Gemini tier: about 1.3 s median per message and a free daily quota large enough for real use and repeated evaluation.
+- **Flash** is the larger tier of the same family, with the same API and JSON mode, so any difference would come from model capacity rather than provider quirks.
+- The question the comparison answers: **is the small model good enough when deterministic checks catch its mistakes?** For this task, yes. Flash-Lite reaches 98% / 95.8% with zero wrong invoices, and every one of its misses is a safe question. A larger model can at most remove a few unnecessary questions; it cannot improve safety, which the checks already enforce.
 
-- **A real small-vs-large contrast.** Both models come from one vendor, with the same API, JSON mode and tokenizer family. Differences in the results therefore reflect model capacity, not provider quirks. The question the eval answers is whether the small, fast model is good enough, given that the deterministic layer catches its mistakes.
-- **It fits a free tier.** Mistral's free "Experiment" plan needs only phone verification (no card) and covers both models with one key. Its limits are reported as roughly 1 request/second and a large monthly token budget, enough for a 50-case run per model (≈55 model calls, ≈1 KB each). Groq was not usable for us. Gemini's free tier was considered for the pair: third-party reports (Oct 2026) say Flash models have very low daily caps (as low as ~20 requests/day), which cannot complete one eval run, and that older 2.5 models are restricted for new projects. Gemini Flash-Lite remains a good optional third, cross-vendor model.
-- **Stable IDs.** The `-latest` aliases survive version bumps. For reproducible numbers, pin dated IDs from the Mistral console in `EVAL_MODELS`. The eval JSON records the exact spec used.
-- **Caveat.** Free-tier data may be used for model training unless you opt out in the console. That's acceptable for this synthetic dataset, but not for real customer messages: production should use a paid tier with a no-training agreement, or a self-hosted model.
+**Finishing the larger-model comparison:** the runner stops a model after 3 consecutive quota failures and records the blocked cases. Each day, run
 
-Quota figures come from third-party sources and change often. Check the provider console before running. Models are configured as `provider:model` strings, so switching needs no code changes.
+```bash
+npm run eval -- --models gemini:gemini-2.5-flash --retry-errors
+```
+
+It keeps earlier cases and adds about 18 more per day, so the main set completes in about 3 days (the held-out set needs `--set holdout` on 2 more). Quota-blocked cases are excluded from metrics and shown as "Cases scored", so partial runs never count as wrong answers. With a billed key or another provider, the whole run takes minutes.
+
+Models are configured as `provider:model` strings; switching needs no code change.
 
 ## 5. Evaluation
 
@@ -102,29 +110,50 @@ Quota figures come from third-party sources and change often. Check the provider
   - *Non-invoice false positive* = a non-invoice or follow-up message that led to an invoice or an invoice-style question.
   - *Latency* = wall-clock time per turn that called the model, including retries.
 
-Run: `npm run eval` (all of `EVAL_MODELS`), or `npm run eval -- --models mistral:mistral-large-latest --cases S01,B01 -v`. Use `EVAL_DELAY_MS` to stay under free-tier RPM. Results go to `eval/results/<model>.json` (per-case detail) and [eval/results/summary.md](../eval/results/summary.md).
+Run: `npm run eval` (all of `EVAL_MODELS`), `npm run eval -- --set holdout`, or `npm run eval -- --models gemini:gemini-3.1-flash-lite --cases S01,B01 -v`. Use `EVAL_DELAY_MS` to stay under free-tier RPM. Results go to `eval/results/<model>.json` (per-case detail) and [eval/results/summary.md](../eval/results/summary.md).
 
-### Results (measured 2026-10-18)
+### Results (measured 2026-10-18, current code)
 
-| Metric | `oracle` (matching only) | `rules` (no LLM) |
-|---|---|---|
-| Action accuracy | 100% (50/50) | 64% (32/50) |
-| Customer match accuracy | 100% (41/41) | 51.2% (21/41) |
-| Item match accuracy | 100% (43/43) | 53.5% (23/43) |
-| Quantity accuracy | 100% (42/42) | 78.6% (33/42) |
-| Rate accuracy | 100% (42/42) | 88.1% (37/42) |
-| Clarification recall | 100% (19/19) | 100% (19/19) |
-| Unnecessary clarification rate | 0% (0/27) | 55.6% (15/27) |
-| Confidently wrong invoices | 0 | 0 |
-| Non-invoice false positives | 0% (0/8) | 25% (2/8) |
+**Main set (50 cases)**
 
-**LLM runs (`mistral:mistral-small-latest`, `mistral:mistral-large-latest`) have NOT been run yet.** No API keys were available in the build environment. Add `MISTRAL_API_KEY` to `.env` and run `npm run eval`; `summary.md` then gains one column per model, with latency and failure/429 counts. No LLM numbers are claimed here.
+| Metric | `gemini-3.1-flash-lite` | `oracle` (matching only) | `rules` (no LLM) |
+|---|---|---|---|
+| Action accuracy | **98%** (49/50) | 100% (50/50) | 72% (36/50) |
+| Customer match accuracy | 100% (41/41) | 100% | 95.1% (39/41) |
+| Item match accuracy | 97.7% (42/43) | 100% | 67.4% (29/43) |
+| Quantity / rate accuracy (extraction) | 97.6% / 92.9% | 100% / 100% | 78.6% / 88.1% |
+| Clarification recall | 100% (19/19) | 100% | 100% |
+| Unnecessary clarification rate | 3.7% (1/27) | 0% | 40.7% (11/27) |
+| Exactly-correct invoices | 96.3% (26/27) | 100% | 59.3% (16/27) |
+| **Confidently wrong invoices** | **0** | 0 | 0 |
+| Non-invoice false positives | 0% (0/8) | 0% | 25% (2/8) |
+| Latency p50 / p95 per message | 1.3 s / 6.8 s | – | – |
+| Model failures / invalid JSON / 429s | 0 / 0 / 0 | – | – |
 
-How to read the measured columns:
+**Held-out set (24 cases, committed in `e58cbc0` before any model ran on it)**
 
-- **Oracle = 100% partly by construction.** The labels and the matcher were written together, so this mainly proves that the ground truth is internally consistent and that the matcher behaves as intended when given good descriptions. It is not evidence of generalization. New, unseen phrasings and catalogues are the real test.
-- **The rules baseline never created a wrong invoice.** It fails *safe* (it asks too often: 55.6% unnecessary clarifications) because every gap it leaves is caught by the deterministic checks. This is the core design property: extraction errors become questions, not wrong invoices. The LLM's job is to cut the unnecessary questions without raising the wrong-invoice count above 0.
-- The baseline's 2 non-invoice false positives (a logistics question with a number, a payment note) are where an LLM classifier should help most.
+| Run | Flash-Lite action accuracy | Wrong invoices | Notes |
+|---|---|---|---|
+| 1. Before any tuning | 95.8% (23/24) | 0 | **Clean generalization number.** |
+| 2. After the boundary-repair heuristic | 91.7% (22/24) | **1 (H10)** | The repair turned the ambiguous "VK Auto" into VK Enterprises. |
+| 3. After restricting the repair (current) | 95.8% (23/24) | 0 | Never repairs ambiguous customers; only drops filler words. |
+
+The regex baseline scores 45.8% on the held-out set (0 wrong invoices). The raw files for runs 1 and 2 are in `eval/results/holdout-history/`. From run 2 on, the held-out set is no longer untouched, so run 1 is the number to quote for generalization.
+
+**How we got here:** the first Flash-Lite run (86% action accuracy) produced **one wrong invoice (B05)**: it copied a single "rate 5200" onto two different products. That led to the deterministic **grounding check**. Every quantity and rate must appear in the message, and one value cannot silently cover several items. Then came a fix for numbers glued to units (`4pc`), swapped-letter typos (`tyers`), and the customer/product boundary repair, which the held-out set caught overreaching (run 2) before it was restricted.
+
+**How to read it:**
+
+- **Zero wrong invoices in every column, including the no-LLM baseline.** Extraction errors become questions, not invoices. The LLM's value shows in fewer unnecessary questions (3.7% vs 40.7%) and far more exactly-correct invoices (96% vs 59%).
+- **Remaining misses are all safe questions.**
+  - W03: the model split "royal alloys" into a customer and an item.
+  - H05: "vijay kumar tyers": the misspelt customer word leaked into the product description.
+- **Oracle = 100% is partly by construction.** The labels and the matcher were written together, so it proves the ground truth is consistent and that matching works on good descriptions. The held-out set is the generalization check.
+- **Limits of this evaluation:**
+  - The catalogue is synthetic and small (12 customers, 20 items).
+  - One author wrote both sets.
+  - Latency was measured from India on the free tier, with occasional slow outliers (max 28 s).
+  - A real deployment needs a labeled sample of the client's actual messages.
 
 ## 6. When to automate vs require human approval
 
@@ -134,7 +163,9 @@ How to read the measured columns:
 | Any ambiguity, missing field, unknown record, foreign currency, invalid number | Ask in the group | Same. |
 | Rate deviates from the item's list rate by > X% (not implemented) | — | Ask for confirmation, or require approval. |
 | Large amount (> limit) or new customer | — | Draft + approval from a named approver. |
-| Edits, cancellations, "same as last time" | Refuse politely | Supported only with an explicit confirmation step showing the referenced invoice. |
+| "Rate same as last time" | Look up the customer's latest issued invoice (not draft, not void) for that exact item and **ask to confirm** the rate and its source invoice (Yes button, or reply with another rate); if none is found, ask for the rate | Same. |
+| "Make it 6 pcs" / "rate 5000" | Only as a **reply to the bot's invoice message**; drafts only; one line per edit; numbers must be in the message; reply shows old → new | Add an audit trail and restrict edits to the requester or an approver. |
+| Cancellations, resends, "same order as last week" | Refuse politely | Human only. |
 | Sending to the customer, recording payments, voiding | Never | Human only. |
 
 ## 7. Learning aliases and shorthand safely
@@ -185,5 +216,5 @@ All three transports implement the same small contract (`IncomingMessage` in, `S
 - The LLM evaluation is not yet run (needs keys). Live Zoho behaviour (PDF via `accept=pdf`, GST fields, `invoice_url`) is implemented from the docs but not exercised against a real org. See [ZOHO_SETUP.md](ZOHO_SETUP.md).
 - Only text messages are handled (captions included). Voice notes and images of handwritten orders are not.
 - Quantities must be integers. There are no discounts, shipping lines or price lists.
-- "Rate same as last time" and edits are deliberately unsupported (bonus features).
+- Edits change one line per message and only drafts this bot created (tracked for 7 days). Cancellation and repeat orders are refused.
 - The matcher's thresholds were tuned on this synthetic catalogue. A real catalogue needs its own labeled set.
