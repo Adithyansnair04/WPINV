@@ -1,0 +1,22 @@
+[
+  { "name": "Lenzo Alloy Wheel 15\" Black", "sku": "LNZ-15-BLK", "rate": 3800, "hsn": "87087000", "tax_percentage": 18 },
+  { "name": "Lenzo Alloy Wheel 17\" Red", "sku": "LNZ-17-RED", "rate": 4600, "hsn": "87087000", "tax_percentage": 18 },
+  { "name": "Lenzo Alloy Wheel 18\" Red", "sku": "LNZ-18-RED", "rate": 5200, "hsn": "87087000", "tax_percentage": 18 },
+  { "name": "Lenzo Alloy Wheel 18\" Black", "sku": "LNZ-18-BLK", "rate": 5100, "hsn": "87087000", "tax_percentage": 18 },
+  { "name": "Lenzo Alloy Wheel 18\" Silver", "sku": "LNZ-18-SLV", "rate": 5000, "hsn": "87087000", "tax_percentage": 18 },
+  { "name": "Lenza Alloy Wheel 18\" Red", "sku": "LZA-18-RED", "rate": 5400, "hsn": "87087000", "tax_percentage": 18 },
+  { "name": "Lenza Alloy Wheel 17\" Gunmetal", "sku": "LZA-17-GUN", "rate": 4700, "hsn": "87087000", "tax_percentage": 18 },
+  { "name": "Neo Alloy Wheel 16\" Red", "sku": "NEO-16-RED", "rate": 4100, "hsn": "87087000", "tax_percentage": 18 },
+  { "name": "Neo Alloy Wheel 16\" Silver", "sku": "NEO-16-SLV", "rate": 3900, "hsn": "87087000", "tax_percentage": 18 },
+  { "name": "Neo Alloy Wheel 17\" Chrome", "sku": "NEO-17-CHR", "rate": 4900, "hsn": "87087000", "tax_percentage": 18 },
+  { "name": "Vortex Alloy Wheel 17\" Black", "sku": "VTX-17-BLK", "rate": 4500, "hsn": "87087000", "tax_percentage": 18 },
+  { "name": "Vortex Alloy Wheel 18\" Matte Black", "sku": "VTX-18-MBK", "rate": 5600, "hsn": "87087000", "tax_percentage": 18 },
+  { "name": "Apex Tyre 195/55 R16", "sku": "APX-195-55-16", "rate": 5600, "hsn": "40111010", "tax_percentage": 18 },
+  { "name": "Apex Tyre 205/55 R16", "sku": "APX-205-55-16", "rate": 6200, "hsn": "40111010", "tax_percentage": 18 },
+  { "name": "Durotrac Tyre 195/55 R16", "sku": "DRT-195-55-16", "rate": 5300, "hsn": "40111010", "tax_percentage": 18 },
+  { "name": "Durotrac Tyre 185/65 R15", "sku": "DRT-185-65-15", "rate": 4400, "hsn": "40111010", "tax_percentage": 18 },
+  { "name": "Wheel Nut Set Chrome (16 pcs)", "sku": "NUT-16-CHR", "rate": 650, "hsn": "73181600", "tax_percentage": 18 },
+  { "name": "Wheel Nut Set Black (16 pcs)", "sku": "NUT-16-BLK", "rate": 650, "hsn": "73181600", "tax_percentage": 18 },
+  { "name": "Lenzo Centre Cap Set (4 pcs)", "sku": "CAP-LNZ-4", "rate": 900, "hsn": "87087000", "tax_percentage": 18 },
+  { "name": "Tyre Valve Set (4 pcs)", "sku": "VLV-4", "rate": 120, "hsn": "84818090", "tax_percentage": 18 }
+]
