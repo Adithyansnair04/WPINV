@@ -1,25 +1,27 @@
 {
   "model": "rules",
   "status": "ok",
-  "timestamp": "2026-10-18T15:58:52.166Z",
+  "timestamp": "2026-10-18T20:17:53.753Z",
   "caseCount": 50,
+  "casesScored": 50,
+  "blocked": [],
   "partial": false,
   "metrics": {
     "headline": {
       "action_accuracy": {
-        "num": 32,
+        "num": 36,
         "den": 50,
-        "pct": 64
+        "pct": 72
       },
       "customer_match_accuracy": {
-        "num": 21,
+        "num": 39,
         "den": 41,
-        "pct": 51.2
+        "pct": 95.1
       },
       "item_match_accuracy": {
-        "num": 23,
+        "num": 29,
         "den": 43,
-        "pct": 53.5
+        "pct": 67.4
       },
       "quantity_accuracy": {
         "num": 33,
@@ -37,9 +39,9 @@
         "pct": 100
       },
       "unnecessary_clarification_rate": {
-        "num": 15,
+        "num": 11,
         "den": 27,
-        "pct": 55.6
+        "pct": 40.7
       },
       "confidently_wrong_invoices": 0,
       "non_invoice_false_positives": {
@@ -48,9 +50,9 @@
         "pct": 25
       },
       "exact_invoice_rate": {
-        "num": 12,
+        "num": 16,
         "den": 27,
-        "pct": 44.4
+        "pct": 59.3
       }
     },
     "extraction": {
@@ -77,14 +79,14 @@
     },
     "matching": {
       "customer_match_accuracy": {
-        "num": 21,
+        "num": 39,
         "den": 41,
-        "pct": 51.2
+        "pct": 95.1
       },
       "item_match_accuracy": {
-        "num": 23,
+        "num": 29,
         "den": 43,
-        "pct": 53.5
+        "pct": 67.4
       }
     },
     "latency_ms": {
@@ -92,8 +94,8 @@
       "mean": 0,
       "p50": 0,
       "p95": 1,
-      "max": 2,
-      "total": 14
+      "max": 1,
+      "total": 23
     },
     "reliability": {
       "model_failures": 0,
@@ -108,7 +110,7 @@
         "n": 5
       },
       "alias": {
-        "ok": 2,
+        "ok": 3,
         "n": 5
       },
       "word_order": {
@@ -120,11 +122,11 @@
         "n": 2
       },
       "typo": {
-        "ok": 2,
+        "ok": 3,
         "n": 4
       },
       "confusable": {
-        "ok": 2,
+        "ok": 3,
         "n": 4
       },
       "missing": {
@@ -148,7 +150,7 @@
         "n": 4
       },
       "clarification_flow": {
-        "ok": 1,
+        "ok": 2,
         "n": 5
       }
     }
@@ -160,11 +162,11 @@
       "turns": [
         {
           "action": "create",
-          "latencyMs": 2,
+          "latencyMs": 1,
           "usedModel": true,
           "meta": {
             "model": "rules:baseline",
-            "latencyMs": 1.012200000000007,
+            "latencyMs": 0.8529000000000337,
             "attempts": 1,
             "retries": 0,
             "rateLimited": 0,
@@ -209,7 +211,7 @@
           "usedModel": true,
           "meta": {
             "model": "rules:baseline",
-            "latencyMs": 0.2148000000000252,
+            "latencyMs": 0.18420000000003256,
             "attempts": 1,
             "retries": 0,
             "rateLimited": 0,
@@ -254,7 +256,7 @@
           "usedModel": true,
           "meta": {
             "model": "rules:baseline",
-            "latencyMs": 0.109800000000007,
+            "latencyMs": 0.08339999999998327,
             "attempts": 1,
             "retries": 0,
             "rateLimited": 0,
@@ -299,7 +301,7 @@
           "usedModel": true,
           "meta": {
             "model": "rules:baseline",
-            "latencyMs": 0.08379999999999654,
+            "latencyMs": 0.07010000000002492,
             "attempts": 1,
             "retries": 0,
             "rateLimited": 0,
@@ -359,7 +361,7 @@
           "usedModel": true,
           "meta": {
             "model": "rules:baseline",
-            "latencyMs": 0.08269999999998845,
+            "latencyMs": 0.061800000000005184,
             "attempts": 1,
             "retries": 0,
             "rateLimited": 0,
@@ -393,12 +395,12 @@
       "turns": [
         {
           "action": "clarify",
-          "reason": "missing_customer,unknown_item,missing_rate",
+          "reason": "unknown_item,missing_rate",
           "latencyMs": 0,
           "usedModel": true,
           "meta": {
             "model": "rules:baseline",
-            "latencyMs": 0.07810000000000628,
+            "latencyMs": 0.06700000000000728,
             "attempts": 1,
             "retries": 0,
             "rateLimited": 0,
@@ -414,7 +416,7 @@
           "rate": null
         }
       ],
-      "resolvedCustomer": null,
+      "resolvedCustomer": "Kerala Wheel Hub",
       "resolvedLines": [
         {
           "status": "not_found",
@@ -422,7 +424,6 @@
         }
       ],
       "problems": [
-        "missing_customer",
         "unknown_item",
         "missing_rate"
       ]
@@ -432,13 +433,12 @@
       "category": "alias",
       "turns": [
         {
-          "action": "clarify",
-          "reason": "missing_customer,unknown_item",
-          "latencyMs": 0,
+          "action": "create",
+          "latencyMs": 1,
           "usedModel": true,
           "meta": {
             "model": "rules:baseline",
-            "latencyMs": 0.08159999999998035,
+            "latencyMs": 0.06600000000003092,
             "attempts": 1,
             "retries": 0,
             "rateLimited": 0,
@@ -454,17 +454,24 @@
           "rate": 4400
         }
       ],
-      "resolvedCustomer": null,
+      "resolvedCustomer": "Sri Ganesh Motors",
       "resolvedLines": [
         {
-          "status": "not_found",
-          "sku": null
+          "status": "matched",
+          "sku": "DRT-185-65-15"
         }
       ],
-      "problems": [
-        "missing_customer",
-        "unknown_item"
-      ]
+      "problems": [],
+      "invoice": {
+        "customer": "Sri Ganesh Motors",
+        "lines": [
+          {
+            "sku": "DRT-185-65-15",
+            "quantity": 4,
+            "rate": 4400
+          }
+        ]
+      }
     },
     {
       "id": "A03",
@@ -472,11 +479,11 @@
       "turns": [
         {
           "action": "create",
-          "latencyMs": 1,
+          "latencyMs": 0,
           "usedModel": true,
           "meta": {
             "model": "rules:baseline",
-            "latencyMs": 0.052300000000002456,
+            "latencyMs": 0.05829999999997426,
             "attempts": 1,
             "retries": 0,
             "rateLimited": 0,
@@ -517,12 +524,12 @@
       "turns": [
         {
           "action": "clarify",
-          "reason": "missing_customer,unknown_item,missing_quantity",
+          "reason": "unknown_item,missing_quantity",
           "latencyMs": 0,
           "usedModel": true,
           "meta": {
             "model": "rules:baseline",
-            "latencyMs": 0.04939999999999145,
+            "latencyMs": 0.041600000000016735,
             "attempts": 1,
             "retries": 0,
             "rateLimited": 0,
@@ -538,7 +545,7 @@
           "rate": 4900
         }
       ],
-      "resolvedCustomer": null,
+      "resolvedCustomer": "Al Ameen Tyre House",
       "resolvedLines": [
         {
           "status": "not_found",
@@ -546,7 +553,6 @@
         }
       ],
       "problems": [
-        "missing_customer",
         "unknown_item",
         "missing_quantity"
       ]
@@ -557,11 +563,11 @@
       "turns": [
         {
           "action": "create",
-          "latencyMs": 1,
+          "latencyMs": 0,
           "usedModel": true,
           "meta": {
             "model": "rules:baseline",
-            "latencyMs": 0.04579999999998563,
+            "latencyMs": 0.03509999999999991,
             "attempts": 1,
             "retries": 0,
             "rateLimited": 0,
@@ -602,11 +608,11 @@
       "turns": [
         {
           "action": "create",
-          "latencyMs": 1,
+          "latencyMs": 0,
           "usedModel": true,
           "meta": {
             "model": "rules:baseline",
-            "latencyMs": 0.0636000000000081,
+            "latencyMs": 0.04640000000000555,
             "attempts": 1,
             "retries": 0,
             "rateLimited": 0,
@@ -651,7 +657,7 @@
           "usedModel": true,
           "meta": {
             "model": "rules:baseline",
-            "latencyMs": 0.051400000000001,
+            "latencyMs": 0.04359999999996944,
             "attempts": 1,
             "retries": 0,
             "rateLimited": 0,
@@ -692,12 +698,12 @@
       "turns": [
         {
           "action": "clarify",
-          "reason": "missing_customer,unknown_item,missing_quantity",
+          "reason": "unknown_item,missing_quantity",
           "latencyMs": 0,
           "usedModel": true,
           "meta": {
             "model": "rules:baseline",
-            "latencyMs": 0.06279999999998154,
+            "latencyMs": 0.0442000000000462,
             "attempts": 1,
             "retries": 0,
             "rateLimited": 0,
@@ -713,7 +719,7 @@
           "rate": 120
         }
       ],
-      "resolvedCustomer": null,
+      "resolvedCustomer": "Royal Alloys",
       "resolvedLines": [
         {
           "status": "not_found",
@@ -721,7 +727,6 @@
         }
       ],
       "problems": [
-        "missing_customer",
         "unknown_item",
         "missing_quantity"
       ]
@@ -732,12 +737,12 @@
       "turns": [
         {
           "action": "clarify",
-          "reason": "missing_customer,unknown_item,missing_quantity",
-          "latencyMs": 0,
+          "reason": "unknown_item,missing_quantity",
+          "latencyMs": 1,
           "usedModel": true,
           "meta": {
             "model": "rules:baseline",
-            "latencyMs": 0.052500000000009095,
+            "latencyMs": 0.06079999999997199,
             "attempts": 1,
             "retries": 0,
             "rateLimited": 0,
@@ -753,7 +758,7 @@
           "rate": 5300
         }
       ],
-      "resolvedCustomer": null,
+      "resolvedCustomer": "Sharma Wheels & Tyres",
       "resolvedLines": [
         {
           "status": "not_found",
@@ -761,7 +766,6 @@
         }
       ],
       "problems": [
-        "missing_customer",
         "unknown_item",
         "missing_quantity"
       ]
@@ -772,12 +776,12 @@
       "turns": [
         {
           "action": "clarify",
-          "reason": "missing_customer,unknown_item,missing_quantity,missing_rate,unknown_item,missing_quantity,missing_rate",
-          "latencyMs": 0,
+          "reason": "unknown_item,missing_quantity,missing_rate,unknown_item,missing_quantity,missing_rate",
+          "latencyMs": 1,
           "usedModel": true,
           "meta": {
             "model": "rules:baseline",
-            "latencyMs": 0.08129999999999882,
+            "latencyMs": 0.05349999999998545,
             "attempts": 1,
             "retries": 0,
             "rateLimited": 0,
@@ -798,7 +802,7 @@
           "rate": null
         }
       ],
-      "resolvedCustomer": null,
+      "resolvedCustomer": "Ganesh Wheel Care",
       "resolvedLines": [
         {
           "status": "not_found",
@@ -810,7 +814,6 @@
         }
       ],
       "problems": [
-        "missing_customer",
         "unknown_item",
         "missing_quantity",
         "missing_rate",
@@ -829,7 +832,7 @@
           "usedModel": true,
           "meta": {
             "model": "rules:baseline",
-            "latencyMs": 0.09210000000001628,
+            "latencyMs": 0.057799999999986085,
             "attempts": 1,
             "retries": 0,
             "rateLimited": 0,
@@ -874,7 +877,7 @@
           "usedModel": true,
           "meta": {
             "model": "rules:baseline",
-            "latencyMs": 0.04570000000001073,
+            "latencyMs": 0.04949999999996635,
             "attempts": 1,
             "retries": 0,
             "rateLimited": 0,
@@ -915,12 +918,12 @@
       "turns": [
         {
           "action": "clarify",
-          "reason": "missing_customer,unknown_item,missing_rate",
-          "latencyMs": 0,
+          "reason": "ambiguous_item,missing_rate",
+          "latencyMs": 1,
           "usedModel": true,
           "meta": {
             "model": "rules:baseline",
-            "latencyMs": 0.03829999999999245,
+            "latencyMs": 0.051799999999957436,
             "attempts": 1,
             "retries": 0,
             "rateLimited": 0,
@@ -936,16 +939,15 @@
           "rate": null
         }
       ],
-      "resolvedCustomer": null,
+      "resolvedCustomer": "Bismi Auto World",
       "resolvedLines": [
         {
-          "status": "not_found",
+          "status": "ambiguous",
           "sku": null
         }
       ],
       "problems": [
-        "missing_customer",
-        "unknown_item",
+        "ambiguous_item",
         "missing_rate"
       ]
     },
@@ -954,13 +956,12 @@
       "category": "typo",
       "turns": [
         {
-          "action": "clarify",
-          "reason": "missing_customer,ambiguous_item",
-          "latencyMs": 0,
+          "action": "create",
+          "latencyMs": 1,
           "usedModel": true,
           "meta": {
             "model": "rules:baseline",
-            "latencyMs": 0.03969999999998208,
+            "latencyMs": 0.0513000000000261,
             "attempts": 1,
             "retries": 0,
             "rateLimited": 0,
@@ -976,30 +977,36 @@
           "rate": 3900
         }
       ],
-      "resolvedCustomer": null,
+      "resolvedCustomer": "Kerala Wheel Hub",
       "resolvedLines": [
         {
-          "status": "ambiguous",
-          "sku": null
+          "status": "matched",
+          "sku": "NEO-16-SLV"
         }
       ],
-      "problems": [
-        "missing_customer",
-        "ambiguous_item"
-      ]
+      "problems": [],
+      "invoice": {
+        "customer": "Kerala Wheel Hub",
+        "lines": [
+          {
+            "sku": "NEO-16-SLV",
+            "quantity": 4,
+            "rate": 3900
+          }
+        ]
+      }
     },
     {
       "id": "C01",
       "category": "confusable",
       "turns": [
         {
-          "action": "clarify",
-          "reason": "missing_customer,ambiguous_item",
-          "latencyMs": 0,
+          "action": "create",
+          "latencyMs": 1,
           "usedModel": true,
           "meta": {
             "model": "rules:baseline",
-            "latencyMs": 0.03820000000001755,
+            "latencyMs": 0.08809999999999718,
             "attempts": 1,
             "retries": 0,
             "rateLimited": 0,
@@ -1015,17 +1022,24 @@
           "rate": 5400
         }
       ],
-      "resolvedCustomer": null,
+      "resolvedCustomer": "VK Enterprises",
       "resolvedLines": [
         {
-          "status": "ambiguous",
-          "sku": null
+          "status": "matched",
+          "sku": "LZA-18-RED"
         }
       ],
-      "problems": [
-        "missing_customer",
-        "ambiguous_item"
-      ]
+      "problems": [],
+      "invoice": {
+        "customer": "VK Enterprises",
+        "lines": [
+          {
+            "sku": "LZA-18-RED",
+            "quantity": 4,
+            "rate": 5400
+          }
+        ]
+      }
     },
     {
       "id": "C02",
@@ -1037,7 +1051,7 @@
           "usedModel": true,
           "meta": {
             "model": "rules:baseline",
-            "latencyMs": 0.040300000000002,
+            "latencyMs": 0.07280000000002929,
             "attempts": 1,
             "retries": 0,
             "rateLimited": 0,
@@ -1082,7 +1096,7 @@
           "usedModel": true,
           "meta": {
             "model": "rules:baseline",
-            "latencyMs": 0.05310000000002901,
+            "latencyMs": 0.04699999999996862,
             "attempts": 1,
             "retries": 0,
             "rateLimited": 0,
@@ -1124,11 +1138,11 @@
         {
           "action": "clarify",
           "reason": "missing_customer,unknown_item",
-          "latencyMs": 0,
+          "latencyMs": 1,
           "usedModel": true,
           "meta": {
             "model": "rules:baseline",
-            "latencyMs": 0.04790000000002692,
+            "latencyMs": 0.04640000000000555,
             "attempts": 1,
             "retries": 0,
             "rateLimited": 0,
@@ -1163,11 +1177,11 @@
         {
           "action": "clarify",
           "reason": "missing_customer",
-          "latencyMs": 0,
+          "latencyMs": 1,
           "usedModel": true,
           "meta": {
             "model": "rules:baseline",
-            "latencyMs": 0.041600000000016735,
+            "latencyMs": 0.04619999999999891,
             "attempts": 1,
             "retries": 0,
             "rateLimited": 0,
@@ -1200,12 +1214,12 @@
       "turns": [
         {
           "action": "clarify",
-          "reason": "missing_customer,unknown_item",
-          "latencyMs": 0,
+          "reason": "unknown_item",
+          "latencyMs": 1,
           "usedModel": true,
           "meta": {
             "model": "rules:baseline",
-            "latencyMs": 0.036000000000001364,
+            "latencyMs": 0.04460000000000264,
             "attempts": 1,
             "retries": 0,
             "rateLimited": 0,
@@ -1221,7 +1235,7 @@
           "rate": 5000
         }
       ],
-      "resolvedCustomer": null,
+      "resolvedCustomer": "VK Enterprises",
       "resolvedLines": [
         {
           "status": "not_found",
@@ -1229,7 +1243,6 @@
         }
       ],
       "problems": [
-        "missing_customer",
         "unknown_item"
       ]
     },
@@ -1239,12 +1252,12 @@
       "turns": [
         {
           "action": "clarify",
-          "reason": "missing_customer,ambiguous_item,missing_quantity",
+          "reason": "missing_quantity",
           "latencyMs": 0,
           "usedModel": true,
           "meta": {
             "model": "rules:baseline",
-            "latencyMs": 0.039400000000000546,
+            "latencyMs": 0.04179999999996653,
             "attempts": 1,
             "retries": 0,
             "rateLimited": 0,
@@ -1260,16 +1273,14 @@
           "rate": 4100
         }
       ],
-      "resolvedCustomer": null,
+      "resolvedCustomer": "Royal Alloys",
       "resolvedLines": [
         {
-          "status": "ambiguous",
-          "sku": null
+          "status": "matched",
+          "sku": "NEO-16-RED"
         }
       ],
       "problems": [
-        "missing_customer",
-        "ambiguous_item",
         "missing_quantity"
       ]
     },
@@ -1284,7 +1295,7 @@
           "usedModel": true,
           "meta": {
             "model": "rules:baseline",
-            "latencyMs": 0.03649999999998954,
+            "latencyMs": 0.03640000000001464,
             "attempts": 1,
             "retries": 0,
             "rateLimited": 0,
@@ -1323,7 +1334,7 @@
           "usedModel": true,
           "meta": {
             "model": "rules:baseline",
-            "latencyMs": 0.033799999999985175,
+            "latencyMs": 0.036500000000046384,
             "attempts": 1,
             "retries": 0,
             "rateLimited": 0,
@@ -1357,12 +1368,12 @@
       "turns": [
         {
           "action": "clarify",
-          "reason": "missing_customer,ambiguous_item,missing_quantity,missing_rate",
+          "reason": "ambiguous_item,missing_quantity,missing_rate",
           "latencyMs": 0,
           "usedModel": true,
           "meta": {
             "model": "rules:baseline",
-            "latencyMs": 0.030199999999979354,
+            "latencyMs": 0.03150000000005093,
             "attempts": 1,
             "retries": 0,
             "rateLimited": 0,
@@ -1378,7 +1389,7 @@
           "rate": null
         }
       ],
-      "resolvedCustomer": null,
+      "resolvedCustomer": "VK Enterprises",
       "resolvedLines": [
         {
           "status": "ambiguous",
@@ -1386,7 +1397,6 @@
         }
       ],
       "problems": [
-        "missing_customer",
         "ambiguous_item",
         "missing_quantity",
         "missing_rate"
@@ -1403,7 +1413,7 @@
           "usedModel": true,
           "meta": {
             "model": "rules:baseline",
-            "latencyMs": 0.033999999999991815,
+            "latencyMs": 0.04479999999995243,
             "attempts": 1,
             "retries": 0,
             "rateLimited": 0,
@@ -1443,7 +1453,7 @@
           "usedModel": true,
           "meta": {
             "model": "rules:baseline",
-            "latencyMs": 0.043299999999987904,
+            "latencyMs": 0.03969999999998208,
             "attempts": 1,
             "retries": 0,
             "rateLimited": 0,
@@ -1477,12 +1487,12 @@
       "turns": [
         {
           "action": "clarify",
-          "reason": "missing_customer,ambiguous_item",
+          "reason": "ambiguous_item",
           "latencyMs": 0,
           "usedModel": true,
           "meta": {
             "model": "rules:baseline",
-            "latencyMs": 0.035799999999994725,
+            "latencyMs": 0.037499999999965894,
             "attempts": 1,
             "retries": 0,
             "rateLimited": 0,
@@ -1498,7 +1508,7 @@
           "rate": 5500
         }
       ],
-      "resolvedCustomer": null,
+      "resolvedCustomer": "VK Enterprises",
       "resolvedLines": [
         {
           "status": "ambiguous",
@@ -1506,7 +1516,6 @@
         }
       ],
       "problems": [
-        "missing_customer",
         "ambiguous_item"
       ]
     },
@@ -1521,7 +1530,7 @@
           "usedModel": true,
           "meta": {
             "model": "rules:baseline",
-            "latencyMs": 0.04009999999999536,
+            "latencyMs": 0.04589999999996053,
             "attempts": 1,
             "retries": 0,
             "rateLimited": 0,
@@ -1564,12 +1573,12 @@
       "turns": [
         {
           "action": "clarify",
-          "reason": "missing_customer,ambiguous_item,invalid_quantity",
+          "reason": "invalid_quantity",
           "latencyMs": 0,
           "usedModel": true,
           "meta": {
             "model": "rules:baseline",
-            "latencyMs": 0.03449999999997999,
+            "latencyMs": 0.04410000000001446,
             "attempts": 1,
             "retries": 0,
             "rateLimited": 0,
@@ -1585,16 +1594,14 @@
           "rate": 5200
         }
       ],
-      "resolvedCustomer": null,
+      "resolvedCustomer": "VK Enterprises",
       "resolvedLines": [
         {
-          "status": "ambiguous",
-          "sku": null
+          "status": "matched",
+          "sku": "LNZ-18-RED"
         }
       ],
       "problems": [
-        "missing_customer",
-        "ambiguous_item",
         "invalid_quantity"
       ]
     },
@@ -1604,12 +1611,12 @@
       "turns": [
         {
           "action": "clarify",
-          "reason": "missing_customer,ambiguous_item",
-          "latencyMs": 0,
+          "reason": "ambiguous_item",
+          "latencyMs": 1,
           "usedModel": true,
           "meta": {
             "model": "rules:baseline",
-            "latencyMs": 0.03540000000003829,
+            "latencyMs": 0.1339999999999577,
             "attempts": 1,
             "retries": 0,
             "rateLimited": 0,
@@ -1625,7 +1632,7 @@
           "rate": 45
         }
       ],
-      "resolvedCustomer": null,
+      "resolvedCustomer": "Royal Alloys",
       "resolvedLines": [
         {
           "status": "ambiguous",
@@ -1633,7 +1640,6 @@
         }
       ],
       "problems": [
-        "missing_customer",
         "ambiguous_item"
       ]
     },
@@ -1643,12 +1649,12 @@
       "turns": [
         {
           "action": "clarify",
-          "reason": "missing_customer,ambiguous_item,missing_quantity",
+          "reason": "ambiguous_item,missing_quantity",
           "latencyMs": 0,
           "usedModel": true,
           "meta": {
             "model": "rules:baseline",
-            "latencyMs": 0.05350000000004229,
+            "latencyMs": 0.03469999999998663,
             "attempts": 1,
             "retries": 0,
             "rateLimited": 0,
@@ -1664,7 +1670,7 @@
           "rate": 5200
         }
       ],
-      "resolvedCustomer": null,
+      "resolvedCustomer": "VK Enterprises",
       "resolvedLines": [
         {
           "status": "ambiguous",
@@ -1672,7 +1678,6 @@
         }
       ],
       "problems": [
-        "missing_customer",
         "ambiguous_item",
         "missing_quantity"
       ]
@@ -1684,11 +1689,11 @@
         {
           "action": "clarify",
           "reason": "missing_customer,unknown_item",
-          "latencyMs": 0,
+          "latencyMs": 1,
           "usedModel": true,
           "meta": {
             "model": "rules:baseline",
-            "latencyMs": 0.04579999999998563,
+            "latencyMs": 0.03440000000000509,
             "attempts": 1,
             "retries": 0,
             "rateLimited": 0,
@@ -1727,7 +1732,7 @@
           "usedModel": true,
           "meta": {
             "model": "rules:baseline",
-            "latencyMs": 0.028200000000026648,
+            "latencyMs": 0.01830000000001064,
             "attempts": 1,
             "retries": 0,
             "rateLimited": 0,
@@ -1752,7 +1757,7 @@
           "usedModel": true,
           "meta": {
             "model": "rules:baseline",
-            "latencyMs": 0.14119999999996935,
+            "latencyMs": 0.09629999999998518,
             "attempts": 1,
             "retries": 0,
             "rateLimited": 0,
@@ -1773,11 +1778,11 @@
         {
           "action": "clarify",
           "reason": "missing_customer,unknown_item,missing_quantity,missing_rate",
-          "latencyMs": 0,
+          "latencyMs": 1,
           "usedModel": true,
           "meta": {
             "model": "rules:baseline",
-            "latencyMs": 0.050399999999967804,
+            "latencyMs": 0.03330000000005384,
             "attempts": 1,
             "retries": 0,
             "rateLimited": 0,
@@ -1818,7 +1823,7 @@
           "usedModel": true,
           "meta": {
             "model": "rules:baseline",
-            "latencyMs": 0.347500000000025,
+            "latencyMs": 0.3418999999999528,
             "attempts": 1,
             "retries": 0,
             "rateLimited": 0,
@@ -1859,7 +1864,7 @@
           "usedModel": true,
           "meta": {
             "model": "rules:baseline",
-            "latencyMs": 0.023899999999969168,
+            "latencyMs": 0.018499999999960437,
             "attempts": 1,
             "retries": 0,
             "rateLimited": 0,
@@ -1884,7 +1889,7 @@
           "usedModel": true,
           "meta": {
             "model": "rules:baseline",
-            "latencyMs": 0.014299999999991542,
+            "latencyMs": 0.012799999999970169,
             "attempts": 1,
             "retries": 0,
             "rateLimited": 0,
@@ -1909,7 +1914,7 @@
           "usedModel": true,
           "meta": {
             "model": "rules:baseline",
-            "latencyMs": 0.015300000000024738,
+            "latencyMs": 0.010800000000017462,
             "attempts": 1,
             "retries": 0,
             "rateLimited": 0,
@@ -1934,7 +1939,7 @@
           "usedModel": true,
           "meta": {
             "model": "rules:baseline",
-            "latencyMs": 0.016100000000051296,
+            "latencyMs": 0.011099999999999,
             "attempts": 1,
             "retries": 0,
             "rateLimited": 0,
@@ -1954,12 +1959,12 @@
       "turns": [
         {
           "action": "clarify",
-          "reason": "missing_customer,ambiguous_item,missing_quantity,missing_rate",
+          "reason": "ambiguous_item,missing_quantity,missing_rate",
           "latencyMs": 0,
           "usedModel": true,
           "meta": {
             "model": "rules:baseline",
-            "latencyMs": 0.03719999999998436,
+            "latencyMs": 0.02580000000000382,
             "attempts": 1,
             "retries": 0,
             "rateLimited": 0,
@@ -1968,12 +1973,12 @@
         },
         {
           "action": "clarify",
-          "reason": "missing_customer,ambiguous_item,missing_quantity,missing_rate,ambiguous_item,missing_quantity,missing_rate",
+          "reason": "ambiguous_item,missing_quantity,missing_rate,ambiguous_item,missing_quantity,missing_rate",
           "latencyMs": 0,
           "usedModel": true,
           "meta": {
             "model": "rules:baseline",
-            "latencyMs": 0.06829999999996517,
+            "latencyMs": 0.06220000000001846,
             "attempts": 1,
             "retries": 0,
             "rateLimited": 0,
@@ -1994,7 +1999,7 @@
           "rate": null
         }
       ],
-      "resolvedCustomer": null,
+      "resolvedCustomer": "VK Enterprises",
       "resolvedLines": [
         {
           "status": "ambiguous",
@@ -2006,7 +2011,6 @@
         }
       ],
       "problems": [
-        "missing_customer",
         "ambiguous_item",
         "missing_quantity",
         "missing_rate",
@@ -2026,7 +2030,7 @@
           "usedModel": true,
           "meta": {
             "model": "rules:baseline",
-            "latencyMs": 0.03540000000003829,
+            "latencyMs": 0.036000000000001364,
             "attempts": 1,
             "retries": 0,
             "rateLimited": 0,
@@ -2040,7 +2044,7 @@
           "usedModel": true,
           "meta": {
             "model": "rules:baseline",
-            "latencyMs": 0.10700000000002774,
+            "latencyMs": 0.03950000000003229,
             "attempts": 1,
             "retries": 0,
             "rateLimited": 0,
@@ -2074,12 +2078,12 @@
       "turns": [
         {
           "action": "clarify",
-          "reason": "missing_customer,ambiguous_item",
+          "reason": "ambiguous_item",
           "latencyMs": 0,
           "usedModel": true,
           "meta": {
             "model": "rules:baseline",
-            "latencyMs": 0.04349999999999454,
+            "latencyMs": 0.027599999999949887,
             "attempts": 1,
             "retries": 0,
             "rateLimited": 0,
@@ -2118,12 +2122,12 @@
       "turns": [
         {
           "action": "clarify",
-          "reason": "missing_customer,ambiguous_item,missing_rate",
+          "reason": "missing_rate",
           "latencyMs": 0,
           "usedModel": true,
           "meta": {
             "model": "rules:baseline",
-            "latencyMs": 0.04200000000003001,
+            "latencyMs": 0.029200000000003,
             "attempts": 1,
             "retries": 0,
             "rateLimited": 0,
@@ -2137,7 +2141,7 @@
           "usedModel": true,
           "meta": {
             "model": "rules:baseline",
-            "latencyMs": 0.023899999999969168,
+            "latencyMs": 0.01979999999997517,
             "attempts": 1,
             "retries": 0,
             "rateLimited": 0,
@@ -2157,12 +2161,12 @@
       "turns": [
         {
           "action": "clarify",
-          "reason": "missing_customer,ambiguous_item,missing_quantity",
+          "reason": "missing_quantity",
           "latencyMs": 0,
           "usedModel": true,
           "meta": {
             "model": "rules:baseline",
-            "latencyMs": 0.06100000000003547,
+            "latencyMs": 0.03249999999997044,
             "attempts": 1,
             "retries": 0,
             "rateLimited": 0,
@@ -2170,13 +2174,12 @@
           }
         },
         {
-          "action": "clarify",
-          "reason": "missing_customer,ambiguous_item",
-          "latencyMs": 0,
+          "action": "create",
+          "latencyMs": 1,
           "usedModel": true,
           "meta": {
             "model": "rules:baseline",
-            "latencyMs": 0.07730000000003656,
+            "latencyMs": 0.03789999999997917,
             "attempts": 1,
             "retries": 0,
             "rateLimited": 0,
@@ -2192,17 +2195,24 @@
           "rate": 4100
         }
       ],
-      "resolvedCustomer": null,
+      "resolvedCustomer": "Royal Alloys",
       "resolvedLines": [
         {
-          "status": "ambiguous",
-          "sku": null
+          "status": "matched",
+          "sku": "NEO-16-RED"
         }
       ],
-      "problems": [
-        "missing_customer",
-        "ambiguous_item"
-      ]
+      "problems": [],
+      "invoice": {
+        "customer": "Royal Alloys",
+        "lines": [
+          {
+            "sku": "NEO-16-RED",
+            "quantity": 4,
+            "rate": 4100
+          }
+        ]
+      }
     }
   ]
 }

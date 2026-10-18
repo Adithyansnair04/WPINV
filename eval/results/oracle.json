@@ -1,8 +1,10 @@
 {
   "model": "oracle",
   "status": "ok",
-  "timestamp": "2026-10-18T15:58:52.127Z",
+  "timestamp": "2026-10-18T20:17:53.706Z",
   "caseCount": 50,
+  "casesScored": 50,
+  "blocked": [],
   "partial": false,
   "metrics": {
     "headline": {
@@ -92,8 +94,8 @@
       "mean": 1,
       "p50": 0,
       "p95": 1,
-      "max": 18,
-      "total": 41
+      "max": 14,
+      "total": 37
     },
     "reliability": {
       "model_failures": 0,
@@ -160,7 +162,7 @@
       "turns": [
         {
           "action": "create",
-          "latencyMs": 18,
+          "latencyMs": 14,
           "usedModel": true,
           "meta": {
             "model": "oracle",
@@ -354,7 +356,7 @@
       "turns": [
         {
           "action": "create",
-          "latencyMs": 1,
+          "latencyMs": 0,
           "usedModel": true,
           "meta": {
             "model": "oracle",
@@ -624,7 +626,7 @@
       "turns": [
         {
           "action": "create",
-          "latencyMs": 1,
+          "latencyMs": 0,
           "usedModel": true,
           "meta": {
             "model": "oracle",
@@ -1074,7 +1076,7 @@
       "turns": [
         {
           "action": "create",
-          "latencyMs": 1,
+          "latencyMs": 0,
           "usedModel": true,
           "meta": {
             "model": "oracle",
@@ -1119,7 +1121,7 @@
       "turns": [
         {
           "action": "create",
-          "latencyMs": 1,
+          "latencyMs": 0,
           "usedModel": true,
           "meta": {
             "model": "oracle",
@@ -1210,7 +1212,7 @@
         {
           "action": "clarify",
           "reason": "missing_customer",
-          "latencyMs": 0,
+          "latencyMs": 1,
           "usedModel": true,
           "meta": {
             "model": "oracle",
@@ -1313,7 +1315,7 @@
         {
           "action": "clarify",
           "reason": "missing_rate",
-          "latencyMs": 0,
+          "latencyMs": 1,
           "usedModel": true,
           "meta": {
             "model": "oracle",
@@ -1390,7 +1392,7 @@
         {
           "action": "clarify",
           "reason": "ambiguous_item,missing_rate",
-          "latencyMs": 1,
+          "latencyMs": 0,
           "usedModel": true,
           "meta": {
             "model": "oracle",
@@ -1950,7 +1952,7 @@
         {
           "action": "clarify",
           "reason": "ambiguous_item,missing_rate",
-          "latencyMs": 0,
+          "latencyMs": 1,
           "usedModel": true,
           "meta": {
             "model": "oracle",
@@ -2068,7 +2070,7 @@
         {
           "action": "clarify",
           "reason": "ambiguous_item",
-          "latencyMs": 0,
+          "latencyMs": 2,
           "usedModel": true,
           "meta": {
             "model": "oracle",
