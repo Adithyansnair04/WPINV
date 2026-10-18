@@ -1,0 +1,46 @@
+{
+  "name": "wpinv",
+  "version": "1.0.0",
+  "description": "WhatsApp group invoice agent for Zoho Books (prototype)",
+  "scripts": {
+    "start": "tsx src/index.ts",
+    "dev": "tsx watch src/index.ts",
+    "simulate": "tsx src/cli/simulate.ts",
+    "typecheck": "tsc --noEmit",
+    "test": "node --import tsx --test \"test/**/*.test.ts\"",
+    "eval": "tsx src/eval/run.ts",
+    "zoho:token": "tsx src/cli/zohoToken.ts",
+    "zoho:check": "tsx src/cli/zohoCheck.ts",
+    "zoho:seed": "tsx src/cli/seedZoho.ts",
+    "seed:csv": "tsx src/cli/seedCsv.ts"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Adithyansnair04/WPINV.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "module",
+  "bugs": {
+    "url": "https://github.com/Adithyansnair04/WPINV/issues"
+  },
+  "homepage": "https://github.com/Adithyansnair04/WPINV#readme",
+  "dependencies": {
+    "@whiskeysockets/baileys": "^7.0.0-rc14",
+    "dotenv": "^17.4.2",
+    "pino": "^9.14.0",
+    "qrcode-terminal": "^0.12.0",
+    "zod": "^4.6.7"
+  },
+  "devDependencies": {
+    "@types/node": "^24.19.2",
+    "@types/qrcode-terminal": "^0.12.2",
+    "tsx": "^4.23.15",
+    "typescript": "5.9"
+  },
+  "private": true,
+  "engines": {
+    "node": ">=20"
+  }
+}
