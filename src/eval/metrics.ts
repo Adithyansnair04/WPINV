@@ -39,7 +39,7 @@ export interface CaseResult {
 }
 
 export const toEvalAction = (a: Action): EvalAction =>
-  a === 'created' || a === 'existing' || a === 'dry_run' ? 'create' : a === 'duplicate' ? 'ignore' : a;
+  a === 'created' || a === 'existing' || a === 'edited' || a === 'dry_run' ? 'create' : a === 'duplicate' ? 'ignore' : a;
 
 const INTENT_FOR: Record<string, string> = { create: 'invoice_request', clarify: 'invoice_request', ignore: 'non_invoice', respond: 'unsupported_followup' };
 

@@ -44,21 +44,22 @@ export function significantTokens(input: string): string[] {
   return tokenize(input).filter((t) => !STOPWORDS.has(t));
 }
 
+/** Optimal-string-alignment distance: insert, delete, substitute, or swap two adjacent letters ("tyers" -> "tyres") each cost 1. */
 export function levenshtein(a: string, b: string, max = 3): number {
   if (Math.abs(a.length - b.length) > max) return max + 1;
+  let prev2: number[] = [];
   let prev = Array.from({ length: b.length + 1 }, (_, i) => i);
   for (let i = 1; i <= a.length; i++) {
     const cur = [i];
-    let rowMin = i;
     for (let j = 1; j <= b.length; j++) {
-      const v = Math.min(prev[j]! + 1, cur[j - 1]! + 1, prev[j - 1]! + (a[i - 1] === b[j - 1] ? 0 : 1));
+      let v = Math.min(prev[j]! + 1, cur[j - 1]! + 1, prev[j - 1]! + (a[i - 1] === b[j - 1] ? 0 : 1));
+      if (i > 1 && j > 1 && a[i - 1] === b[j - 2] && a[i - 2] === b[j - 1]) v = Math.min(v, prev2[j - 2]! + 1);
       cur.push(v);
-      rowMin = Math.min(rowMin, v);
     }
-    if (rowMin > max) return max + 1;
+    prev2 = prev;
     prev = cur;
   }
-  return prev[b.length]!;
+  return Math.min(prev[b.length]!, max + 1);
 }
 
 const isNumeric = (t: string) => /\d/.test(t);

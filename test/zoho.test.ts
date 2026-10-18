@@ -106,3 +106,31 @@ test('zoho: create invoice payload and PDF retrieval', async () => {
   assert.deepEqual(body, { customer_id: 'c1', reference_number: 'WA-1', line_items: [{ item_id: 'i1', quantity: 4, rate: 5200 }] });
   assert.equal((await z.getInvoicePdf('9'))?.toString(), '%PDF-1.4');
 });
+
+test('zoho: last rate scans newest non-void invoices for the item; update uses PUT with full line items', async () => {
+  const calls: { method: string; path: string; query: URLSearchParams; body?: unknown }[] = [];
+  const inv = (id: string, number: string, date: string, itemId: string, rate: number) => ({
+    code: 0,
+    invoice: { invoice_id: id, invoice_number: number, status: 'sent', customer_name: 'VK', customer_id: 'c1', date, total: rate, line_items: [{ item_id: itemId, name: 'x', quantity: 1, rate, item_total: rate }] },
+  });
+  const { impl } = fakeFetch((url, init) => {
+    if (url.pathname === '/oauth/v2/token') return json({ access_token: 't', expires_in: 3600 });
+    const path = url.pathname.replace('/books/v3', '');
+    calls.push({ method: String(init.method), path, query: url.searchParams, body: init.body ? JSON.parse(String(init.body)) : undefined });
+    if (path === '/invoices') return json({ code: 0, invoices: [{ invoice_id: '3', status: 'void' }, { invoice_id: '2', status: 'sent' }, { invoice_id: '1', status: 'paid' }] });
+    if (path === '/invoices/2') return json(inv('2', 'INV-2', '2026-10-01', 'other', 10));
+    if (path === '/invoices/1') return json(inv('1', 'INV-1', '2026-09-01', 'i1', 5100));
+    if (path === '/invoices/9' && init.method === 'PUT') return json(inv('9', 'INV-9', '2026-10-19', 'i1', 5200));
+    return json({ code: 0 });
+  });
+  const z = new ZohoBooks(creds, { fetchImpl: impl, sleep: noSleep });
+  assert.deepEqual(await z.findLastRate('c1', 'i1'), { rate: 5100, invoiceNumber: 'INV-1', date: '2026-09-01' });
+  assert.equal(calls[0]!.query.get('customer_id'), 'c1');
+  assert.equal(calls[0]!.query.get('sort_order'), 'D');
+  assert.ok(!calls.some((c) => c.path === '/invoices/3'), 'void invoice must not be read');
+
+  const updated = await z.updateInvoiceLines('9', 'c1', [{ itemId: 'i1', quantity: 6, rate: 5200 }]);
+  assert.equal(updated.number, 'INV-9');
+  const put = calls.find((c) => c.method === 'PUT')!;
+  assert.deepEqual(put.body, { customer_id: 'c1', line_items: [{ item_id: 'i1', quantity: 6, rate: 5200 }] });
+});

@@ -15,25 +15,38 @@ import { renderSummary } from './report.js';
 
 /**
  * Runs the labeled cases through each model against mocked Zoho data (no network to Zoho, no WhatsApp).
- * Usage: npm run eval -- [--models rules,mistral:mistral-small-latest] [--cases S01,B01]
+ * Usage: npm run eval -- [--models rules,gemini:gemini-3.1-flash-lite] [--cases S01,B01] [--set main|holdout] [--retry-errors]
+ *   --set holdout   runs eval/holdout.json (written before tuning; no gold, so no oracle) into eval/results/holdout/
+ *   --retry-errors  keeps earlier results and re-runs only cases that were blocked by provider quota/rate limits
  */
-const { values } = parseArgs({ options: { models: { type: 'string' }, cases: { type: 'string' }, verbose: { type: 'boolean', short: 'v' } } });
+const { values } = parseArgs({
+  options: {
+    models: { type: 'string' },
+    cases: { type: 'string' },
+    set: { type: 'string', default: 'main' },
+    'retry-errors': { type: 'boolean' },
+    verbose: { type: 'boolean', short: 'v' },
+  },
+});
 const cfg = loadConfig();
-const RESULTS = 'eval/results';
-const DEFAULT_MODELS = ['oracle', 'rules', 'mistral:mistral-small-latest', 'mistral:mistral-large-latest'];
+const SET = values.set === 'holdout' ? 'holdout' : 'main';
+const RESULTS = SET === 'holdout' ? 'eval/results/holdout' : 'eval/results';
+const DEFAULT_MODELS = ['oracle', 'rules', 'gemini:gemini-3.1-flash-lite', 'gemini:gemini-3-flash-preview'];
 const models = values.models?.split(',').map((s) => s.trim()).filter(Boolean) ?? (cfg.EVAL_MODELS.length ? cfg.EVAL_MODELS : DEFAULT_MODELS);
 const filter = values.cases?.split(',');
-const cases = (JSON.parse(readFileSync('eval/cases.json', 'utf8')) as EvalCase[]).filter((c) => !filter || filter.includes(c.id));
+const cases = (JSON.parse(readFileSync(SET === 'holdout' ? 'eval/holdout.json' : 'eval/cases.json', 'utf8')) as EvalCase[]).filter(
+  (c) => !filter || filter.includes(c.id),
+);
 mkdirSync(RESULTS, { recursive: true });
 
 type GoldTurn = [string, string | null, [string, number | null, number | null][], { currency?: string; prev?: boolean }?];
-const gold = JSON.parse(readFileSync('eval/gold.json', 'utf8')) as Record<string, GoldTurn[]>;
+const gold = SET === 'main' ? (JSON.parse(readFileSync('eval/gold.json', 'utf8')) as Record<string, GoldTurn[]>) : null;
 
 /** Returns the labeled ideal extraction for each turn: isolates matching/decision quality from the LLM. */
 function oracleFor(c: EvalCase): Extractor {
   const byText = new Map(
     c.turns.map((t, i) => {
-      const [intent, customer, items, o = {}] = gold[c.id]![i]!;
+      const [intent, customer, items, o = {}] = gold![c.id]![i]!;
       const extraction = Extraction.parse({
         intent,
         customer,
@@ -99,7 +112,7 @@ async function runCase(extractor: Extractor, c: EvalCase, delayMs: number): Prom
   }
 
   const trace = last?.decision?.trace;
-  const inv = books.invoices[0];
+  const inv = books.created[0];
   return {
     id: c.id,
     category: c.category,
@@ -127,20 +140,48 @@ for (const spec of models) {
     if (!existsSync(file)) writeFileSync(file, JSON.stringify({ model: spec, status: 'not_run', reason, timestamp: new Date().toISOString() }, null, 2));
     continue;
   }
-  console.log(`\n[${spec}] running ${cases.length} cases...`);
-  const results: CaseResult[] = [];
-  for (const c of cases) {
+  if (!extractor && !gold) {
+    console.log(`\n[${spec}] NOT RUN: this case set has no gold extractions`);
+    continue;
+  }
+  const quotaBlocked = (r: CaseResult) => r.turns.some((t) => t.reason === 'extract_rate_limit');
+  const previous = new Map<string, CaseResult>();
+  if (values['retry-errors'] && existsSync(file)) {
+    const prev = JSON.parse(readFileSync(file, 'utf8')) as { results?: CaseResult[] };
+    for (const r of prev.results ?? []) if (!quotaBlocked(r)) previous.set(r.id, r);
+  }
+  const todo = cases.filter((c) => !previous.has(c.id));
+  console.log(`\n[${spec}] running ${todo.length} cases${previous.size ? ` (reusing ${previous.size} earlier cases)` : ''}...`);
+  const results: CaseResult[] = cases.filter((c) => previous.has(c.id)).map((c) => previous.get(c.id)!);
+  const blocked: string[] = [];
+  let streak = 0;
+  for (const c of todo) {
+    if (streak >= 3) {
+      blocked.push(c.id);
+      continue;
+    }
     const r = await runCase(extractor ?? oracleFor(c), c, extractor && extractor.id !== 'rules:baseline' ? cfg.EVAL_DELAY_MS : 0);
+    if (quotaBlocked(r)) {
+      streak++;
+      blocked.push(c.id);
+      if (streak === 3) console.log(`  stopping ${spec}: 3 consecutive quota/rate-limit failures; re-run later with --retry-errors`);
+    } else {
+      streak = 0;
+    }
     results.push(r);
     if (values.verbose) console.log(`  ${c.id} ${r.turns.map((t) => t.action).join('>')} (expected ${c.expected_first ? `${c.expected_first}>` : ''}${c.expected.action}) ${r.turns.map((t) => `${t.latencyMs}ms`).join('/')}`);
   }
-  const metrics = computeMetrics(cases, results);
-  writeFileSync(file, JSON.stringify({ model: spec, status: 'ok', timestamp: new Date().toISOString(), caseCount: cases.length, partial: Boolean(filter), metrics, results }, null, 2));
+  // Quota-blocked cases say nothing about model quality: they are excluded from metrics and reported as coverage.
+  const scored = results.filter((r) => !quotaBlocked(r));
+  const metrics = computeMetrics(cases, scored);
+  const partial = Boolean(filter) || blocked.length > 0;
+  writeFileSync(file, JSON.stringify({ model: spec, status: 'ok', timestamp: new Date().toISOString(), caseCount: cases.length, casesScored: scored.length, blocked, partial, metrics, results }, null, 2));
+  if (blocked.length) console.log(`  ${blocked.length} case(s) blocked by quota/rate limits: ${blocked.join(' ')}`);
   console.log(JSON.stringify(metrics.headline, null, 2));
 }
 
 const all = readdirSync(RESULTS)
   .filter((f) => f.endsWith('.json'))
   .map((f) => JSON.parse(readFileSync(join(RESULTS, f), 'utf8')));
-writeFileSync(join(RESULTS, 'summary.md'), renderSummary(all, cases));
+writeFileSync(join(RESULTS, 'summary.md'), renderSummary(all, cases, SET));
 console.log(`\nWrote ${RESULTS}/summary.md`);

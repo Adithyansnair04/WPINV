@@ -77,6 +77,11 @@ export class CustomerMatcher {
     this.vocab = new Set(this.entries.flatMap((e) => [...e.tokens]));
   }
 
+  /** True if the word means something in the customer list (exactly or as a typo of a name word). */
+  knowsWord(word: string): boolean {
+    return significantTokens(word).some((t) => this.vocab.has(t) || [...this.vocab].some((v) => typoBudget(t) > 0 && levenshtein(t, v, typoBudget(t)) <= typoBudget(t)));
+  }
+
   match(query: string): MatchResult<Customer> {
     const q = normalizeText(query);
     const qTokens = significantTokens(query);

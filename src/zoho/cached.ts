@@ -39,4 +39,16 @@ export class CachedBooks implements BooksApi {
   getInvoicePdf(id: string) {
     return this.inner.getInvoicePdf(id);
   }
+
+  getInvoice(id: string) {
+    return this.inner.getInvoice(id);
+  }
+
+  findLastRate(customerId: string, itemId: string) {
+    return this.inner.findLastRate(customerId, itemId);
+  }
+
+  updateInvoiceLines(...args: Parameters<BooksApi['updateInvoiceLines']>) {
+    return this.inner.updateInvoiceLines(...args);
+  }
 }

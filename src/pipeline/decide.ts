@@ -1,6 +1,6 @@
 import type { Extraction } from '../extraction/schema.js';
 import { CustomerMatcher, ItemMatcher, type MatchResult } from '../matching/matcher.js';
-import type { Customer, Item } from '../types.js';
+import type { Customer, Item, PreviousRate } from '../types.js';
 import { checkGrounding } from './grounding.js';
 
 export interface ResolvedLine {
@@ -8,7 +8,7 @@ export interface ResolvedLine {
   item: Item;
   quantity: number;
   rate: number;
-  rateSource: 'message' | 'item_default';
+  rateSource: 'message' | 'item_default' | 'previous_invoice';
 }
 
 export interface LineTrace {
@@ -26,12 +26,15 @@ export interface DecisionTrace {
   customer?: { query: string; status: MatchResult<Customer>['status']; id?: string; name?: string; candidates: { name: string; score: number }[] };
   lines: LineTrace[];
   problems: string[];
+  repairs?: string[];
 }
 
 export interface ClarifyOption {
   lineIndex: number;
   itemId: string;
   name: string;
+  /** Set when choosing this option confirms a rate taken from a previous invoice. */
+  rate?: number;
 }
 
 export type Decision =
@@ -45,21 +48,51 @@ export interface DecideOptions {
   baseCurrency: string;
   /** Original message text (plus clarification answers); numbers in the extraction must appear in it. */
   sourceText?: string;
+  /** Previous-invoice rates looked up for lines that asked for "rate same as last time" (by line index). Present = lookup was done. */
+  previousRates?: Map<number, PreviousRate | null>;
 }
 
 const MAX_QTY = 10000;
 const MAX_RATE = 10_000_000;
 const CURRENCY_ALIASES = new Set(['inr', 'rs', 'rs.', 'rupees', 'rupee', '₹']);
 
+export const EDIT_HELP = 'To change an invoice, reply to my invoice message with the change, e.g. "make it 6 pcs" or "rate 5000". Only drafts can be changed.';
+
 export const fmtMoney = (n: number) => `₹${n.toLocaleString('en-IN', { maximumFractionDigits: 2 })}`;
 
 const shortList = <T extends { name: string }>(r: MatchResult<T>) =>
   r.candidates.map((c) => ({ name: c.record.name, score: Math.round(c.score * 100) / 100 }));
 
-export function decide(ex: Extraction, customers: Customer[], items: Item[], opts: DecideOptions): Decision {
+/**
+ * When the customer did not resolve, the model may have put the customer/product boundary in the wrong place
+ * ("royl" + "alloys vortx 18", "gwc ku" + "apex ..."). Retry with up to 3 leading description words added (longest first),
+ * then with trailing customer words dropped. Only a confident, unique match is accepted; otherwise nothing changes.
+ */
+function repairCustomer(ex: Extraction, matcher: CustomerMatcher): { customer: Customer; query: string; description?: string } | null {
+  const words = ex.items[0]?.description?.trim().split(/\s+/) ?? [];
+  const base = ex.customer?.trim() ?? '';
+  for (let k = Math.min(3, words.length - 1); k >= 1; k--) {
+    const query = `${base} ${words.slice(0, k).join(' ')}`.trim();
+    const r = matcher.match(query);
+    if (r.status === 'matched') return { customer: r.record, query, description: words.slice(k).join(' ') };
+  }
+  // Only filler words may be dropped ("gwc ku"); a word that exists in customer names ("VK Auto") carries meaning.
+  const own = base.split(/\s+/);
+  for (let k = own.length - 1; k >= 1; k--) {
+    if (own.slice(k).some((w) => matcher.knowsWord(w))) break;
+    const query = own.slice(0, k).join(' ');
+    const r = matcher.match(query);
+    if (r.status === 'matched') return { customer: r.record, query };
+  }
+  return null;
+}
+
+export function decide(input: Extraction, customers: Customer[], items: Item[], opts: DecideOptions): Decision {
+  const ex = structuredClone(input);
   const trace: DecisionTrace = { lines: [], problems: [] };
 
   if (ex.intent === 'non_invoice') return { kind: 'ignore', reason: 'non_invoice', trace };
+  if (ex.intent === 'edit_request') return { kind: 'respond', reason: 'edit_without_target', text: EDIT_HELP, trace };
   if (ex.intent === 'unsupported_followup' || (ex.refers_to_previous_invoice && !ex.items.length)) {
     return {
       kind: 'respond',
@@ -73,11 +106,24 @@ export function decide(ex: Extraction, customers: Customer[], items: Item[], opt
   const options: ClarifyOption[] = [];
 
   let customer: Customer | undefined;
+  const customerMatcher = new CustomerMatcher(customers);
+  if (ex.intent === 'invoice_request' || ex.intent === 'clarification_response') {
+    const first = ex.customer ? customerMatcher.match(ex.customer) : null;
+    // Ambiguous means real alternatives exist: never repair, always ask.
+    if (first?.status !== 'matched' && first?.status !== 'ambiguous') {
+      const fixed = repairCustomer(ex, customerMatcher);
+      if (fixed) {
+        trace.repairs = [`customer "${ex.customer ?? ''}" -> "${fixed.query}"`];
+        ex.customer = fixed.query;
+        if (fixed.description !== undefined && ex.items[0]) ex.items[0].description = fixed.description;
+      }
+    }
+  }
   if (!ex.customer) {
     questions.push('Which customer is this for?');
     trace.problems.push('missing_customer');
   } else {
-    const r = new CustomerMatcher(customers).match(ex.customer);
+    const r = customerMatcher.match(ex.customer);
     trace.customer = { query: ex.customer, status: r.status, candidates: shortList(r) };
     if (r.status === 'matched') {
       customer = r.record;
@@ -135,15 +181,25 @@ export function decide(ex: Extraction, customers: Customer[], items: Item[], opt
     }
 
     let rate = li.rate;
-    let rateSource: ResolvedLine['rateSource'] = 'message';
+    let rateSource: ResolvedLine['rateSource'] = li.rate_from_previous ? 'previous_invoice' : 'message';
     if (rate === null && opts.ratePolicy === 'item_default' && r.status === 'matched' && r.record.rate > 0 && !li.rate_from_previous) {
       rate = r.record.rate;
       rateSource = 'item_default';
     }
-    if (rate === null) {
+    const prev = opts.previousRates?.get(idx);
+    if (rate === null && li.rate_from_previous && prev && r.status === 'matched') {
+      // Never applied silently: the user confirms the exact rate and its source invoice.
+      options.push({ lineIndex: idx, itemId: r.record.id, name: `Yes, ${fmtMoney(prev.rate)} (${prev.invoiceNumber})`, rate: prev.rate });
+      questions.push(`Use the last rate for ${label}: ${fmtMoney(prev.rate)} (invoice ${prev.invoiceNumber}${prev.date ? `, ${prev.date}` : ''})?
+  ${options.length}) Yes, use ${fmtMoney(prev.rate)}
+Or reply with a different rate.`);
+      trace.problems.push('confirm_previous_rate');
+    } else if (rate === null) {
       questions.push(
         li.rate_from_previous
-          ? `I can’t reuse previous invoice rates yet. What rate for ${label}?`
+          ? opts.previousRates
+            ? `I couldn't find an earlier invoice of ${label} for this customer. What rate should I use?`
+            : `What rate for ${label}? (I need the customer and exact item first to look up the last rate.)`
           : `Rate for ${label}?${r.status === 'matched' && r.record.rate > 0 ? ` (list rate ${fmtMoney(r.record.rate)})` : ''}`,
       );
       trace.problems.push(li.rate_from_previous ? 'rate_from_previous' : 'missing_rate');

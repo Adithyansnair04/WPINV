@@ -1,0 +1,6 @@
+[
+  { "number": "INV-000098", "date": "2026-09-21", "customer": "Royal Alloys", "status": "sent", "lines": [{ "sku": "NEO-16-SLV", "quantity": 4, "rate": 3850 }] },
+  { "number": "INV-000101", "date": "2026-09-28", "customer": "VK Enterprises", "status": "paid", "lines": [{ "sku": "LNZ-18-RED", "quantity": 4, "rate": 5100 }, { "sku": "NUT-16-CHR", "quantity": 1, "rate": 600 }] },
+  { "number": "INV-000107", "date": "2026-10-05", "customer": "VK Enterprises", "status": "void", "lines": [{ "sku": "LNZ-18-RED", "quantity": 4, "rate": 4000 }] },
+  { "number": "INV-000112", "date": "2026-10-09", "customer": "Metro Car Accessories", "status": "sent", "lines": [{ "sku": "VTX-17-BLK", "quantity": 4, "rate": 4450 }] }
+]

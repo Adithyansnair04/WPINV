@@ -22,7 +22,7 @@ export function dryRunSummary(customerName: string, lines: ResolvedLine[]): stri
   return [
     'DRY RUN: no invoice was created. Would create draft invoice:',
     `Customer: ${customerName}`,
-    ...lines.map((l, i) => `${i + 1}. ${l.item.name} — ${l.quantity} × ${fmtMoney(l.rate)} = ${fmtMoney(l.quantity * l.rate)}${l.rateSource === 'item_default' ? ' (list rate)' : ''}`),
+    ...lines.map((l, i) => `${i + 1}. ${l.item.name} — ${l.quantity} × ${fmtMoney(l.rate)} = ${fmtMoney(l.quantity * l.rate)}${l.rateSource === 'item_default' ? ' (list rate)' : l.rateSource === 'previous_invoice' ? ' (previous invoice rate)' : ''}`),
     `Subtotal: ${fmtMoney(sub)}`,
     knownTax ? `Estimated tax: ${fmtMoney(tax)} (Zoho calculates the final tax)` : 'Tax: calculated by Zoho on creation',
   ].join('\n');
