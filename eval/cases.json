@@ -1,0 +1,62 @@
+[
+  { "id": "S01", "category": "straightforward", "turns": ["VK\nred lenzo alloy 18 inch x 4\nrate 5200"], "expected": { "action": "create", "customer": "VK Enterprises", "items": [{ "sku": "LNZ-18-RED", "quantity": 4, "rate": 5200 }] } },
+  { "id": "S02", "category": "straightforward", "turns": ["Bill to Royal Alloys: Neo alloy 16 inch silver, 4 nos @ 3900"], "expected": { "action": "create", "customer": "Royal Alloys", "items": [{ "sku": "NEO-16-SLV", "quantity": 4, "rate": 3900 }] } },
+  { "id": "S03", "category": "straightforward", "turns": ["Sri Ganesh Motors - Apex 195/55 R16 tyre qty 2 rate 5600"], "expected": { "action": "create", "customer": "Sri Ganesh Motors", "items": [{ "sku": "APX-195-55-16", "quantity": 2, "rate": 5600 }] } },
+  { "id": "S04", "category": "straightforward", "turns": ["Metro Car Accessories\nVortex 17 black alloy x4 @4500\nchrome wheel nut set x 2 @ 650"], "expected": { "action": "create", "customer": "Metro Car Accessories", "items": [{ "sku": "VTX-17-BLK", "quantity": 4, "rate": 4500 }, { "sku": "NUT-16-CHR", "quantity": 2, "rate": 650 }] } },
+  { "id": "S05", "category": "straightforward", "turns": ["Invoice for Kerala Wheel Hub: 2 x Durotrac 185/65 R15 at 4400 each"], "expected": { "action": "create", "customer": "Kerala Wheel Hub", "items": [{ "sku": "DRT-185-65-15", "quantity": 2, "rate": 4400 }] } },
+
+  { "id": "A01", "category": "alias", "turns": ["kwh lenza 17 gunmetal 4 pcs 4700"], "expected": { "action": "create", "customer": "Kerala Wheel Hub", "items": [{ "sku": "LZA-17-GUN", "quantity": 4, "rate": 4700 }] } },
+  { "id": "A02", "category": "alias", "turns": ["SGM durotrac 185/65 r15 x 4 rate 4400"], "expected": { "action": "create", "customer": "Sri Ganesh Motors", "items": [{ "sku": "DRT-185-65-15", "quantity": 4, "rate": 4400 }] } },
+  { "id": "A03", "category": "alias", "turns": ["vkt - apex 205/55r16 2 nos @ 6200"], "expected": { "action": "create", "customer": "Vijay Kumar Tyres", "items": [{ "sku": "APX-205-55-16", "quantity": 2, "rate": 6200 }] } },
+  { "id": "A04", "category": "alias", "turns": ["ameen 4 neo 17 chrome rims 4900 each"], "expected": { "action": "create", "customer": "Al Ameen Tyre House", "items": [{ "sku": "NEO-17-CHR", "quantity": 4, "rate": 4900 }] } },
+  { "id": "A05", "category": "alias", "turns": ["VKS: lenzo centre cap set x 3 @ 900"], "expected": { "action": "create", "customer": "VKS Auto Spares", "items": [{ "sku": "CAP-LNZ-4", "quantity": 3, "rate": 900 }] } },
+
+  { "id": "W01", "category": "word_order", "turns": ["4 x lenzo 18 black for VK Enterprises, 5100 per piece"], "expected": { "action": "create", "customer": "VK Enterprises", "items": [{ "sku": "LNZ-18-BLK", "quantity": 4, "rate": 5100 }] } },
+  { "id": "W02", "category": "word_order", "turns": ["Rate 3800. Qty 4. Lenzo 15 black. Customer: Bismi Auto World"], "expected": { "action": "create", "customer": "Bismi Auto World", "items": [{ "sku": "LNZ-15-BLK", "quantity": 4, "rate": 3800 }] } },
+  { "id": "W03", "category": "word_order", "turns": ["pls make bill royal alloys 2 tyre valve set 120 rs"], "expected": { "action": "create", "customer": "Royal Alloys", "items": [{ "sku": "VLV-4", "quantity": 2, "rate": 120 }] } },
+  { "id": "W04", "category": "informal", "turns": ["Sharma Wheels & Tyres ko 4 durotrac 195/55 R16 bhej do, rate 5300"], "expected": { "action": "create", "customer": "Sharma Wheels & Tyres", "items": [{ "sku": "DRT-195-55-16", "quantity": 4, "rate": 5300 }] } },
+  { "id": "W05", "category": "informal", "turns": ["gwc ku 2 apex 195/55 r16 tyre podu, 5.6k each"], "expected": { "action": "create", "customer": "Ganesh Wheel Care", "items": [{ "sku": "APX-195-55-16", "quantity": 2, "rate": 5600 }] } },
+
+  { "id": "T01", "category": "typo", "turns": ["vk entrprises\nlenzzo red 17inch x4 rate 4600"], "expected": { "action": "create", "customer": "VK Enterprises", "items": [{ "sku": "LNZ-17-RED", "quantity": 4, "rate": 4600 }] } },
+  { "id": "T02", "category": "typo", "turns": ["royl alloys - vortx 18 mat black 4pc @ 5600"], "expected": { "action": "create", "customer": "Royal Alloys", "items": [{ "sku": "VTX-18-MBK", "quantity": 4, "rate": 5600 }] } },
+  { "id": "T03", "category": "typo", "turns": ["bismi bhai 2 set blak wheel nuts 650"], "expected": { "action": "create", "customer": "Bismi Auto World", "items": [{ "sku": "NUT-16-BLK", "quantity": 2, "rate": 650 }] } },
+  { "id": "T04", "category": "typo", "turns": ["kerla wheel hub neo 16 slvr x 4 rate 3900"], "expected": { "action": "create", "customer": "Kerala Wheel Hub", "items": [{ "sku": "NEO-16-SLV", "quantity": 4, "rate": 3900 }] } },
+
+  { "id": "C01", "category": "confusable", "turns": ["VK lenza 18 red x 4 @ 5400"], "expected": { "action": "create", "customer": "VK Enterprises", "items": [{ "sku": "LZA-18-RED", "quantity": 4, "rate": 5400 }] } },
+  { "id": "C02", "category": "confusable", "turns": ["Kerala wheel hub - Lenzo 18 silver x 4 @ 5000"], "expected": { "action": "create", "customer": "Kerala Wheel Hub", "items": [{ "sku": "LNZ-18-SLV", "quantity": 4, "rate": 5000 }] } },
+  { "id": "C03", "category": "confusable", "turns": ["Metro: vortex 18 black x 4 @ 5600"], "expected": { "action": "create", "customer": "Metro Car Accessories", "items": [{ "sku": "VTX-18-MBK", "quantity": 4, "rate": 5600 }] }, "note": "Only one Vortex 18 exists (matte black)." },
+  { "id": "C04", "category": "confusable", "turns": ["apex 195/55 r16 x 4 for al ameen @5600"], "expected": { "action": "create", "customer": "Al Ameen Tyre House", "items": [{ "sku": "APX-195-55-16", "quantity": 4, "rate": 5600 }] } },
+
+  { "id": "M01", "category": "missing", "turns": ["lenzo 18 red x 4 rate 5200"], "expected": { "action": "clarify", "customer": null, "items": [{ "sku": "LNZ-18-RED", "quantity": 4, "rate": 5200 }] }, "note": "No customer." },
+  { "id": "M02", "category": "missing", "turns": ["VK Enterprises 4 pcs rate 5000"], "expected": { "action": "clarify", "customer": "VK Enterprises", "items": [] }, "note": "No product." },
+  { "id": "M03", "category": "missing", "turns": ["Royal Alloys neo 16 red rate 4100"], "expected": { "action": "clarify", "customer": "Royal Alloys", "items": [{ "sku": "NEO-16-RED", "quantity": null, "rate": 4100 }] }, "note": "No quantity." },
+  { "id": "M04", "category": "missing", "turns": ["Bismi - apex 205/55 r16 x 2"], "expected": { "action": "clarify", "customer": "Bismi Auto World", "items": [{ "sku": "APX-205-55-16", "quantity": 2, "rate": null }] }, "note": "No rate (RATE_POLICY=ask)." },
+  { "id": "M05", "category": "missing", "turns": ["durotrac 195/55 r16 4 nos"], "expected": { "action": "clarify", "customer": null, "items": [{ "sku": "DRT-195-55-16", "quantity": 4, "rate": null }] } },
+
+  { "id": "B01", "category": "ambiguous", "turns": ["VK red wheel 4"], "expected": { "action": "clarify", "customer": "VK Enterprises", "items": [{ "sku": null, "quantity": 4, "rate": null }] }, "note": "Four red wheels exist." },
+  { "id": "B02", "category": "ambiguous", "turns": ["sharma 4 neo 16 silver @3900"], "expected": { "action": "clarify", "customer": null, "items": [{ "sku": "NEO-16-SLV", "quantity": 4, "rate": 3900 }] }, "note": "Two Sharma customers." },
+  { "id": "B03", "category": "ambiguous", "turns": ["ganesh lenzo 18 x 4 @ 5100"], "expected": { "action": "clarify", "customer": null, "items": [{ "sku": null, "quantity": 4, "rate": 5100 }] }, "note": "Two Ganesh customers; three Lenzo 18 colours." },
+  { "id": "B04", "category": "ambiguous", "turns": ["VK 195/55 r16 tyres x 4 @ 5500"], "expected": { "action": "clarify", "customer": "VK Enterprises", "items": [{ "sku": null, "quantity": 4, "rate": 5500 }] }, "note": "Apex and Durotrac both have 195/55 R16." },
+  { "id": "B05", "category": "ambiguous", "turns": ["Metro - 4 lenzo 18 red, 2 neo 16 red, rate 5200"], "expected": { "action": "clarify", "customer": "Metro Car Accessories", "items": [{ "sku": "LNZ-18-RED", "quantity": 4, "rate": null }, { "sku": "NEO-16-RED", "quantity": 2, "rate": null }] }, "note": "One rate for two different items." },
+
+  { "id": "I01", "category": "invalid", "turns": ["VK lenzo 18 red x 0 rate 5200"], "expected": { "action": "clarify", "customer": "VK Enterprises", "items": [{ "sku": "LNZ-18-RED", "quantity": 0, "rate": 5200 }] } },
+  { "id": "I02", "category": "invalid", "turns": ["Royal Alloys lenzo 15 black x 4 rate 45 USD"], "expected": { "action": "clarify", "customer": "Royal Alloys", "items": [{ "sku": "LNZ-15-BLK", "quantity": 4, "rate": 45 }] }, "note": "Foreign currency." },
+  { "id": "I03", "category": "invalid", "turns": ["VK 4 momo alloy 18 red rate 5200"], "expected": { "action": "clarify", "customer": "VK Enterprises", "items": [{ "sku": null, "quantity": 4, "rate": 5200 }] }, "note": "Brand not in catalogue." },
+  { "id": "I04", "category": "invalid", "turns": ["Zenith Motors lenzo 18 red x 4 rate 5200"], "expected": { "action": "clarify", "customer": null, "items": [{ "sku": "LNZ-18-RED", "quantity": 4, "rate": 5200 }] }, "note": "Customer not in Zoho." },
+
+  { "id": "N01", "category": "non_invoice", "turns": ["ok thanks"], "expected": { "action": "ignore" } },
+  { "id": "N02", "category": "non_invoice", "turns": ["Good morning all 🙏"], "expected": { "action": "ignore" } },
+  { "id": "N03", "category": "non_invoice", "turns": ["Is the delivery truck leaving at 5?"], "expected": { "action": "ignore" } },
+  { "id": "N04", "category": "non_invoice", "turns": ["received payment of 25000 from VK today 👍"], "expected": { "action": "ignore", "acceptable": ["respond"] } },
+
+  { "id": "P01", "category": "previous_invoice", "turns": ["where is my invoice from yesterday?"], "expected": { "action": "respond", "acceptable": ["ignore"] } },
+  { "id": "P02", "category": "previous_invoice", "turns": ["VK lenzo 18 red x 4 rate same as last time"], "expected": { "action": "respond", "acceptable": ["clarify"] }, "note": "Unsupported bonus; must not invent a rate." },
+  { "id": "P03", "category": "previous_invoice", "turns": ["make it 6 pcs"], "expected": { "action": "respond", "acceptable": ["ignore"] } },
+  { "id": "P04", "category": "previous_invoice", "turns": ["same order as last week for Royal Alloys"], "expected": { "action": "respond", "acceptable": ["clarify"] } },
+
+  { "id": "X01", "category": "clarification_flow", "turns": ["VK red wheel 4", { "text": "lenzo 18 inch, rate 5200", "quote": true }], "expected_first": "clarify", "expected": { "action": "create", "customer": "VK Enterprises", "items": [{ "sku": "LNZ-18-RED", "quantity": 4, "rate": 5200 }] } },
+  { "id": "X02", "category": "clarification_flow", "turns": ["Bismi - apex 205/55 r16 x 2", { "text": "6200", "quote": true }], "expected_first": "clarify", "expected": { "action": "create", "customer": "Bismi Auto World", "items": [{ "sku": "APX-205-55-16", "quantity": 2, "rate": 6200 }] } },
+  { "id": "X03", "category": "clarification_flow", "turns": ["Royal Alloys neo 16 x 4 rate 4000", { "text": "2", "quote": true }], "expected_first": "clarify", "expected": { "action": "create", "customer": "Royal Alloys", "items": [{ "sku": "NEO-16-SLV", "quantity": 4, "rate": 4000 }] }, "note": "Options are listed Red, Silver; '2' selects Silver." },
+  { "id": "X04", "category": "clarification_flow", "turns": ["VK lenzo 18 red x 4", { "text": "rate 5200", "sender": "bob" }], "expected_first": "clarify", "expected": { "action": "clarify", "acceptable": ["ignore", "respond"] }, "note": "A different sender must not complete Alice's pending request." },
+  { "id": "X05", "category": "clarification_flow", "turns": ["Royal Alloys neo 16 red rate 4100", { "text": "4 pcs" }], "expected_first": "clarify", "expected": { "action": "create", "customer": "Royal Alloys", "items": [{ "sku": "NEO-16-RED", "quantity": 4, "rate": 4100 }] }, "note": "Unquoted answer from the same sender." }
+]
