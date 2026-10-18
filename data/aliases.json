@@ -1,0 +1,15 @@
+{
+  "_comment": "Business-approved shorthand -> exact Zoho customer name. Matched by name at runtime; no IDs stored here.",
+  "VK Enterprises": ["vk", "vk ent", "vke"],
+  "VKS Auto Spares": ["vks"],
+  "Vijay Kumar Tyres": ["vkt", "vijay tyres"],
+  "Sri Ganesh Motors": ["sgm", "sri ganesh"],
+  "Ganesh Wheel Care": ["gwc"],
+  "Sharma Auto Parts": ["sap"],
+  "Sharma Wheels & Tyres": ["swt"],
+  "Al Ameen Tyre House": ["al ameen", "ameen"],
+  "Kerala Wheel Hub": ["kwh"],
+  "Royal Alloys": ["royal"],
+  "Metro Car Accessories": ["metro", "mca"],
+  "Bismi Auto World": ["bismi"]
+}

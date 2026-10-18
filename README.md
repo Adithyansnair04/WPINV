@@ -1,2 +1,123 @@
-# WPINV
-AI-powered WhatsApp invoice automation using Zoho Books
+# WPINV — chat-group → Zoho Books invoice agent (prototype)
+
+Add the bot to a **Telegram group** (official Bot API) and send messy invoice requests like
+
+```
+VK
+red lenzo alloy 18 inch x 4
+rate 5200
+```
+
+and creates a **draft** invoice in Zoho Books. It resolves `VK` to *VK Enterprises* and the product to *Lenzo Alloy Wheel 18" Red*, then replies in the group with the invoice number, lines, totals/tax and the PDF. If a request is ambiguous (`VK red wheel 4`), it asks a short question with numbered options instead of guessing.
+
+- An LLM interprets the language. Deterministic code with transparent scores matches against the **real** Zoho customer and item records.
+- Interchangeable LLM providers: Mistral (default pair: Mistral Small = fast/small, Mistral Large = larger), Gemini, Groq, OpenRouter, or any OpenAI-compatible endpoint such as local Ollama. A regex baseline (`rules`) needs no key.
+- Safe defaults: Zoho is mocked; live mode only *previews* until `INVOICE_ALLOW_LIVE_CREATE=true`; invoices are drafts and are never sent to customers.
+
+Design, model comparison and evaluation write-up: [docs/DESIGN.md](docs/DESIGN.md) · Telegram setup: [docs/TELEGRAM_SETUP.md](docs/TELEGRAM_SETUP.md) · Zoho trial setup: [docs/ZOHO_SETUP.md](docs/ZOHO_SETUP.md) · Demo script: [docs/DEMO.md](docs/DEMO.md) · Latest results: [eval/results/summary.md](eval/results/summary.md)
+
+## Requirements
+
+- Node.js ≥ 20 (developed on Node 24)
+- For live LLM runs: a free [Mistral](https://console.mistral.ai) API key (Experiment plan). Alternatives: [Gemini](https://aistudio.google.com/apikey), [OpenRouter](https://openrouter.ai/keys), or local [Ollama](https://ollama.com)
+- For live Zoho: a Zoho Books trial organization (India DC by default)
+- For chat: a Telegram bot token from @BotFather (free). No tunnel or public URL is needed.
+
+## Install
+
+```bash
+npm install
+cp .env.example .env      # then fill in keys as needed
+```
+
+## Commands
+
+| Command | What it does |
+|---|---|
+| `npm test` | Unit/integration tests: matcher, schema, decision engine, processor (dedupe, idempotency, clarification flow), Zoho client with stubbed HTTP. No network. |
+| `npm run typecheck` | `tsc --noEmit` |
+| `npm run simulate` | Interactive chat simulator using the same processor as the bot (mock Zoho by default). |
+| `npm run simulate -- --model rules -m "VK red wheel 4"` | One-shot simulation; `-m ">2"` replies to the last question. |
+| `npm run eval` | Runs the 50 labeled cases through every model in `EVAL_MODELS` against mocked Zoho and writes `eval/results/summary.md`. |
+| `npm start` | Starts the bot on the configured transport (Telegram long polling by default). |
+| `npm run zoho:token -- <grant_code>` | Exchanges a Zoho Self Client grant code for a refresh token. |
+| `npm run zoho:check` | Read-only Zoho check: token refresh, org list, customer/item counts, seed coverage. |
+| `npm run zoho:seed -- --confirm` | Creates the synthetic customers/items in a trial org (skips existing names). |
+| `npm run seed:csv` | Regenerates the importable CSVs in `data/seed/`. |
+
+## Configuration
+
+All configuration is in environment variables, validated with Zod at startup ([src/config.ts](src/config.ts)). See [.env.example](.env.example) for every option. Key ones:
+
+- `LLM_MODEL`: `provider:model`, e.g. `mistral:mistral-small-latest`, `mistral:mistral-large-latest`, `gemini:<model>`, `groq:<model>`, `openrouter:<model>`, `compat:<model>` (any OpenAI-compatible endpoint via `COMPAT_BASE_URL`, e.g. Ollama), or `rules`.
+- `ZOHO_MODE`: `mock` (default) or `live`.
+- `INVOICE_ALLOW_LIVE_CREATE`: must be `true` before anything is written to a real Zoho org.
+- `ZOHO_API_BASE` / `ZOHO_ACCOUNTS_URL`: India DC by default (`https://www.zohoapis.in/books/v3`, `https://accounts.zoho.in`).
+- `CHAT_TRANSPORT`: `telegram` (default; groups, official API), `whatsapp_cloud` (official, 1:1 only), or `baileys` (unofficial WhatsApp groups, ban risk).
+- `TELEGRAM_BOT_TOKEN`, `TELEGRAM_ALLOWED_CHATS`: bot token and the group/chat ids the bot acts in. Every other chat is ignored.
+- `RATE_POLICY`: `ask` (default: missing rate → clarify) or `item_default` (use the item's Zoho selling rate).
+
+## Quick demo without any credentials
+
+```bash
+npm run simulate -- --model rules -m "VK\nred lenzo alloy 18 inch x 4\nrate 5200" -m "Royal Alloys - neo 16 x 4 rate 4000" -m ">2" -m "ok thanks"
+npm run eval -- --models oracle,rules
+```
+
+With a Mistral key in `.env`, drop `--model rules` to use the LLM.
+
+## Running in a Telegram group
+
+Full walkthrough: [docs/TELEGRAM_SETUP.md](docs/TELEGRAM_SETUP.md).
+
+1. Create a bot with **@BotFather** (`/newbot`) and put the token in `TELEGRAM_BOT_TOKEN`.
+2. In BotFather, `/setprivacy` → **Disable** (or make the bot a group admin) so it can read normal group messages, then add it to your group.
+3. `npm start`, write anything in the group, copy the logged `chatId` into `TELEGRAM_ALLOWED_CHATS`, and restart.
+4. Send requests in the group. Reply to the bot's question to answer a clarification (any member may answer that way); the next message from the **same person** within `CLARIFY_TTL_MINUTES` also counts.
+
+The bot ignores other bots, unlisted chats, messages older than `MAX_MESSAGE_AGE_SEC` and already-processed message ids.
+
+**Other transports.** The processor doesn't depend on the chat platform:
+- `CHAT_TRANSPORT=whatsapp_cloud` uses Meta's official WhatsApp Cloud API. It is 1:1 only and needs a public webhook URL; see [docs/WHATSAPP_CLOUD_SETUP.md](docs/WHATSAPP_CLOUD_SETUP.md).
+- `CHAT_TRANSPORT=baileys` uses unofficial WhatsApp groups, with a ban risk.
+
+## Going live with Zoho Books
+
+Follow [docs/ZOHO_SETUP.md](docs/ZOHO_SETUP.md). In short: create a trial org, create a Self Client in the Zoho API console, run `npm run zoho:token`, import `data/seed/*.csv` (or `npm run zoho:seed -- --confirm`), then run `npm run zoho:check`. Next set `ZOHO_MODE=live`; the bot then replies with **dry-run previews**. Set `INVOICE_ALLOW_LIVE_CREATE=true` to create real **draft** invoices.
+
+## Project layout
+
+```
+src/
+  config.ts, logger.ts, http.ts     env validation, redacting JSON logs, fetch with timeout/backoff/Retry-After
+  types.ts                          domain types + BooksApi interface
+  llm/provider.ts                   Mistral/Groq/OpenRouter/compat (OpenAI-style) and Gemini providers
+  extraction/                       prompt, Zod schema, LLM extractor with one corrective retry, regex baseline
+  matching/                         normalization (sizes, tyre specs, synonyms) + scored customer/item matcher
+  pipeline/                         decide (create/clarify/respond/ignore), processor, state (dedupe, pending), format
+  zoho/                             OAuth + REST client, catalogue cache, in-memory mock from seed data
+  telegram/bot.ts                   Telegram Bot API: long polling, chat allowlist, quoted replies, PDF documents (default)
+  whatsapp/cloud.ts                 WhatsApp Cloud API (1:1): signed webhook server, send text/PDF
+  whatsapp/baileys.ts               unofficial WhatsApp groups (CHAT_TRANSPORT=baileys)
+  cli/                              simulator, Zoho token/check/seed, CSV export
+  eval/                             runner, metrics, markdown report
+data/seed/                          synthetic customers/items (JSON + Zoho-importable CSV)
+data/aliases.json                   business-approved customer shorthand (by name, no IDs)
+eval/cases.json, eval/gold.json     50 labeled cases + ideal extractions for the oracle run
+test/                               node:test suites
+```
+
+## Security and privacy notes
+
+- Secrets live only in `.env` (git-ignored). Logs redact token/secret/authorization fields. Message text is **not** logged unless `LOG_MESSAGE_TEXT=true`, and chat, sender and message IDs are hashed in logs.
+- `.data/` holds dedupe and pending-clarification state and simulator PDFs (plus the session if you use the legacy Baileys transport). It is git-ignored.
+- `TELEGRAM_BOT_TOKEN` (and the WhatsApp tokens, if used) are secrets: `.env` only. If a bot token leaks, revoke it with @BotFather `/revoke`.
+- Seed data is synthetic.
+
+## Why Telegram
+
+The workflow needs a **shared group**. On WhatsApp the options are poor:
+- **Baileys** (unofficial): groups work, but it carries a ban risk and breaks easily.
+- **WhatsApp Cloud API** (official): groups need an Official Business Account, so in practice it's 1:1 only.
+
+Telegram's official Bot API supports groups, is free, has no ban risk, and needs no public URL. The trade-off: the team must use Telegram. The WhatsApp transports remain available. See [docs/DESIGN.md](docs/DESIGN.md#9-transport-choice).

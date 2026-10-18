@@ -218,3 +218,16 @@ __marimo__/
 
 # Streamlit
 .streamlit/secrets.toml
+
+# --- WPINV (Node/TypeScript) ---
+node_modules/
+dist/
+.env.*
+!.env.example
+# Runtime state: Baileys session/auth, dedupe + pending state, generated PDFs
+.data/
+auth_info*/
+baileys_auth*/
+*.pdf
+logs/
+npm-debug.log*
