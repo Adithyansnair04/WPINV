@@ -8,10 +8,13 @@ red lenzo alloy 18 inch x 4
 rate 5200
 ```
 
-and creates a **draft** invoice in Zoho Books. It resolves `VK` to *VK Enterprises* and the product to *Lenzo Alloy Wheel 18" Red*, then replies in the group with the invoice number, lines, totals/tax and the PDF. If a request is ambiguous (`VK red wheel 4`), it asks a short question with numbered options instead of guessing.
+and creates a **draft** invoice in Zoho Books. It resolves `VK` to *VK Enterprises* and the product to *Lenzo Alloy Wheel 18" Red*, then replies in the group with the invoice number, lines, totals/tax and the PDF. If a request is ambiguous (`VK red wheel 4`), it asks a short question with **tap-to-choose buttons** instead of guessing.
 
 - An LLM interprets the language. Deterministic code with transparent scores matches against the **real** Zoho customer and item records.
-- Interchangeable LLM providers: Mistral (default pair: Mistral Small = fast/small, Mistral Large = larger), Gemini, Groq, OpenRouter, or any OpenAI-compatible endpoint such as local Ollama. A regex baseline (`rules`) needs no key.
+- Interchangeable LLM providers: Gemini (Flash-Lite is the evaluated default: 98% correct actions, 0 wrong invoices; the larger Flash tier is limited to 20 free requests/day), Mistral, Groq, OpenRouter, or any OpenAI-compatible endpoint such as local Ollama. A regex baseline (`rules`) needs no key.
+- **"Rate same as last time"** looks up the customer's last invoice for that item and asks you to confirm the rate and its source invoice.
+- **Edits:** reply to the bot's invoice message with "make it 6 pcs" or "rate 5000" to update that draft (drafts only).
+- **Dashboard** at `http://127.0.0.1:3001`: live activity, the reasoning behind each decision, open questions, and evaluation results.
 - Safe defaults: Zoho is mocked; live mode only *previews* until `INVOICE_ALLOW_LIVE_CREATE=true`; invoices are drafts and are never sent to customers.
 
 Design, model comparison and evaluation write-up: [docs/DESIGN.md](docs/DESIGN.md) · Telegram setup: [docs/TELEGRAM_SETUP.md](docs/TELEGRAM_SETUP.md) · Zoho trial setup: [docs/ZOHO_SETUP.md](docs/ZOHO_SETUP.md) · Demo script: [docs/DEMO.md](docs/DEMO.md) · Latest results: [eval/results/summary.md](eval/results/summary.md)
@@ -19,7 +22,7 @@ Design, model comparison and evaluation write-up: [docs/DESIGN.md](docs/DESIGN.m
 ## Requirements
 
 - Node.js ≥ 20 (developed on Node 24)
-- For live LLM runs: a free [Mistral](https://console.mistral.ai) API key (Experiment plan). Alternatives: [Gemini](https://aistudio.google.com/apikey), [OpenRouter](https://openrouter.ai/keys), or local [Ollama](https://ollama.com)
+- For live LLM runs: a free [Gemini](https://aistudio.google.com/apikey) API key. Alternatives: [Mistral](https://console.mistral.ai), [OpenRouter](https://openrouter.ai/keys), or local [Ollama](https://ollama.com)
 - For live Zoho: a Zoho Books trial organization (India DC by default)
 - For chat: a Telegram bot token from @BotFather (free). No tunnel or public URL is needed.
 
@@ -34,11 +37,13 @@ cp .env.example .env      # then fill in keys as needed
 
 | Command | What it does |
 |---|---|
-| `npm test` | Unit/integration tests: matcher, schema, decision engine, processor (dedupe, idempotency, clarification flow), Zoho client with stubbed HTTP. No network. |
+| `npm test` | 49 offline tests: matcher, schema, decision engine, number grounding, processor (dedupe, idempotency, clarifications, previous rates, edits), Zoho client, Telegram/WhatsApp transports, dashboard. No network. |
 | `npm run typecheck` | `tsc --noEmit` |
 | `npm run simulate` | Interactive chat simulator using the same processor as the bot (mock Zoho by default). |
-| `npm run simulate -- --model rules -m "VK red wheel 4"` | One-shot simulation; `-m ">2"` replies to the last question. |
+| `npm run simulate -- --model rules -m "VK red wheel 4"` | One-shot simulation; `-m ">2"` replies to the last question. Add `--dashboard` to watch it on the dashboard. |
 | `npm run eval` | Runs the 50 labeled cases through every model in `EVAL_MODELS` against mocked Zoho and writes `eval/results/summary.md`. |
+| `npm run eval -- --set holdout` | Runs the 24-case held-out set (frozen before any tuning) into `eval/results/holdout/`. |
+| `npm run eval -- --retry-errors` | Re-runs only cases that were blocked by provider quota, keeping the rest. |
 | `npm start` | Starts the bot on the configured transport (Telegram long polling by default). |
 | `npm run zoho:token -- <grant_code>` | Exchanges a Zoho Self Client grant code for a refresh token. |
 | `npm run zoho:check` | Read-only Zoho check: token refresh, org list, customer/item counts, seed coverage. |
@@ -49,7 +54,7 @@ cp .env.example .env      # then fill in keys as needed
 
 All configuration is in environment variables, validated with Zod at startup ([src/config.ts](src/config.ts)). See [.env.example](.env.example) for every option. Key ones:
 
-- `LLM_MODEL`: `provider:model`, e.g. `mistral:mistral-small-latest`, `mistral:mistral-large-latest`, `gemini:<model>`, `groq:<model>`, `openrouter:<model>`, `compat:<model>` (any OpenAI-compatible endpoint via `COMPAT_BASE_URL`, e.g. Ollama), or `rules`.
+- `LLM_MODEL`: `provider:model`, e.g. `gemini:gemini-3.1-flash-lite`, `gemini:gemini-2.5-flash`, `mistral:<model>`, `groq:<model>`, `openrouter:<model>`, `compat:<model>` (any OpenAI-compatible endpoint via `COMPAT_BASE_URL`, e.g. Ollama), or `rules`.
 - `ZOHO_MODE`: `mock` (default) or `live`.
 - `INVOICE_ALLOW_LIVE_CREATE`: must be `true` before anything is written to a real Zoho org.
 - `ZOHO_API_BASE` / `ZOHO_ACCOUNTS_URL`: India DC by default (`https://www.zohoapis.in/books/v3`, `https://accounts.zoho.in`).
@@ -64,7 +69,7 @@ npm run simulate -- --model rules -m "VK\nred lenzo alloy 18 inch x 4\nrate 5200
 npm run eval -- --models oracle,rules
 ```
 
-With a Mistral key in `.env`, drop `--model rules` to use the LLM.
+With a Gemini key in `.env`, drop `--model rules` to use the LLM.
 
 ## Running in a Telegram group
 
@@ -81,6 +86,46 @@ The bot ignores other bots, unlisted chats, messages older than `MAX_MESSAGE_AGE
 - `CHAT_TRANSPORT=whatsapp_cloud` uses Meta's official WhatsApp Cloud API. It is 1:1 only and needs a public webhook URL; see [docs/WHATSAPP_CLOUD_SETUP.md](docs/WHATSAPP_CLOUD_SETUP.md).
 - `CHAT_TRANSPORT=baileys` uses unofficial WhatsApp groups, with a ban risk.
 
+## Using it in the group
+
+| You send | Bot does |
+|---|---|
+| `VK` / `red lenzo alloy 18 inch x 4` / `rate 5200` | Creates a draft invoice and replies with lines, tax, total and the PDF. |
+| `VK red wheel 4` | Asks which wheel (buttons) and the rate. Tap a button or reply to the question. |
+| `VK lenzo 18 red x 4 rate same as last time` | "Use the last rate: ₹5,100 (invoice INV-000101)?" Tap **Yes** or reply with another rate. |
+| Reply to an invoice message: `make it 6 pcs` | Updates that draft and shows old → new. Refused for sent or paid invoices. |
+| `ok thanks`, `good morning` | Nothing. |
+| `where is my invoice from yesterday?`, `cancel the last bill` | A short "can't do that here" reply. |
+
+## Dashboard
+
+While the bot runs, open <http://127.0.0.1:3001>. It shows:
+- every message's outcome, with the matched customer and items (with scores), quantities, rates and latency;
+- the reason behind every question;
+- open clarifications and when they expire;
+- the latest evaluation tables.
+
+It is read-only, has no login, and listens only on your machine by default (`DASHBOARD_HOST`). Message text is shown only if `LOG_MESSAGE_TEXT=true`. To try it without Telegram: `npm run simulate -- --dashboard`.
+
+## Deploying
+
+The bot only makes outbound connections (Telegram long polling, the LLM, Zoho), so any always-on machine works. Run **one** instance per bot token.
+
+- **pm2 on a VPS:**
+
+  ```bash
+  npm ci && npm i -g pm2 && pm2 start "npm start" --name wpinv && pm2 save
+  ```
+
+- **Docker** (written, but not build-tested here because Docker wasn't installed):
+
+  ```bash
+  docker build -t wpinv .
+  docker run -d --name wpinv --env-file .env -v wpinv-data:/app/.data -p 127.0.0.1:3001:3001 wpinv
+  ```
+
+  The volume keeps dedupe and clarification state across restarts. The dashboard port is bound to localhost on the host; reach it from elsewhere with an SSH tunnel, never by exposing it.
+
 ## Going live with Zoho Books
 
 Follow [docs/ZOHO_SETUP.md](docs/ZOHO_SETUP.md). In short: create a trial org, create a Self Client in the Zoho API console, run `npm run zoho:token`, import `data/seed/*.csv` (or `npm run zoho:seed -- --confirm`), then run `npm run zoho:check`. Next set `ZOHO_MODE=live`; the bot then replies with **dry-run previews**. Set `INVOICE_ALLOW_LIVE_CREATE=true` to create real **draft** invoices.
@@ -96,7 +141,8 @@ src/
   matching/                         normalization (sizes, tyre specs, synonyms) + scored customer/item matcher
   pipeline/                         decide (create/clarify/respond/ignore), processor, state (dedupe, pending), format
   zoho/                             OAuth + REST client, catalogue cache, in-memory mock from seed data
-  telegram/bot.ts                   Telegram Bot API: long polling, chat allowlist, quoted replies, PDF documents (default)
+  telegram/bot.ts                   Telegram Bot API: long polling, chat allowlist, quoted replies, option buttons, PDFs (default)
+  dashboard/                        read-only web dashboard (activity log, pending questions, eval results)
   whatsapp/cloud.ts                 WhatsApp Cloud API (1:1): signed webhook server, send text/PDF
   whatsapp/baileys.ts               unofficial WhatsApp groups (CHAT_TRANSPORT=baileys)
   cli/                              simulator, Zoho token/check/seed, CSV export
@@ -104,6 +150,8 @@ src/
 data/seed/                          synthetic customers/items (JSON + Zoho-importable CSV)
 data/aliases.json                   business-approved customer shorthand (by name, no IDs)
 eval/cases.json, eval/gold.json     50 labeled cases + ideal extractions for the oracle run
+eval/holdout.json                   24 held-out cases, committed before any model was run on them
+data/seed/history.json              synthetic past invoices (for "rate same as last time" in mock mode)
 test/                               node:test suites
 ```
 
