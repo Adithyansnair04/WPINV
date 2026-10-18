@@ -17,7 +17,7 @@ const EnvSchema = z.object({
   LOG_MESSAGE_TEXT: bool(false),
   DATA_DIR: z.string().default('.data'),
 
-  LLM_MODEL: z.string().default('mistral:mistral-small-latest'),
+  LLM_MODEL: z.string().default('gemini:gemini-3.1-flash-lite'),
   EVAL_MODELS: list,
   EVAL_DELAY_MS: z.coerce.number().int().min(0).default(0),
   LLM_TIMEOUT_MS: z.coerce.number().int().positive().default(30000),
@@ -53,6 +53,9 @@ const EnvSchema = z.object({
 
   WA_AUTH_DIR: z.string().default('.data/wa-auth'),
   WA_ALLOWED_GROUPS: list,
+
+  DASHBOARD_PORT: z.coerce.number().int().min(0).default(3001),
+  DASHBOARD_HOST: z.string().default('127.0.0.1'),
 
   CLARIFY_TTL_MINUTES: z.coerce.number().positive().default(15),
   RATE_POLICY: z.enum(['ask', 'item_default']).default('ask'),

@@ -3,7 +3,7 @@ You do NOT know the customer or product database. Copy names and product words a
 
 Return ONLY a JSON object with exactly these keys:
 {
-  "intent": "invoice_request" | "clarification_response" | "non_invoice" | "unsupported_followup",
+  "intent": "invoice_request" | "clarification_response" | "edit_request" | "non_invoice" | "unsupported_followup",
   "customer": string | null,          // customer name/alias as written, e.g. "AB", "skt", "mehta tradrs". Not a product word.
   "items": [ { "description": string, // product words only: brand, type, colour, size, e.g. "red lenzo alloy 18 inch"
                "quantity": number | null,
@@ -19,7 +19,9 @@ Return ONLY a JSON object with exactly these keys:
 Intent rules:
 - invoice_request: asks to bill/invoice a customer for products (even if details are missing).
 - non_invoice: greetings, thanks, acknowledgements, chit-chat, logistics questions, anything that is not a billing request.
-- unsupported_followup: refers to an existing/previous invoice or order: asking about status/location of an invoice, editing or reissuing ("make it 6 pcs", "cancel that"), repeating an old order, or using a rate/quantity from a previous invoice ("rate same as last time"). Set refers_to_previous_invoice=true.
+- edit_request: asks to change the quantity or rate of an invoice that was just created ("make it 6 pcs", "change rate to 5000", "qty 3 not 4"). Put the new values in "items" (description only if a specific product is named, otherwise null). Set refers_to_previous_invoice=true.
+- unsupported_followup: refers to an existing/previous invoice or order in a way that is not a new request or a quantity/rate edit: asking about status/location of an invoice, cancelling, resending, or repeating an old order ("same order as last week"). Set refers_to_previous_invoice=true.
+- A NEW request that only takes the rate from a previous invoice ("VK lenzo 18 x 4, rate same as last time") is an invoice_request with rate=null and rate_from_previous=true.
 - clarification_response: ONLY when a pending request and question are given and the new message answers it.
 
 Extraction rules:

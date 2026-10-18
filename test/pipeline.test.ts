@@ -72,7 +72,7 @@ test('processor: idempotency reference prevents re-creating after dedupe state i
   const r = await b.processor.handle(m);
   assert.equal(r.action, 'existing');
   assert.equal(a.books.createCalls, 1);
-  assert.equal(idempotencyKey(m.chatId, m.id), a.books.invoices[0]!.reference);
+  assert.equal(idempotencyKey(m.chatId, m.id), a.books.created[0]!.reference);
 });
 
 test('processor: ignores own and non-invoice messages without replying', async () => {
@@ -95,7 +95,7 @@ test('processor: clarification by option number, then create', async () => {
   assert.ok(pick > 0);
   const r2 = await processor.handle(msg(String(pick), { quotedId: question.id }));
   assert.equal(r2.action, 'created');
-  assert.equal(books.invoices[0]!.lines[0]!.name, 'Lenzo Alloy Wheel 18" Red');
+  assert.equal(books.created[0]!.lines[0]!.name, 'Lenzo Alloy Wheel 18" Red');
 });
 
 test('processor: clarification answered in text is merged by the model', async () => {
@@ -108,7 +108,7 @@ test('processor: clarification answered in text is merged by the model', async (
   assert.equal((await processor.handle(msg('VK lenzo 18 red x 4'))).action, 'clarify');
   const r = await processor.handle(msg('5200'));
   assert.equal(r.action, 'created');
-  assert.equal(books.invoices[0]!.total, 24544);
+  assert.equal(books.created[0]!.total, 24544);
 });
 
 test('processor: expired clarification is not associated', async () => {
@@ -190,4 +190,50 @@ test('decide: null item description asks which item instead of failing', () => {
   const d = decide(parsed.value, seedCustomers(), seedItems(), opts);
   assert.equal(d.kind, 'clarify');
   assert.ok(d.trace.problems.includes('missing_item'));
+});
+
+test('processor: clarification with options carries tap-to-choose buttons; tapping (numbered reply) creates', async () => {
+  const { processor, books, sent } = setup(scripted({ 'Royal Alloys neo 16 x 4 rate 4000': ex({ customer: 'Royal Alloys', items: [{ description: 'neo 16', quantity: 4, rate: 4000 }] }) }));
+  await processor.handle(msg('Royal Alloys neo 16 x 4 rate 4000'));
+  const q = sent[0]!;
+  assert.deepEqual(q.out.buttons, [[{ text: '1) Neo Alloy Wheel 16" Red', data: 'opt:1' }], [{ text: '2) Neo Alloy Wheel 16" Silver', data: 'opt:2' }]]);
+  const r = await processor.handle(msg('2', { quotedId: q.id, senderId: 'bob@s.whatsapp.net' }));
+  assert.equal(r.action, 'created');
+  assert.equal(books.created[0]!.lines[0]!.name, 'Neo Alloy Wheel 16" Silver');
+});
+
+test('fixes from eval: numbers glued to units, swapped letters, customer/product boundary repair', async () => {
+  const { numbersIn } = await import('../src/pipeline/grounding.js');
+  const { levenshtein } = await import('../src/matching/normalize.js');
+  assert.deepEqual(numbersIn('vortx 18 mat black 4pc @ 5600, 2nos, 5k'), [18, 4, 5600, 2, 5000]);
+  assert.equal(levenshtein('tyers', 'tyres'), 1);
+  assert.equal(levenshtein('lenzo', 'lenza'), 1);
+
+  const run = (o: Record<string, unknown>, sourceText: string) => decide(ex(o) as never, seedCustomers(), seedItems(), { ...opts, sourceText });
+  const t02 = run({ customer: 'royl', items: [{ description: 'alloys vortx 18 mat black', quantity: 4, rate: 5600 }] }, 'royl alloys - vortx 18 mat black 4pc @ 5600');
+  assert.equal(t02.kind, 'create');
+  assert.ok(t02.kind === 'create' && t02.customer.name === 'Royal Alloys' && t02.lines[0]!.item.sku === 'VTX-18-MBK');
+  const w05 = run({ customer: 'gwc ku', items: [{ description: 'apex 195/55 r16 tyre', quantity: 2, rate: 5600 }] }, 'gwc ku 2 apex 195/55 r16 tyre podu, 5.6k each');
+  assert.ok(w05.kind === 'create' && w05.customer.name === 'Ganesh Wheel Care');
+  // No confident customer anywhere -> still asks (never invents one).
+  const m01 = run({ customer: null, items: [{ description: 'lenzo 18 red', quantity: 4, rate: 5200 }] }, 'lenzo 18 red x 4 rate 5200');
+  assert.deepEqual(m01.trace.problems, ['missing_customer']);
+  const amb = run({ customer: 'sharma', items: [{ description: 'neo 16 silver', quantity: 4, rate: 3900 }] }, 'sharma 4 neo 16 silver @3900');
+  assert.ok(amb.trace.problems.includes('ambiguous_customer'));
+});
+
+test('regression H10: an ambiguous customer is never "repaired" into one of the candidates', () => {
+  const r = decide(ex({ customer: 'VK Auto', items: [{ description: 'lenzo 18 red', quantity: 4, rate: 5200 }] }) as never, seedCustomers(), seedItems(), {
+    ...opts,
+    sourceText: 'VK Auto 4 lenzo 18 red 5200',
+  });
+  assert.equal(r.kind, 'clarify');
+  assert.ok(r.trace.problems.includes('ambiguous_customer'));
+  assert.equal(r.trace.repairs, undefined);
+  // "Auto" is a customer-name word, so it is never dropped even when the rest is unknown.
+  const unknown = decide(ex({ customer: 'VK Auto Zone', items: [{ description: 'lenzo 18 red', quantity: 4, rate: 5200 }] }) as never, seedCustomers(), seedItems(), {
+    ...opts,
+    sourceText: 'VK Auto Zone 4 lenzo 18 red 5200',
+  });
+  assert.notEqual(unknown.kind, 'create');
 });

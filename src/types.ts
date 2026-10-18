@@ -41,7 +41,15 @@ export interface Invoice {
   taxTotal: number;
   total: number;
   url?: string;
-  lines: { name: string; quantity: number; rate: number; amount: number }[];
+  customerId?: string;
+  date?: string;
+  lines: { itemId?: string; name: string; quantity: number; rate: number; amount: number }[];
+}
+
+export interface PreviousRate {
+  rate: number;
+  invoiceNumber: string;
+  date: string;
 }
 
 /** Narrow interface over Zoho Books so the pipeline can run against a mock. */
@@ -51,6 +59,11 @@ export interface BooksApi {
   findInvoiceByReference(referenceNumber: string): Promise<Invoice | null>;
   createInvoice(input: InvoiceInput): Promise<Invoice>;
   getInvoicePdf(invoiceId: string): Promise<Buffer | null>;
+  getInvoice(invoiceId: string): Promise<Invoice>;
+  /** Most recent issued (not draft, not void) invoice line for this customer and item, used for "rate same as last time". */
+  findLastRate(customerId: string, itemId: string): Promise<PreviousRate | null>;
+  /** Replaces the line items of an existing invoice (used only for drafts created by this bot). */
+  updateInvoiceLines(invoiceId: string, customerId: string, lines: InvoiceLineInput[]): Promise<Invoice>;
 }
 
 export interface IncomingMessage {
@@ -66,6 +79,8 @@ export interface IncomingMessage {
 export interface Outgoing {
   text: string;
   document?: { data: Buffer; fileName: string; mimetype: string };
+  /** Optional tap-to-choose buttons (rows). Transports without button support ignore them; the text stays self-sufficient. */
+  buttons?: { text: string; data: string }[][];
 }
 
 /** Sends a message to a chat, optionally quoting a message; returns the sent message id when known. */

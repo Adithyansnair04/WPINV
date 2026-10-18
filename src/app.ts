@@ -23,11 +23,11 @@ export function createBooks(cfg: Config, log: Logger): BooksApi {
 /** Live Zoho creation needs ZOHO_MODE=live AND INVOICE_ALLOW_LIVE_CREATE=true; otherwise dry run. Mock mode always "creates" in memory. */
 export const isDryRun = (cfg: Config) => cfg.ZOHO_MODE === 'live' && !cfg.INVOICE_ALLOW_LIVE_CREATE;
 
-export function createProcessor(cfg: Config, log: Logger, send: SendFn, opts: { persistState?: boolean } = {}) {
+export function createProcessor(cfg: Config, log: Logger, send: SendFn, opts: { persistState?: boolean; store?: StateStore } = {}) {
   return new InvoiceProcessor({
     extractor: createExtractor(cfg.LLM_MODEL, cfg),
     books: createBooks(cfg, log),
-    store: new StateStore(opts.persistState === false ? undefined : join(cfg.DATA_DIR, 'state.json')),
+    store: opts.store ?? new StateStore(opts.persistState === false ? undefined : join(cfg.DATA_DIR, 'state.json')),
     send,
     log: log.child({ component: 'processor' }),
     options: {
