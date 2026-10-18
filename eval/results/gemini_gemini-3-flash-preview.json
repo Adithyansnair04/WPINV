@@ -1,0 +1,1885 @@
+{
+  "model": "gemini:gemini-3-flash-preview",
+  "status": "ok",
+  "timestamp": "2026-10-18T16:18:43.638Z",
+  "caseCount": 50,
+  "partial": false,
+  "metrics": {
+    "headline": {
+      "action_accuracy": {
+        "num": 18,
+        "den": 50,
+        "pct": 36
+      },
+      "customer_match_accuracy": {
+        "num": 23,
+        "den": 41,
+        "pct": 56.1
+      },
+      "item_match_accuracy": {
+        "num": 24,
+        "den": 43,
+        "pct": 55.8
+      },
+      "quantity_accuracy": {
+        "num": 21,
+        "den": 42,
+        "pct": 50
+      },
+      "rate_accuracy": {
+        "num": 21,
+        "den": 42,
+        "pct": 50
+      },
+      "clarification_recall": {
+        "num": 0,
+        "den": 19,
+        "pct": 0
+      },
+      "unnecessary_clarification_rate": {
+        "num": 2,
+        "den": 27,
+        "pct": 7.4
+      },
+      "confidently_wrong_invoices": 0,
+      "non_invoice_false_positives": {
+        "num": 0,
+        "den": 8,
+        "pct": 0
+      },
+      "exact_invoice_rate": {
+        "num": 18,
+        "den": 27,
+        "pct": 66.7
+      }
+    },
+    "extraction": {
+      "intent_accuracy": {
+        "num": 20,
+        "den": 20,
+        "pct": 100
+      },
+      "line_count_accuracy": {
+        "num": 21,
+        "den": 41,
+        "pct": 51.2
+      },
+      "quantity_accuracy": {
+        "num": 21,
+        "den": 42,
+        "pct": 50
+      },
+      "rate_accuracy": {
+        "num": 21,
+        "den": 42,
+        "pct": 50
+      }
+    },
+    "matching": {
+      "customer_match_accuracy": {
+        "num": 23,
+        "den": 41,
+        "pct": 56.1
+      },
+      "item_match_accuracy": {
+        "num": 24,
+        "den": 43,
+        "pct": 55.8
+      }
+    },
+    "latency_ms": {
+      "model_turns": 55,
+      "mean": 6916,
+      "p50": 8014,
+      "p95": 9746,
+      "max": 9796,
+      "total": 380386
+    },
+    "reliability": {
+      "model_failures": 35,
+      "invalid_outputs": 0,
+      "http_retries": 107,
+      "rate_limit_events": 142
+    },
+    "confidently_wrong_case_ids": [],
+    "per_category": {
+      "straightforward": {
+        "ok": 5,
+        "n": 5
+      },
+      "alias": {
+        "ok": 3,
+        "n": 5
+      },
+      "word_order": {
+        "ok": 3,
+        "n": 3
+      },
+      "informal": {
+        "ok": 2,
+        "n": 2
+      },
+      "typo": {
+        "ok": 4,
+        "n": 4
+      },
+      "confusable": {
+        "ok": 1,
+        "n": 4
+      },
+      "missing": {
+        "ok": 0,
+        "n": 5
+      },
+      "ambiguous": {
+        "ok": 0,
+        "n": 5
+      },
+      "invalid": {
+        "ok": 0,
+        "n": 4
+      },
+      "non_invoice": {
+        "ok": 0,
+        "n": 4
+      },
+      "previous_invoice": {
+        "ok": 0,
+        "n": 4
+      },
+      "clarification_flow": {
+        "ok": 0,
+        "n": 5
+      }
+    }
+  },
+  "results": [
+    {
+      "id": "S01",
+      "category": "straightforward",
+      "turns": [
+        {
+          "action": "create",
+          "latencyMs": 6322,
+          "usedModel": true,
+          "meta": {
+            "model": "gemini:gemini-3-flash-preview",
+            "latencyMs": 6321.613899999997,
+            "attempts": 1,
+            "retries": 0,
+            "rateLimited": 0,
+            "invalidOutputs": 0
+          }
+        }
+      ],
+      "intent": "invoice_request",
+      "extractedItems": [
+        {
+          "description": "red lenzo alloy 18 inch",
+          "quantity": 4,
+          "rate": 5200
+        }
+      ],
+      "resolvedCustomer": "VK Enterprises",
+      "resolvedLines": [
+        {
+          "status": "matched",
+          "sku": "LNZ-18-RED"
+        }
+      ],
+      "problems": [],
+      "invoice": {
+        "customer": "VK Enterprises",
+        "lines": [
+          {
+            "sku": "LNZ-18-RED",
+            "quantity": 4,
+            "rate": 5200
+          }
+        ]
+      }
+    },
+    {
+      "id": "S02",
+      "category": "straightforward",
+      "turns": [
+        {
+          "action": "create",
+          "latencyMs": 2877,
+          "usedModel": true,
+          "meta": {
+            "model": "gemini:gemini-3-flash-preview",
+            "latencyMs": 2876.2718999999925,
+            "attempts": 1,
+            "retries": 0,
+            "rateLimited": 0,
+            "invalidOutputs": 0
+          }
+        }
+      ],
+      "intent": "invoice_request",
+      "extractedItems": [
+        {
+          "description": "Neo alloy 16 inch silver",
+          "quantity": 4,
+          "rate": 3900
+        }
+      ],
+      "resolvedCustomer": "Royal Alloys",
+      "resolvedLines": [
+        {
+          "status": "matched",
+          "sku": "NEO-16-SLV"
+        }
+      ],
+      "problems": [],
+      "invoice": {
+        "customer": "Royal Alloys",
+        "lines": [
+          {
+            "sku": "NEO-16-SLV",
+            "quantity": 4,
+            "rate": 3900
+          }
+        ]
+      }
+    },
+    {
+      "id": "S03",
+      "category": "straightforward",
+      "turns": [
+        {
+          "action": "create",
+          "latencyMs": 2972,
+          "usedModel": true,
+          "meta": {
+            "model": "gemini:gemini-3-flash-preview",
+            "latencyMs": 2971.435700000031,
+            "attempts": 1,
+            "retries": 0,
+            "rateLimited": 0,
+            "invalidOutputs": 0
+          }
+        }
+      ],
+      "intent": "invoice_request",
+      "extractedItems": [
+        {
+          "description": "Apex 195/55 R16 tyre",
+          "quantity": 2,
+          "rate": 5600
+        }
+      ],
+      "resolvedCustomer": "Sri Ganesh Motors",
+      "resolvedLines": [
+        {
+          "status": "matched",
+          "sku": "APX-195-55-16"
+        }
+      ],
+      "problems": [],
+      "invoice": {
+        "customer": "Sri Ganesh Motors",
+        "lines": [
+          {
+            "sku": "APX-195-55-16",
+            "quantity": 2,
+            "rate": 5600
+          }
+        ]
+      }
+    },
+    {
+      "id": "S04",
+      "category": "straightforward",
+      "turns": [
+        {
+          "action": "create",
+          "latencyMs": 3485,
+          "usedModel": true,
+          "meta": {
+            "model": "gemini:gemini-3-flash-preview",
+            "latencyMs": 3484.1405000000377,
+            "attempts": 1,
+            "retries": 0,
+            "rateLimited": 0,
+            "invalidOutputs": 0
+          }
+        }
+      ],
+      "intent": "invoice_request",
+      "extractedItems": [
+        {
+          "description": "Vortex 17 black alloy",
+          "quantity": 4,
+          "rate": 4500
+        },
+        {
+          "description": "chrome wheel nut set",
+          "quantity": 2,
+          "rate": 650
+        }
+      ],
+      "resolvedCustomer": "Metro Car Accessories",
+      "resolvedLines": [
+        {
+          "status": "matched",
+          "sku": "VTX-17-BLK"
+        },
+        {
+          "status": "matched",
+          "sku": "NUT-16-CHR"
+        }
+      ],
+      "problems": [],
+      "invoice": {
+        "customer": "Metro Car Accessories",
+        "lines": [
+          {
+            "sku": "VTX-17-BLK",
+            "quantity": 4,
+            "rate": 4500
+          },
+          {
+            "sku": "NUT-16-CHR",
+            "quantity": 2,
+            "rate": 650
+          }
+        ]
+      }
+    },
+    {
+      "id": "S05",
+      "category": "straightforward",
+      "turns": [
+        {
+          "action": "create",
+          "latencyMs": 2483,
+          "usedModel": true,
+          "meta": {
+            "model": "gemini:gemini-3-flash-preview",
+            "latencyMs": 2481.9759000000195,
+            "attempts": 1,
+            "retries": 0,
+            "rateLimited": 0,
+            "invalidOutputs": 0
+          }
+        }
+      ],
+      "intent": "invoice_request",
+      "extractedItems": [
+        {
+          "description": "Durotrac 185/65 R15",
+          "quantity": 2,
+          "rate": 4400
+        }
+      ],
+      "resolvedCustomer": "Kerala Wheel Hub",
+      "resolvedLines": [
+        {
+          "status": "matched",
+          "sku": "DRT-185-65-15"
+        }
+      ],
+      "problems": [],
+      "invoice": {
+        "customer": "Kerala Wheel Hub",
+        "lines": [
+          {
+            "sku": "DRT-185-65-15",
+            "quantity": 2,
+            "rate": 4400
+          }
+        ]
+      }
+    },
+    {
+      "id": "A01",
+      "category": "alias",
+      "turns": [
+        {
+          "action": "clarify",
+          "reason": "missing_customer,unknown_item",
+          "latencyMs": 3335,
+          "usedModel": true,
+          "meta": {
+            "model": "gemini:gemini-3-flash-preview",
+            "latencyMs": 3335.0796000000555,
+            "attempts": 1,
+            "retries": 0,
+            "rateLimited": 0,
+            "invalidOutputs": 0
+          }
+        }
+      ],
+      "intent": "invoice_request",
+      "extractedItems": [
+        {
+          "description": "kwh lenza 17 gunmetal",
+          "quantity": 4,
+          "rate": 4700
+        }
+      ],
+      "resolvedCustomer": null,
+      "resolvedLines": [
+        {
+          "status": "not_found",
+          "sku": null
+        }
+      ],
+      "problems": [
+        "missing_customer",
+        "unknown_item"
+      ]
+    },
+    {
+      "id": "A02",
+      "category": "alias",
+      "turns": [
+        {
+          "action": "clarify",
+          "reason": "missing_customer,unknown_item",
+          "latencyMs": 3082,
+          "usedModel": true,
+          "meta": {
+            "model": "gemini:gemini-3-flash-preview",
+            "latencyMs": 3081.8386000000173,
+            "attempts": 1,
+            "retries": 0,
+            "rateLimited": 0,
+            "invalidOutputs": 0
+          }
+        }
+      ],
+      "intent": "invoice_request",
+      "extractedItems": [
+        {
+          "description": "SGM durotrac 185/65 r15",
+          "quantity": 4,
+          "rate": 4400
+        }
+      ],
+      "resolvedCustomer": null,
+      "resolvedLines": [
+        {
+          "status": "not_found",
+          "sku": null
+        }
+      ],
+      "problems": [
+        "missing_customer",
+        "unknown_item"
+      ]
+    },
+    {
+      "id": "A03",
+      "category": "alias",
+      "turns": [
+        {
+          "action": "create",
+          "latencyMs": 2992,
+          "usedModel": true,
+          "meta": {
+            "model": "gemini:gemini-3-flash-preview",
+            "latencyMs": 2991.0498999999836,
+            "attempts": 1,
+            "retries": 0,
+            "rateLimited": 0,
+            "invalidOutputs": 0
+          }
+        }
+      ],
+      "intent": "invoice_request",
+      "extractedItems": [
+        {
+          "description": "apex 205/55r16",
+          "quantity": 2,
+          "rate": 6200
+        }
+      ],
+      "resolvedCustomer": "Vijay Kumar Tyres",
+      "resolvedLines": [
+        {
+          "status": "matched",
+          "sku": "APX-205-55-16"
+        }
+      ],
+      "problems": [],
+      "invoice": {
+        "customer": "Vijay Kumar Tyres",
+        "lines": [
+          {
+            "sku": "APX-205-55-16",
+            "quantity": 2,
+            "rate": 6200
+          }
+        ]
+      }
+    },
+    {
+      "id": "A04",
+      "category": "alias",
+      "turns": [
+        {
+          "action": "create",
+          "latencyMs": 3932,
+          "usedModel": true,
+          "meta": {
+            "model": "gemini:gemini-3-flash-preview",
+            "latencyMs": 3927.5076999999583,
+            "attempts": 1,
+            "retries": 0,
+            "rateLimited": 0,
+            "invalidOutputs": 0
+          }
+        }
+      ],
+      "intent": "invoice_request",
+      "extractedItems": [
+        {
+          "description": "neo 17 chrome rims",
+          "quantity": 4,
+          "rate": 4900
+        }
+      ],
+      "resolvedCustomer": "Al Ameen Tyre House",
+      "resolvedLines": [
+        {
+          "status": "matched",
+          "sku": "NEO-17-CHR"
+        }
+      ],
+      "problems": [],
+      "invoice": {
+        "customer": "Al Ameen Tyre House",
+        "lines": [
+          {
+            "sku": "NEO-17-CHR",
+            "quantity": 4,
+            "rate": 4900
+          }
+        ]
+      }
+    },
+    {
+      "id": "A05",
+      "category": "alias",
+      "turns": [
+        {
+          "action": "create",
+          "latencyMs": 2925,
+          "usedModel": true,
+          "meta": {
+            "model": "gemini:gemini-3-flash-preview",
+            "latencyMs": 2924.5877999999793,
+            "attempts": 1,
+            "retries": 0,
+            "rateLimited": 0,
+            "invalidOutputs": 0
+          }
+        }
+      ],
+      "intent": "invoice_request",
+      "extractedItems": [
+        {
+          "description": "lenzo centre cap set",
+          "quantity": 3,
+          "rate": 900
+        }
+      ],
+      "resolvedCustomer": "VKS Auto Spares",
+      "resolvedLines": [
+        {
+          "status": "matched",
+          "sku": "CAP-LNZ-4"
+        }
+      ],
+      "problems": [],
+      "invoice": {
+        "customer": "VKS Auto Spares",
+        "lines": [
+          {
+            "sku": "CAP-LNZ-4",
+            "quantity": 3,
+            "rate": 900
+          }
+        ]
+      }
+    },
+    {
+      "id": "W01",
+      "category": "word_order",
+      "turns": [
+        {
+          "action": "create",
+          "latencyMs": 2959,
+          "usedModel": true,
+          "meta": {
+            "model": "gemini:gemini-3-flash-preview",
+            "latencyMs": 2958.755200000014,
+            "attempts": 1,
+            "retries": 0,
+            "rateLimited": 0,
+            "invalidOutputs": 0
+          }
+        }
+      ],
+      "intent": "invoice_request",
+      "extractedItems": [
+        {
+          "description": "lenzo 18 black",
+          "quantity": 4,
+          "rate": 5100
+        }
+      ],
+      "resolvedCustomer": "VK Enterprises",
+      "resolvedLines": [
+        {
+          "status": "matched",
+          "sku": "LNZ-18-BLK"
+        }
+      ],
+      "problems": [],
+      "invoice": {
+        "customer": "VK Enterprises",
+        "lines": [
+          {
+            "sku": "LNZ-18-BLK",
+            "quantity": 4,
+            "rate": 5100
+          }
+        ]
+      }
+    },
+    {
+      "id": "W02",
+      "category": "word_order",
+      "turns": [
+        {
+          "action": "create",
+          "latencyMs": 7690,
+          "usedModel": true,
+          "meta": {
+            "model": "gemini:gemini-3-flash-preview",
+            "latencyMs": 7689.344999999972,
+            "attempts": 1,
+            "retries": 2,
+            "rateLimited": 2,
+            "invalidOutputs": 0
+          }
+        }
+      ],
+      "intent": "invoice_request",
+      "extractedItems": [
+        {
+          "description": "Lenzo 15 black",
+          "quantity": 4,
+          "rate": 3800
+        }
+      ],
+      "resolvedCustomer": "Bismi Auto World",
+      "resolvedLines": [
+        {
+          "status": "matched",
+          "sku": "LNZ-15-BLK"
+        }
+      ],
+      "problems": [],
+      "invoice": {
+        "customer": "Bismi Auto World",
+        "lines": [
+          {
+            "sku": "LNZ-15-BLK",
+            "quantity": 4,
+            "rate": 3800
+          }
+        ]
+      }
+    },
+    {
+      "id": "W03",
+      "category": "word_order",
+      "turns": [
+        {
+          "action": "create",
+          "latencyMs": 6031,
+          "usedModel": true,
+          "meta": {
+            "model": "gemini:gemini-3-flash-preview",
+            "latencyMs": 6030.543900000048,
+            "attempts": 1,
+            "retries": 0,
+            "rateLimited": 0,
+            "invalidOutputs": 0
+          }
+        }
+      ],
+      "intent": "invoice_request",
+      "extractedItems": [
+        {
+          "description": "tyre valve set",
+          "quantity": 2,
+          "rate": 120
+        }
+      ],
+      "resolvedCustomer": "Royal Alloys",
+      "resolvedLines": [
+        {
+          "status": "matched",
+          "sku": "VLV-4"
+        }
+      ],
+      "problems": [],
+      "invoice": {
+        "customer": "Royal Alloys",
+        "lines": [
+          {
+            "sku": "VLV-4",
+            "quantity": 2,
+            "rate": 120
+          }
+        ]
+      }
+    },
+    {
+      "id": "W04",
+      "category": "informal",
+      "turns": [
+        {
+          "action": "create",
+          "latencyMs": 2843,
+          "usedModel": true,
+          "meta": {
+            "model": "gemini:gemini-3-flash-preview",
+            "latencyMs": 2842.409299999941,
+            "attempts": 1,
+            "retries": 0,
+            "rateLimited": 0,
+            "invalidOutputs": 0
+          }
+        }
+      ],
+      "intent": "invoice_request",
+      "extractedItems": [
+        {
+          "description": "durotrac 195/55 R16",
+          "quantity": 4,
+          "rate": 5300
+        }
+      ],
+      "resolvedCustomer": "Sharma Wheels & Tyres",
+      "resolvedLines": [
+        {
+          "status": "matched",
+          "sku": "DRT-195-55-16"
+        }
+      ],
+      "problems": [],
+      "invoice": {
+        "customer": "Sharma Wheels & Tyres",
+        "lines": [
+          {
+            "sku": "DRT-195-55-16",
+            "quantity": 4,
+            "rate": 5300
+          }
+        ]
+      }
+    },
+    {
+      "id": "W05",
+      "category": "informal",
+      "turns": [
+        {
+          "action": "create",
+          "latencyMs": 3435,
+          "usedModel": true,
+          "meta": {
+            "model": "gemini:gemini-3-flash-preview",
+            "latencyMs": 3434.422399999923,
+            "attempts": 1,
+            "retries": 0,
+            "rateLimited": 0,
+            "invalidOutputs": 0
+          }
+        }
+      ],
+      "intent": "invoice_request",
+      "extractedItems": [
+        {
+          "description": "apex 195/55 r16 tyre",
+          "quantity": 2,
+          "rate": 5600
+        }
+      ],
+      "resolvedCustomer": "Ganesh Wheel Care",
+      "resolvedLines": [
+        {
+          "status": "matched",
+          "sku": "APX-195-55-16"
+        }
+      ],
+      "problems": [],
+      "invoice": {
+        "customer": "Ganesh Wheel Care",
+        "lines": [
+          {
+            "sku": "APX-195-55-16",
+            "quantity": 2,
+            "rate": 5600
+          }
+        ]
+      }
+    },
+    {
+      "id": "T01",
+      "category": "typo",
+      "turns": [
+        {
+          "action": "create",
+          "latencyMs": 4979,
+          "usedModel": true,
+          "meta": {
+            "model": "gemini:gemini-3-flash-preview",
+            "latencyMs": 4978.199000000022,
+            "attempts": 1,
+            "retries": 0,
+            "rateLimited": 0,
+            "invalidOutputs": 0
+          }
+        }
+      ],
+      "intent": "invoice_request",
+      "extractedItems": [
+        {
+          "description": "lenzzo red 17inch",
+          "quantity": 4,
+          "rate": 4600
+        }
+      ],
+      "resolvedCustomer": "VK Enterprises",
+      "resolvedLines": [
+        {
+          "status": "matched",
+          "sku": "LNZ-17-RED"
+        }
+      ],
+      "problems": [],
+      "invoice": {
+        "customer": "VK Enterprises",
+        "lines": [
+          {
+            "sku": "LNZ-17-RED",
+            "quantity": 4,
+            "rate": 4600
+          }
+        ]
+      }
+    },
+    {
+      "id": "T02",
+      "category": "typo",
+      "turns": [
+        {
+          "action": "create",
+          "latencyMs": 3359,
+          "usedModel": true,
+          "meta": {
+            "model": "gemini:gemini-3-flash-preview",
+            "latencyMs": 3358.543399999966,
+            "attempts": 1,
+            "retries": 0,
+            "rateLimited": 0,
+            "invalidOutputs": 0
+          }
+        }
+      ],
+      "intent": "invoice_request",
+      "extractedItems": [
+        {
+          "description": "vortx 18 mat black",
+          "quantity": 4,
+          "rate": 5600
+        }
+      ],
+      "resolvedCustomer": "Royal Alloys",
+      "resolvedLines": [
+        {
+          "status": "matched",
+          "sku": "VTX-18-MBK"
+        }
+      ],
+      "problems": [],
+      "invoice": {
+        "customer": "Royal Alloys",
+        "lines": [
+          {
+            "sku": "VTX-18-MBK",
+            "quantity": 4,
+            "rate": 5600
+          }
+        ]
+      }
+    },
+    {
+      "id": "T03",
+      "category": "typo",
+      "turns": [
+        {
+          "action": "create",
+          "latencyMs": 2948,
+          "usedModel": true,
+          "meta": {
+            "model": "gemini:gemini-3-flash-preview",
+            "latencyMs": 2946.879500000039,
+            "attempts": 1,
+            "retries": 0,
+            "rateLimited": 0,
+            "invalidOutputs": 0
+          }
+        }
+      ],
+      "intent": "invoice_request",
+      "extractedItems": [
+        {
+          "description": "blak wheel nuts",
+          "quantity": 2,
+          "rate": 650
+        }
+      ],
+      "resolvedCustomer": "Bismi Auto World",
+      "resolvedLines": [
+        {
+          "status": "matched",
+          "sku": "NUT-16-BLK"
+        }
+      ],
+      "problems": [],
+      "invoice": {
+        "customer": "Bismi Auto World",
+        "lines": [
+          {
+            "sku": "NUT-16-BLK",
+            "quantity": 2,
+            "rate": 650
+          }
+        ]
+      }
+    },
+    {
+      "id": "T04",
+      "category": "typo",
+      "turns": [
+        {
+          "action": "create",
+          "latencyMs": 6160,
+          "usedModel": true,
+          "meta": {
+            "model": "gemini:gemini-3-flash-preview",
+            "latencyMs": 6159.527099999948,
+            "attempts": 1,
+            "retries": 0,
+            "rateLimited": 0,
+            "invalidOutputs": 0
+          }
+        }
+      ],
+      "intent": "invoice_request",
+      "extractedItems": [
+        {
+          "description": "neo 16 slvr",
+          "quantity": 4,
+          "rate": 3900
+        }
+      ],
+      "resolvedCustomer": "Kerala Wheel Hub",
+      "resolvedLines": [
+        {
+          "status": "matched",
+          "sku": "NEO-16-SLV"
+        }
+      ],
+      "problems": [],
+      "invoice": {
+        "customer": "Kerala Wheel Hub",
+        "lines": [
+          {
+            "sku": "NEO-16-SLV",
+            "quantity": 4,
+            "rate": 3900
+          }
+        ]
+      }
+    },
+    {
+      "id": "C01",
+      "category": "confusable",
+      "turns": [
+        {
+          "action": "create",
+          "latencyMs": 3590,
+          "usedModel": true,
+          "meta": {
+            "model": "gemini:gemini-3-flash-preview",
+            "latencyMs": 3589.8851000000723,
+            "attempts": 1,
+            "retries": 0,
+            "rateLimited": 0,
+            "invalidOutputs": 0
+          }
+        }
+      ],
+      "intent": "invoice_request",
+      "extractedItems": [
+        {
+          "description": "lenza 18 red",
+          "quantity": 4,
+          "rate": 5400
+        }
+      ],
+      "resolvedCustomer": "VK Enterprises",
+      "resolvedLines": [
+        {
+          "status": "matched",
+          "sku": "LZA-18-RED"
+        }
+      ],
+      "problems": [],
+      "invoice": {
+        "customer": "VK Enterprises",
+        "lines": [
+          {
+            "sku": "LZA-18-RED",
+            "quantity": 4,
+            "rate": 5400
+          }
+        ]
+      }
+    },
+    {
+      "id": "C02",
+      "category": "confusable",
+      "turns": [
+        {
+          "action": "error",
+          "reason": "extract_rate_limit",
+          "latencyMs": 8958,
+          "usedModel": true,
+          "meta": {
+            "model": "gemini:gemini-3-flash-preview",
+            "latencyMs": 0,
+            "attempts": 1,
+            "retries": 3,
+            "rateLimited": 4,
+            "invalidOutputs": 0
+          },
+          "error": "LLM HTTP 429: {\n  \"error\": {\n    \"code\": 429,\n    \"message\": \"You exceeded your current quota, please check your plan and billing details. For more information on this error, head to: https://ai.google.dev/gemini-api/docs/rate-limits. To monitor your current usage, head to: https://ai.dev/rate-limit"
+        }
+      ],
+      "extractedItems": [],
+      "resolvedCustomer": null,
+      "resolvedLines": [],
+      "problems": []
+    },
+    {
+      "id": "C03",
+      "category": "confusable",
+      "turns": [
+        {
+          "action": "error",
+          "reason": "extract_rate_limit",
+          "latencyMs": 8372,
+          "usedModel": true,
+          "meta": {
+            "model": "gemini:gemini-3-flash-preview",
+            "latencyMs": 0,
+            "attempts": 1,
+            "retries": 3,
+            "rateLimited": 4,
+            "invalidOutputs": 0
+          },
+          "error": "LLM HTTP 429: {\n  \"error\": {\n    \"code\": 429,\n    \"message\": \"You exceeded your current quota, please check your plan and billing details. For more information on this error, head to: https://ai.google.dev/gemini-api/docs/rate-limits. To monitor your current usage, head to: https://ai.dev/rate-limit"
+        }
+      ],
+      "extractedItems": [],
+      "resolvedCustomer": null,
+      "resolvedLines": [],
+      "problems": []
+    },
+    {
+      "id": "C04",
+      "category": "confusable",
+      "turns": [
+        {
+          "action": "error",
+          "reason": "extract_rate_limit",
+          "latencyMs": 9785,
+          "usedModel": true,
+          "meta": {
+            "model": "gemini:gemini-3-flash-preview",
+            "latencyMs": 0,
+            "attempts": 1,
+            "retries": 3,
+            "rateLimited": 4,
+            "invalidOutputs": 0
+          },
+          "error": "LLM HTTP 429: {\n  \"error\": {\n    \"code\": 429,\n    \"message\": \"You exceeded your current quota, please check your plan and billing details. For more information on this error, head to: https://ai.google.dev/gemini-api/docs/rate-limits. To monitor your current usage, head to: https://ai.dev/rate-limit"
+        }
+      ],
+      "extractedItems": [],
+      "resolvedCustomer": null,
+      "resolvedLines": [],
+      "problems": []
+    },
+    {
+      "id": "M01",
+      "category": "missing",
+      "turns": [
+        {
+          "action": "error",
+          "reason": "extract_rate_limit",
+          "latencyMs": 9796,
+          "usedModel": true,
+          "meta": {
+            "model": "gemini:gemini-3-flash-preview",
+            "latencyMs": 0,
+            "attempts": 1,
+            "retries": 3,
+            "rateLimited": 4,
+            "invalidOutputs": 0
+          },
+          "error": "LLM HTTP 429: {\n  \"error\": {\n    \"code\": 429,\n    \"message\": \"You exceeded your current quota, please check your plan and billing details. For more information on this error, head to: https://ai.google.dev/gemini-api/docs/rate-limits. To monitor your current usage, head to: https://ai.dev/rate-limit"
+        }
+      ],
+      "extractedItems": [],
+      "resolvedCustomer": null,
+      "resolvedLines": [],
+      "problems": []
+    },
+    {
+      "id": "M02",
+      "category": "missing",
+      "turns": [
+        {
+          "action": "error",
+          "reason": "extract_rate_limit",
+          "latencyMs": 8675,
+          "usedModel": true,
+          "meta": {
+            "model": "gemini:gemini-3-flash-preview",
+            "latencyMs": 0,
+            "attempts": 1,
+            "retries": 3,
+            "rateLimited": 4,
+            "invalidOutputs": 0
+          },
+          "error": "LLM HTTP 429: {\n  \"error\": {\n    \"code\": 429,\n    \"message\": \"You exceeded your current quota, please check your plan and billing details. For more information on this error, head to: https://ai.google.dev/gemini-api/docs/rate-limits. To monitor your current usage, head to: https://ai.dev/rate-limit"
+        }
+      ],
+      "extractedItems": [],
+      "resolvedCustomer": null,
+      "resolvedLines": [],
+      "problems": []
+    },
+    {
+      "id": "M03",
+      "category": "missing",
+      "turns": [
+        {
+          "action": "error",
+          "reason": "extract_rate_limit",
+          "latencyMs": 9351,
+          "usedModel": true,
+          "meta": {
+            "model": "gemini:gemini-3-flash-preview",
+            "latencyMs": 0,
+            "attempts": 1,
+            "retries": 3,
+            "rateLimited": 4,
+            "invalidOutputs": 0
+          },
+          "error": "LLM HTTP 429: {\n  \"error\": {\n    \"code\": 429,\n    \"message\": \"You exceeded your current quota, please check your plan and billing details. For more information on this error, head to: https://ai.google.dev/gemini-api/docs/rate-limits. To monitor your current usage, head to: https://ai.dev/rate-limit"
+        }
+      ],
+      "extractedItems": [],
+      "resolvedCustomer": null,
+      "resolvedLines": [],
+      "problems": []
+    },
+    {
+      "id": "M04",
+      "category": "missing",
+      "turns": [
+        {
+          "action": "error",
+          "reason": "extract_rate_limit",
+          "latencyMs": 9354,
+          "usedModel": true,
+          "meta": {
+            "model": "gemini:gemini-3-flash-preview",
+            "latencyMs": 0,
+            "attempts": 1,
+            "retries": 3,
+            "rateLimited": 4,
+            "invalidOutputs": 0
+          },
+          "error": "LLM HTTP 429: {\n  \"error\": {\n    \"code\": 429,\n    \"message\": \"You exceeded your current quota, please check your plan and billing details. For more information on this error, head to: https://ai.google.dev/gemini-api/docs/rate-limits. To monitor your current usage, head to: https://ai.dev/rate-limit"
+        }
+      ],
+      "extractedItems": [],
+      "resolvedCustomer": null,
+      "resolvedLines": [],
+      "problems": []
+    },
+    {
+      "id": "M05",
+      "category": "missing",
+      "turns": [
+        {
+          "action": "error",
+          "reason": "extract_rate_limit",
+          "latencyMs": 7901,
+          "usedModel": true,
+          "meta": {
+            "model": "gemini:gemini-3-flash-preview",
+            "latencyMs": 0,
+            "attempts": 1,
+            "retries": 3,
+            "rateLimited": 4,
+            "invalidOutputs": 0
+          },
+          "error": "LLM HTTP 429: {\n  \"error\": {\n    \"code\": 429,\n    \"message\": \"You exceeded your current quota, please check your plan and billing details. For more information on this error, head to: https://ai.google.dev/gemini-api/docs/rate-limits. To monitor your current usage, head to: https://ai.dev/rate-limit"
+        }
+      ],
+      "extractedItems": [],
+      "resolvedCustomer": null,
+      "resolvedLines": [],
+      "problems": []
+    },
+    {
+      "id": "B01",
+      "category": "ambiguous",
+      "turns": [
+        {
+          "action": "error",
+          "reason": "extract_rate_limit",
+          "latencyMs": 7117,
+          "usedModel": true,
+          "meta": {
+            "model": "gemini:gemini-3-flash-preview",
+            "latencyMs": 0,
+            "attempts": 1,
+            "retries": 3,
+            "rateLimited": 4,
+            "invalidOutputs": 0
+          },
+          "error": "LLM HTTP 429: {\n  \"error\": {\n    \"code\": 429,\n    \"message\": \"You exceeded your current quota, please check your plan and billing details. For more information on this error, head to: https://ai.google.dev/gemini-api/docs/rate-limits. To monitor your current usage, head to: https://ai.dev/rate-limit"
+        }
+      ],
+      "extractedItems": [],
+      "resolvedCustomer": null,
+      "resolvedLines": [],
+      "problems": []
+    },
+    {
+      "id": "B02",
+      "category": "ambiguous",
+      "turns": [
+        {
+          "action": "error",
+          "reason": "extract_rate_limit",
+          "latencyMs": 8155,
+          "usedModel": true,
+          "meta": {
+            "model": "gemini:gemini-3-flash-preview",
+            "latencyMs": 0,
+            "attempts": 1,
+            "retries": 3,
+            "rateLimited": 4,
+            "invalidOutputs": 0
+          },
+          "error": "LLM HTTP 429: {\n  \"error\": {\n    \"code\": 429,\n    \"message\": \"You exceeded your current quota, please check your plan and billing details. For more information on this error, head to: https://ai.google.dev/gemini-api/docs/rate-limits. To monitor your current usage, head to: https://ai.dev/rate-limit"
+        }
+      ],
+      "extractedItems": [],
+      "resolvedCustomer": null,
+      "resolvedLines": [],
+      "problems": []
+    },
+    {
+      "id": "B03",
+      "category": "ambiguous",
+      "turns": [
+        {
+          "action": "error",
+          "reason": "extract_rate_limit",
+          "latencyMs": 9332,
+          "usedModel": true,
+          "meta": {
+            "model": "gemini:gemini-3-flash-preview",
+            "latencyMs": 0,
+            "attempts": 1,
+            "retries": 3,
+            "rateLimited": 4,
+            "invalidOutputs": 0
+          },
+          "error": "LLM HTTP 429: {\n  \"error\": {\n    \"code\": 429,\n    \"message\": \"You exceeded your current quota, please check your plan and billing details. For more information on this error, head to: https://ai.google.dev/gemini-api/docs/rate-limits. To monitor your current usage, head to: https://ai.dev/rate-limit"
+        }
+      ],
+      "extractedItems": [],
+      "resolvedCustomer": null,
+      "resolvedLines": [],
+      "problems": []
+    },
+    {
+      "id": "B04",
+      "category": "ambiguous",
+      "turns": [
+        {
+          "action": "error",
+          "reason": "extract_rate_limit",
+          "latencyMs": 8072,
+          "usedModel": true,
+          "meta": {
+            "model": "gemini:gemini-3-flash-preview",
+            "latencyMs": 0,
+            "attempts": 1,
+            "retries": 3,
+            "rateLimited": 4,
+            "invalidOutputs": 0
+          },
+          "error": "LLM HTTP 429: {\n  \"error\": {\n    \"code\": 429,\n    \"message\": \"You exceeded your current quota, please check your plan and billing details. For more information on this error, head to: https://ai.google.dev/gemini-api/docs/rate-limits. To monitor your current usage, head to: https://ai.dev/rate-limit"
+        }
+      ],
+      "extractedItems": [],
+      "resolvedCustomer": null,
+      "resolvedLines": [],
+      "problems": []
+    },
+    {
+      "id": "B05",
+      "category": "ambiguous",
+      "turns": [
+        {
+          "action": "error",
+          "reason": "extract_rate_limit",
+          "latencyMs": 9167,
+          "usedModel": true,
+          "meta": {
+            "model": "gemini:gemini-3-flash-preview",
+            "latencyMs": 0,
+            "attempts": 1,
+            "retries": 3,
+            "rateLimited": 4,
+            "invalidOutputs": 0
+          },
+          "error": "LLM HTTP 429: {\n  \"error\": {\n    \"code\": 429,\n    \"message\": \"You exceeded your current quota, please check your plan and billing details. For more information on this error, head to: https://ai.google.dev/gemini-api/docs/rate-limits. To monitor your current usage, head to: https://ai.dev/rate-limit"
+        }
+      ],
+      "extractedItems": [],
+      "resolvedCustomer": null,
+      "resolvedLines": [],
+      "problems": []
+    },
+    {
+      "id": "I01",
+      "category": "invalid",
+      "turns": [
+        {
+          "action": "error",
+          "reason": "extract_rate_limit",
+          "latencyMs": 8309,
+          "usedModel": true,
+          "meta": {
+            "model": "gemini:gemini-3-flash-preview",
+            "latencyMs": 0,
+            "attempts": 1,
+            "retries": 3,
+            "rateLimited": 4,
+            "invalidOutputs": 0
+          },
+          "error": "LLM HTTP 429: {\n  \"error\": {\n    \"code\": 429,\n    \"message\": \"You exceeded your current quota, please check your plan and billing details. For more information on this error, head to: https://ai.google.dev/gemini-api/docs/rate-limits. To monitor your current usage, head to: https://ai.dev/rate-limit"
+        }
+      ],
+      "extractedItems": [],
+      "resolvedCustomer": null,
+      "resolvedLines": [],
+      "problems": []
+    },
+    {
+      "id": "I02",
+      "category": "invalid",
+      "turns": [
+        {
+          "action": "error",
+          "reason": "extract_rate_limit",
+          "latencyMs": 9363,
+          "usedModel": true,
+          "meta": {
+            "model": "gemini:gemini-3-flash-preview",
+            "latencyMs": 0,
+            "attempts": 1,
+            "retries": 3,
+            "rateLimited": 4,
+            "invalidOutputs": 0
+          },
+          "error": "LLM HTTP 429: {\n  \"error\": {\n    \"code\": 429,\n    \"message\": \"You exceeded your current quota, please check your plan and billing details. For more information on this error, head to: https://ai.google.dev/gemini-api/docs/rate-limits. To monitor your current usage, head to: https://ai.dev/rate-limit"
+        }
+      ],
+      "extractedItems": [],
+      "resolvedCustomer": null,
+      "resolvedLines": [],
+      "problems": []
+    },
+    {
+      "id": "I03",
+      "category": "invalid",
+      "turns": [
+        {
+          "action": "error",
+          "reason": "extract_rate_limit",
+          "latencyMs": 7140,
+          "usedModel": true,
+          "meta": {
+            "model": "gemini:gemini-3-flash-preview",
+            "latencyMs": 0,
+            "attempts": 1,
+            "retries": 3,
+            "rateLimited": 4,
+            "invalidOutputs": 0
+          },
+          "error": "LLM HTTP 429: {\n  \"error\": {\n    \"code\": 429,\n    \"message\": \"You exceeded your current quota, please check your plan and billing details. For more information on this error, head to: https://ai.google.dev/gemini-api/docs/rate-limits. To monitor your current usage, head to: https://ai.dev/rate-limit"
+        }
+      ],
+      "extractedItems": [],
+      "resolvedCustomer": null,
+      "resolvedLines": [],
+      "problems": []
+    },
+    {
+      "id": "I04",
+      "category": "invalid",
+      "turns": [
+        {
+          "action": "error",
+          "reason": "extract_rate_limit",
+          "latencyMs": 9467,
+          "usedModel": true,
+          "meta": {
+            "model": "gemini:gemini-3-flash-preview",
+            "latencyMs": 0,
+            "attempts": 1,
+            "retries": 3,
+            "rateLimited": 4,
+            "invalidOutputs": 0
+          },
+          "error": "LLM HTTP 429: {\n  \"error\": {\n    \"code\": 429,\n    \"message\": \"You exceeded your current quota, please check your plan and billing details. For more information on this error, head to: https://ai.google.dev/gemini-api/docs/rate-limits. To monitor your current usage, head to: https://ai.dev/rate-limit"
+        }
+      ],
+      "extractedItems": [],
+      "resolvedCustomer": null,
+      "resolvedLines": [],
+      "problems": []
+    },
+    {
+      "id": "N01",
+      "category": "non_invoice",
+      "turns": [
+        {
+          "action": "error",
+          "reason": "extract_rate_limit",
+          "latencyMs": 8100,
+          "usedModel": true,
+          "meta": {
+            "model": "gemini:gemini-3-flash-preview",
+            "latencyMs": 0,
+            "attempts": 1,
+            "retries": 3,
+            "rateLimited": 4,
+            "invalidOutputs": 0
+          },
+          "error": "LLM HTTP 429: {\n  \"error\": {\n    \"code\": 429,\n    \"message\": \"You exceeded your current quota, please check your plan and billing details. For more information on this error, head to: https://ai.google.dev/gemini-api/docs/rate-limits. To monitor your current usage, head to: https://ai.dev/rate-limit"
+        }
+      ],
+      "extractedItems": [],
+      "resolvedCustomer": null,
+      "resolvedLines": [],
+      "problems": []
+    },
+    {
+      "id": "N02",
+      "category": "non_invoice",
+      "turns": [
+        {
+          "action": "error",
+          "reason": "extract_rate_limit",
+          "latencyMs": 7337,
+          "usedModel": true,
+          "meta": {
+            "model": "gemini:gemini-3-flash-preview",
+            "latencyMs": 0,
+            "attempts": 1,
+            "retries": 3,
+            "rateLimited": 4,
+            "invalidOutputs": 0
+          },
+          "error": "LLM HTTP 429: {\n  \"error\": {\n    \"code\": 429,\n    \"message\": \"You exceeded your current quota, please check your plan and billing details. For more information on this error, head to: https://ai.google.dev/gemini-api/docs/rate-limits. To monitor your current usage, head to: https://ai.dev/rate-limit"
+        }
+      ],
+      "extractedItems": [],
+      "resolvedCustomer": null,
+      "resolvedLines": [],
+      "problems": []
+    },
+    {
+      "id": "N03",
+      "category": "non_invoice",
+      "turns": [
+        {
+          "action": "error",
+          "reason": "extract_rate_limit",
+          "latencyMs": 8005,
+          "usedModel": true,
+          "meta": {
+            "model": "gemini:gemini-3-flash-preview",
+            "latencyMs": 0,
+            "attempts": 1,
+            "retries": 3,
+            "rateLimited": 4,
+            "invalidOutputs": 0
+          },
+          "error": "LLM HTTP 429: {\n  \"error\": {\n    \"code\": 429,\n    \"message\": \"You exceeded your current quota, please check your plan and billing details. For more information on this error, head to: https://ai.google.dev/gemini-api/docs/rate-limits. To monitor your current usage, head to: https://ai.dev/rate-limit"
+        }
+      ],
+      "extractedItems": [],
+      "resolvedCustomer": null,
+      "resolvedLines": [],
+      "problems": []
+    },
+    {
+      "id": "N04",
+      "category": "non_invoice",
+      "turns": [
+        {
+          "action": "error",
+          "reason": "extract_rate_limit",
+          "latencyMs": 9686,
+          "usedModel": true,
+          "meta": {
+            "model": "gemini:gemini-3-flash-preview",
+            "latencyMs": 0,
+            "attempts": 1,
+            "retries": 3,
+            "rateLimited": 4,
+            "invalidOutputs": 0
+          },
+          "error": "LLM HTTP 429: {\n  \"error\": {\n    \"code\": 429,\n    \"message\": \"You exceeded your current quota, please check your plan and billing details. For more information on this error, head to: https://ai.google.dev/gemini-api/docs/rate-limits. To monitor your current usage, head to: https://ai.dev/rate-limit"
+        }
+      ],
+      "extractedItems": [],
+      "resolvedCustomer": null,
+      "resolvedLines": [],
+      "problems": []
+    },
+    {
+      "id": "P01",
+      "category": "previous_invoice",
+      "turns": [
+        {
+          "action": "error",
+          "reason": "extract_rate_limit",
+          "latencyMs": 8281,
+          "usedModel": true,
+          "meta": {
+            "model": "gemini:gemini-3-flash-preview",
+            "latencyMs": 0,
+            "attempts": 1,
+            "retries": 3,
+            "rateLimited": 4,
+            "invalidOutputs": 0
+          },
+          "error": "LLM HTTP 429: {\n  \"error\": {\n    \"code\": 429,\n    \"message\": \"You exceeded your current quota, please check your plan and billing details. For more information on this error, head to: https://ai.google.dev/gemini-api/docs/rate-limits. To monitor your current usage, head to: https://ai.dev/rate-limit"
+        }
+      ],
+      "extractedItems": [],
+      "resolvedCustomer": null,
+      "resolvedLines": [],
+      "problems": []
+    },
+    {
+      "id": "P02",
+      "category": "previous_invoice",
+      "turns": [
+        {
+          "action": "error",
+          "reason": "extract_rate_limit",
+          "latencyMs": 8273,
+          "usedModel": true,
+          "meta": {
+            "model": "gemini:gemini-3-flash-preview",
+            "latencyMs": 0,
+            "attempts": 1,
+            "retries": 3,
+            "rateLimited": 4,
+            "invalidOutputs": 0
+          },
+          "error": "LLM HTTP 429: {\n  \"error\": {\n    \"code\": 429,\n    \"message\": \"You exceeded your current quota, please check your plan and billing details. For more information on this error, head to: https://ai.google.dev/gemini-api/docs/rate-limits. To monitor your current usage, head to: https://ai.dev/rate-limit"
+        }
+      ],
+      "extractedItems": [],
+      "resolvedCustomer": null,
+      "resolvedLines": [],
+      "problems": []
+    },
+    {
+      "id": "P03",
+      "category": "previous_invoice",
+      "turns": [
+        {
+          "action": "error",
+          "reason": "extract_rate_limit",
+          "latencyMs": 8899,
+          "usedModel": true,
+          "meta": {
+            "model": "gemini:gemini-3-flash-preview",
+            "latencyMs": 0,
+            "attempts": 1,
+            "retries": 3,
+            "rateLimited": 4,
+            "invalidOutputs": 0
+          },
+          "error": "LLM HTTP 429: {\n  \"error\": {\n    \"code\": 429,\n    \"message\": \"You exceeded your current quota, please check your plan and billing details. For more information on this error, head to: https://ai.google.dev/gemini-api/docs/rate-limits. To monitor your current usage, head to: https://ai.dev/rate-limit"
+        }
+      ],
+      "extractedItems": [],
+      "resolvedCustomer": null,
+      "resolvedLines": [],
+      "problems": []
+    },
+    {
+      "id": "P04",
+      "category": "previous_invoice",
+      "turns": [
+        {
+          "action": "error",
+          "reason": "extract_rate_limit",
+          "latencyMs": 7874,
+          "usedModel": true,
+          "meta": {
+            "model": "gemini:gemini-3-flash-preview",
+            "latencyMs": 0,
+            "attempts": 1,
+            "retries": 3,
+            "rateLimited": 4,
+            "invalidOutputs": 0
+          },
+          "error": "LLM HTTP 429: {\n  \"error\": {\n    \"code\": 429,\n    \"message\": \"You exceeded your current quota, please check your plan and billing details. For more information on this error, head to: https://ai.google.dev/gemini-api/docs/rate-limits. To monitor your current usage, head to: https://ai.dev/rate-limit"
+        }
+      ],
+      "extractedItems": [],
+      "resolvedCustomer": null,
+      "resolvedLines": [],
+      "problems": []
+    },
+    {
+      "id": "X01",
+      "category": "clarification_flow",
+      "turns": [
+        {
+          "action": "error",
+          "reason": "extract_rate_limit",
+          "latencyMs": 9746,
+          "usedModel": true,
+          "meta": {
+            "model": "gemini:gemini-3-flash-preview",
+            "latencyMs": 0,
+            "attempts": 1,
+            "retries": 3,
+            "rateLimited": 4,
+            "invalidOutputs": 0
+          },
+          "error": "LLM HTTP 429: {\n  \"error\": {\n    \"code\": 429,\n    \"message\": \"You exceeded your current quota, please check your plan and billing details. For more information on this error, head to: https://ai.google.dev/gemini-api/docs/rate-limits. To monitor your current usage, head to: https://ai.dev/rate-limit"
+        },
+        {
+          "action": "error",
+          "reason": "extract_rate_limit",
+          "latencyMs": 9235,
+          "usedModel": true,
+          "meta": {
+            "model": "gemini:gemini-3-flash-preview",
+            "latencyMs": 0,
+            "attempts": 1,
+            "retries": 3,
+            "rateLimited": 4,
+            "invalidOutputs": 0
+          },
+          "error": "LLM HTTP 429: {\n  \"error\": {\n    \"code\": 429,\n    \"message\": \"You exceeded your current quota, please check your plan and billing details. For more information on this error, head to: https://ai.google.dev/gemini-api/docs/rate-limits. To monitor your current usage, head to: https://ai.dev/rate-limit"
+        }
+      ],
+      "extractedItems": [],
+      "resolvedCustomer": null,
+      "resolvedLines": [],
+      "problems": []
+    },
+    {
+      "id": "X02",
+      "category": "clarification_flow",
+      "turns": [
+        {
+          "action": "error",
+          "reason": "extract_rate_limit",
+          "latencyMs": 9069,
+          "usedModel": true,
+          "meta": {
+            "model": "gemini:gemini-3-flash-preview",
+            "latencyMs": 0,
+            "attempts": 1,
+            "retries": 3,
+            "rateLimited": 4,
+            "invalidOutputs": 0
+          },
+          "error": "LLM HTTP 429: {\n  \"error\": {\n    \"code\": 429,\n    \"message\": \"You exceeded your current quota, please check your plan and billing details. For more information on this error, head to: https://ai.google.dev/gemini-api/docs/rate-limits. To monitor your current usage, head to: https://ai.dev/rate-limit"
+        },
+        {
+          "action": "error",
+          "reason": "extract_rate_limit",
+          "latencyMs": 8014,
+          "usedModel": true,
+          "meta": {
+            "model": "gemini:gemini-3-flash-preview",
+            "latencyMs": 0,
+            "attempts": 1,
+            "retries": 3,
+            "rateLimited": 4,
+            "invalidOutputs": 0
+          },
+          "error": "LLM HTTP 429: {\n  \"error\": {\n    \"code\": 429,\n    \"message\": \"You exceeded your current quota, please check your plan and billing details. For more information on this error, head to: https://ai.google.dev/gemini-api/docs/rate-limits. To monitor your current usage, head to: https://ai.dev/rate-limit"
+        }
+      ],
+      "extractedItems": [],
+      "resolvedCustomer": null,
+      "resolvedLines": [],
+      "problems": []
+    },
+    {
+      "id": "X03",
+      "category": "clarification_flow",
+      "turns": [
+        {
+          "action": "error",
+          "reason": "extract_rate_limit",
+          "latencyMs": 8199,
+          "usedModel": true,
+          "meta": {
+            "model": "gemini:gemini-3-flash-preview",
+            "latencyMs": 0,
+            "attempts": 1,
+            "retries": 3,
+            "rateLimited": 4,
+            "invalidOutputs": 0
+          },
+          "error": "LLM HTTP 429: {\n  \"error\": {\n    \"code\": 429,\n    \"message\": \"You exceeded your current quota, please check your plan and billing details. For more information on this error, head to: https://ai.google.dev/gemini-api/docs/rate-limits. To monitor your current usage, head to: https://ai.dev/rate-limit"
+        },
+        {
+          "action": "error",
+          "reason": "extract_rate_limit",
+          "latencyMs": 7485,
+          "usedModel": true,
+          "meta": {
+            "model": "gemini:gemini-3-flash-preview",
+            "latencyMs": 0,
+            "attempts": 1,
+            "retries": 3,
+            "rateLimited": 4,
+            "invalidOutputs": 0
+          },
+          "error": "LLM HTTP 429: {\n  \"error\": {\n    \"code\": 429,\n    \"message\": \"You exceeded your current quota, please check your plan and billing details. For more information on this error, head to: https://ai.google.dev/gemini-api/docs/rate-limits. To monitor your current usage, head to: https://ai.dev/rate-limit"
+        }
+      ],
+      "extractedItems": [],
+      "resolvedCustomer": null,
+      "resolvedLines": [],
+      "problems": []
+    },
+    {
+      "id": "X04",
+      "category": "clarification_flow",
+      "turns": [
+        {
+          "action": "error",
+          "reason": "extract_rate_limit",
+          "latencyMs": 8712,
+          "usedModel": true,
+          "meta": {
+            "model": "gemini:gemini-3-flash-preview",
+            "latencyMs": 0,
+            "attempts": 1,
+            "retries": 3,
+            "rateLimited": 4,
+            "invalidOutputs": 0
+          },
+          "error": "LLM HTTP 429: {\n  \"error\": {\n    \"code\": 429,\n    \"message\": \"You exceeded your current quota, please check your plan and billing details. For more information on this error, head to: https://ai.google.dev/gemini-api/docs/rate-limits. To monitor your current usage, head to: https://ai.dev/rate-limit"
+        },
+        {
+          "action": "error",
+          "reason": "extract_rate_limit",
+          "latencyMs": 9116,
+          "usedModel": true,
+          "meta": {
+            "model": "gemini:gemini-3-flash-preview",
+            "latencyMs": 0,
+            "attempts": 1,
+            "retries": 3,
+            "rateLimited": 4,
+            "invalidOutputs": 0
+          },
+          "error": "LLM HTTP 429: {\n  \"error\": {\n    \"code\": 429,\n    \"message\": \"You exceeded your current quota, please check your plan and billing details. For more information on this error, head to: https://ai.google.dev/gemini-api/docs/rate-limits. To monitor your current usage, head to: https://ai.dev/rate-limit"
+        }
+      ],
+      "extractedItems": [],
+      "resolvedCustomer": null,
+      "resolvedLines": [],
+      "problems": []
+    },
+    {
+      "id": "X05",
+      "category": "clarification_flow",
+      "turns": [
+        {
+          "action": "error",
+          "reason": "extract_rate_limit",
+          "latencyMs": 9452,
+          "usedModel": true,
+          "meta": {
+            "model": "gemini:gemini-3-flash-preview",
+            "latencyMs": 0,
+            "attempts": 1,
+            "retries": 3,
+            "rateLimited": 4,
+            "invalidOutputs": 0
+          },
+          "error": "LLM HTTP 429: {\n  \"error\": {\n    \"code\": 429,\n    \"message\": \"You exceeded your current quota, please check your plan and billing details. For more information on this error, head to: https://ai.google.dev/gemini-api/docs/rate-limits. To monitor your current usage, head to: https://ai.dev/rate-limit"
+        },
+        {
+          "action": "error",
+          "reason": "extract_rate_limit",
+          "latencyMs": 8190,
+          "usedModel": true,
+          "meta": {
+            "model": "gemini:gemini-3-flash-preview",
+            "latencyMs": 0,
+            "attempts": 1,
+            "retries": 3,
+            "rateLimited": 4,
+            "invalidOutputs": 0
+          },
+          "error": "LLM HTTP 429: {\n  \"error\": {\n    \"code\": 429,\n    \"message\": \"You exceeded your current quota, please check your plan and billing details. For more information on this error, head to: https://ai.google.dev/gemini-api/docs/rate-limits. To monitor your current usage, head to: https://ai.dev/rate-limit"
+        }
+      ],
+      "extractedItems": [],
+      "resolvedCustomer": null,
+      "resolvedLines": [],
+      "problems": []
+    }
+  ]
+}
