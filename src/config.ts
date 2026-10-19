@@ -1,5 +1,8 @@
-import 'dotenv/config';
+import { config as loadDotenv } from 'dotenv';
 import { z } from 'zod';
+
+// .env is the source of truth: override stale values that editors (e.g. VS Code's useEnvFile) inject when a terminal opens.
+loadDotenv({ override: true, quiet: true });
 
 const bool = (def: boolean) =>
   z
