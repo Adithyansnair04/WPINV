@@ -55,6 +55,16 @@ Then verify:
 npm run zoho:check   # all seed customers/items present?
 ```
 
+## Tax (18% GST)
+
+Zoho only allows tax on invoices in an India org that is **registered for GST**. Otherwise it rejects them with *"You are not allowed to create tax invoice in GST Regime, as you're not registered for GST"*, and the bot reports that and creates nothing.
+
+1. In Zoho Books, open **Settings → Taxes → GST Settings**, choose *registered for GST*, and enter the GSTIN and state.
+2. Make sure an 18% tax exists. `npm run zoho:seed -- --confirm --tax 18` creates "GST 18%" if missing.
+3. In `.env`, set `DEFAULT_TAX_PERCENT=18`. The bot then adds that tax to every invoice line whose item has no tax of its own. Zoho calculates the tax total; the bot never computes tax itself in live mode.
+
+Alternatively, set the GST rate on each item in Zoho (intra/inter-state preferences) and leave `DEFAULT_TAX_PERCENT` empty.
+
 ## 5. Turn on live mode safely
 
 ```env

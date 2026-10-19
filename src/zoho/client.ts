@@ -23,7 +23,7 @@ interface Opts {
 const TokenResponse = z.object({ access_token: z.string().min(1), expires_in: z.number().optional(), api_domain: z.string().optional() });
 
 /** Exchanges the long-lived refresh token for 1-hour access tokens; caches and single-flights refreshes. */
-export class ZohoAuth {
+class ZohoAuth {
   private token?: { value: string; expiresAt: number };
   private inflight?: Promise<string>;
 
@@ -125,9 +125,12 @@ const toInvoice = (i: z.infer<typeof ZInvoice>): Invoice => ({
 
 const MAX_PAGES = 25;
 
+const toLineItem = (l: InvoiceLineInput) => ({ item_id: l.itemId, quantity: l.quantity, rate: l.rate, ...(l.taxId ? { tax_id: l.taxId } : {}) });
+
 export class ZohoBooks implements BooksApi {
   readonly stats: RetryStats = { retries: 0, rateLimited: 0 };
   private readonly auth: ZohoAuth;
+  private readonly taxIds = new Map<number, string | null>();
   private readonly log: Logger;
 
   constructor(
@@ -253,7 +256,7 @@ export class ZohoBooks implements BooksApi {
       body: {
         customer_id: input.customerId,
         reference_number: input.referenceNumber,
-        line_items: input.lines.map((l) => ({ item_id: l.itemId, quantity: l.quantity, rate: l.rate })),
+        line_items: input.lines.map(toLineItem),
         ...(input.notes ? { notes: input.notes.slice(0, 500) } : {}),
       },
     });
@@ -278,11 +281,22 @@ export class ZohoBooks implements BooksApi {
   /** PUT /invoices/{id}: replaces line items. Callers must only use this for drafts created by this bot. */
   async updateInvoiceLines(invoiceId: string, customerId: string, lines: InvoiceLineInput[]): Promise<Invoice> {
     const { json } = await this.request('PUT', `/invoices/${encodeURIComponent(invoiceId)}`, {
-      body: { customer_id: customerId, line_items: lines.map((l) => ({ item_id: l.itemId, quantity: l.quantity, rate: l.rate })) },
+      body: { customer_id: customerId, line_items: lines.map(toLineItem) },
     });
     const parsed = z.object({ invoice: ZInvoice }).safeParse(json);
     if (!parsed.success) throw new HttpError('Invoice updated but response shape was unexpected; check Zoho', 'validation');
     return toInvoice(parsed.data.invoice);
+  }
+
+  /** GET /settings/taxes, cached per percentage. Only exact matches are used; nothing is created here. */
+  async findTaxId(percent: number): Promise<string | null> {
+    if (this.taxIds.has(percent)) return this.taxIds.get(percent)!;
+    const { json } = await this.request('GET', '/settings/taxes');
+    const parsed = z.object({ taxes: z.array(z.object({ tax_id: z.coerce.string(), tax_percentage: z.coerce.number(), tax_type: z.string().optional() })).default([]) }).safeParse(json);
+    if (!parsed.success) throw new HttpError('Unexpected Zoho taxes response shape', 'validation');
+    const hit = parsed.data.taxes.find((t) => t.tax_percentage === percent && t.tax_type !== 'compound_tax');
+    this.taxIds.set(percent, hit?.tax_id ?? null);
+    return hit?.tax_id ?? null;
   }
 
   /** POST /contacts (customer). GST-registered orgs may additionally require gst_treatment; Zoho's error is surfaced to the user. */

@@ -15,10 +15,11 @@ export function invoiceSummary(inv: Invoice, heading: string): string {
   ].join('\n');
 }
 
-export function dryRunSummary(customerName: string, lines: ResolvedLine[]): string {
+export function dryRunSummary(customerName: string, lines: ResolvedLine[], defaultTaxPercent?: number): string {
   const sub = lines.reduce((s, l) => s + l.quantity * l.rate, 0);
-  const knownTax = lines.every((l) => l.item.taxPercentage !== undefined);
-  const tax = lines.reduce((s, l) => s + (l.quantity * l.rate * (l.item.taxPercentage ?? 0)) / 100, 0);
+  const pct = (l: ResolvedLine) => (l.item.taxId || l.item.taxPercentage ? l.item.taxPercentage : defaultTaxPercent);
+  const knownTax = lines.every((l) => pct(l) !== undefined);
+  const tax = lines.reduce((s, l) => s + (l.quantity * l.rate * (pct(l) ?? 0)) / 100, 0);
   return [
     'DRY RUN: no invoice was created. Would create draft invoice:',
     `Customer: ${customerName}`,

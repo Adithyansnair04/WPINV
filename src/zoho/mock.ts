@@ -68,7 +68,8 @@ export class MockBooks implements BooksApi {
     const lines = input.map((l) => {
       const item = this.items.find((i) => i.id === l.itemId);
       if (!item) throw new Error(`mock: unknown item ${l.itemId}`);
-      return { itemId: item.id, name: item.name, quantity: l.quantity, rate: l.rate, amount: round2(l.quantity * l.rate), tax: item.taxPercentage ?? 0 };
+      const lineTax = l.taxId?.startsWith('mock-tax-') ? Number(l.taxId.slice(9)) : undefined;
+      return { itemId: item.id, name: item.name, quantity: l.quantity, rate: l.rate, amount: round2(l.quantity * l.rate), tax: lineTax ?? item.taxPercentage ?? 0 };
     });
     const subTotal = round2(lines.reduce((s, l) => s + l.amount, 0));
     const taxTotal = round2(lines.reduce((s, l) => s + (l.amount * l.tax) / 100, 0));
@@ -141,6 +142,10 @@ export class MockBooks implements BooksApi {
     const updated = { ...this.build(old.id, old.number, this.customer(customerId), lines, old.reference), status: old.status, date: old.date };
     this.invoices[idx] = updated;
     return updated;
+  }
+
+  async findTaxId(percent: number): Promise<string | null> {
+    return `mock-tax-${percent}`;
   }
 
   async createCustomer(name: string): Promise<Customer> {

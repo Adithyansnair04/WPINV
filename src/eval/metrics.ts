@@ -51,7 +51,7 @@ function percentile(xs: number[], p: number) {
   return s[Math.min(s.length - 1, Math.ceil((p / 100) * s.length) - 1)]!;
 }
 
-export function invoiceMatches(c: EvalCase, r: CaseResult): boolean {
+function invoiceMatches(c: EvalCase, r: CaseResult): boolean {
   const exp = c.expected;
   if (!r.invoice || exp.action !== 'create' || !exp.items) return false;
   if (r.invoice.customer !== exp.customer || r.invoice.lines.length !== exp.items.length) return false;

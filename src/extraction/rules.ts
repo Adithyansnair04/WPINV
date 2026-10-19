@@ -12,7 +12,7 @@ const CUSTOMER = /\b(?:customer|party|bill to|invoice to|for)\s*:?\s+([a-z][a-z 
 
 const num = (s: string | undefined) => (s === undefined ? null : Number(s.replace(/,/g, '')));
 
-export function rulesExtract(text: string): Extraction {
+function rulesExtract(text: string): Extraction {
   const base = { customer: null, items: [], currency: null, refers_to_previous_invoice: false, notes: null, missing: [], ambiguity: null };
   if (PREVIOUS.test(text)) return Extraction.parse({ ...base, intent: 'unsupported_followup', refers_to_previous_invoice: true });
   if (!/\d/.test(text)) return Extraction.parse({ ...base, intent: 'non_invoice' });

@@ -21,7 +21,7 @@ export interface WhatsAppOptions {
 
 const RECENT_LIMIT = 500;
 
-export function textOf(m: WAMessage): { text: string; quotedId?: string } {
+function textOf(m: WAMessage): { text: string; quotedId?: string } {
   const c = m.message;
   if (!c) return { text: '' };
   const ext = c.extendedTextMessage;

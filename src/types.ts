@@ -22,6 +22,8 @@ export interface InvoiceLineInput {
   itemId: string;
   quantity: number;
   rate: number;
+  /** Zoho tax to apply to this line (used when the item itself has no tax). */
+  taxId?: string;
 }
 
 export interface InvoiceInput {
@@ -66,6 +68,8 @@ export interface BooksApi {
   findLastRate(customerId: string, itemId: string): Promise<PreviousRate | null>;
   /** Replaces the line items of an existing invoice (used only for drafts created by this bot). */
   updateInvoiceLines(invoiceId: string, customerId: string, lines: InvoiceLineInput[]): Promise<Invoice>;
+  /** Id of the organization tax with this exact percentage, or null if none exists. */
+  findTaxId(percent: number): Promise<string | null>;
   /** Creates a customer contact. Only called after an explicit user confirmation. */
   createCustomer(name: string): Promise<Customer>;
 }

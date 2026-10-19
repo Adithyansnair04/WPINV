@@ -52,6 +52,10 @@ export class CachedBooks implements BooksApi {
     return this.inner.updateInvoiceLines(...args);
   }
 
+  findTaxId(percent: number) {
+    return this.inner.findTaxId(percent);
+  }
+
   async createCustomer(name: string) {
     const c = await this.inner.createCustomer(name);
     this.customers = undefined; // the next lookup must see the new customer

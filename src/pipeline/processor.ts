@@ -4,7 +4,7 @@ import type { Extraction } from '../extraction/schema.js';
 import { HttpError } from '../http.js';
 import type { Logger } from '../logger.js';
 import { CustomerMatcher, ItemMatcher } from '../matching/matcher.js';
-import type { BooksApi, IncomingMessage, Invoice, Outgoing, PreviousRate, SendFn } from '../types.js';
+import type { BooksApi, IncomingMessage, Invoice, InvoiceLineInput, Outgoing, PreviousRate, SendFn } from '../types.js';
 import { decide, fmtMoney, type Decision } from './decide.js';
 import { dryRunSummary, invoiceSummary } from './format.js';
 import { numbersIn } from './grounding.js';
@@ -22,6 +22,8 @@ export interface ProcessorOptions {
   customerCreate?: 'confirm' | 'off';
   /** If non-empty, only these sender ids may add customers. */
   customerCreators?: string[];
+  /** Tax % applied to lines whose item has no tax in Zoho. */
+  defaultTaxPercent?: number;
 }
 
 export interface ProcessorDeps {
@@ -274,7 +276,7 @@ export class InvoiceProcessor {
         return result('existing', { ...base, invoice: existing, reason: 'idempotent_hit' });
       }
       if (this.deps.options.dryRun) {
-        await this.reply(msg, dryRunSummary(decision.customer.name, decision.lines));
+        await this.reply(msg, dryRunSummary(decision.customer.name, decision.lines, this.deps.options.defaultTaxPercent));
         return result('dry_run', { ...base, reason: 'dry_run' });
       }
       const invoice = await this.createOnce(reference, decision, log);
@@ -356,7 +358,7 @@ export class InvoiceProcessor {
         return respond('edit_not_draft', `${target.number} is ${current.status}, so I won't change it here. Please edit it in Zoho Books.`);
       }
       if (this.deps.options.dryRun) return respond('edit_dry_run', `DRY RUN: would update ${target.number}: ${change}`);
-      const updated = await this.deps.books.updateInvoiceLines(target.invoiceId, target.customerId, lines.map((l) => ({ itemId: l.itemId, quantity: l.quantity, rate: l.rate })));
+      const updated = await this.deps.books.updateInvoiceLines(target.invoiceId, target.customerId, await this.withTax(lines.map((l) => ({ itemId: l.itemId, quantity: l.quantity, rate: l.rate }))));
       log.info('invoice.edited', { invoiceId: updated.id, number: updated.number, line: idx });
       const rec = { ...target, lines, createdAt: this.now() };
       this.deps.store.setInvoiceMessage(targetMsgId, rec);
@@ -466,12 +468,24 @@ export class InvoiceProcessor {
     }
   }
 
+  /** Adds DEFAULT_TAX_PERCENT to lines whose item has no tax in Zoho. Fails (nothing created) if that tax does not exist. */
+  private async withTax(lines: InvoiceLineInput[]): Promise<InvoiceLineInput[]> {
+    const pct = this.deps.options.defaultTaxPercent;
+    if (pct === undefined) return lines;
+    const items = await this.deps.books.listItems();
+    const untaxed = (l: InvoiceLineInput) => !items.find((i) => i.id === l.itemId)?.taxId;
+    if (!lines.some(untaxed)) return lines;
+    const taxId = await this.deps.books.findTaxId(pct);
+    if (!taxId) throw new HttpError(`No ${pct}% tax exists in Zoho Books. Create it under Settings → Taxes (or run npm run zoho:seed -- --confirm --tax ${pct}).`, 'client');
+    return lines.map((l) => (untaxed(l) ? { ...l, taxId } : l));
+  }
+
   /** Creates the invoice; on an uncertain failure, checks the reference before a single retry. */
   private async createOnce(reference: string, d: Extract<Decision, { kind: 'create' }>, log: Logger): Promise<Invoice> {
     const input = {
       customerId: d.customer.id,
       referenceNumber: reference,
-      lines: d.lines.map((l) => ({ itemId: l.item.id, quantity: l.quantity, rate: l.rate })),
+      lines: await this.withTax(d.lines.map((l) => ({ itemId: l.item.id, quantity: l.quantity, rate: l.rate }))),
       notes: d.notes,
     };
     try {

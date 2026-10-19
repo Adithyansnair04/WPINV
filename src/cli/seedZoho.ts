@@ -6,9 +6,10 @@ import { ZohoBooks } from '../zoho/client.js';
 
 /**
  * Creates the synthetic seed customers/items in a Zoho Books TRIAL organization, skipping names that already exist.
- * Usage: npm run zoho:seed -- --confirm [--gst-treatment business_none]
+ * Usage: npm run zoho:seed -- --confirm [--gst-treatment business_none] [--tax 18]
+ * --tax N also creates an N% tax ("GST N%") if the org has none, for DEFAULT_TAX_PERCENT.
  */
-const { values } = parseArgs({ options: { confirm: { type: 'boolean' }, 'gst-treatment': { type: 'string' } } });
+const { values } = parseArgs({ options: { confirm: { type: 'boolean' }, 'gst-treatment': { type: 'string' }, tax: { type: 'string' } } });
 const cfg = loadConfig();
 const creds = requireZohoCredentials(cfg);
 const customers = JSON.parse(readFileSync('data/seed/customers.json', 'utf8')) as { name: string; company: string; city: string }[];
@@ -42,5 +43,13 @@ for (const i of items) {
     body: { name: i.name, sku: i.sku, rate: i.rate, product_type: 'goods', item_type: 'sales', hsn_or_sac: i.hsn },
   });
   console.log(`item created: ${i.name}`);
+}
+if (values.tax) {
+  const pct = Number(values.tax);
+  if (await zoho.findTaxId(pct)) console.log(`tax ${pct}% already exists`);
+  else {
+    await zoho.request('POST', '/settings/taxes', { body: { tax_name: `GST ${pct}%`, tax_percentage: pct, tax_type: 'tax' } });
+    console.log(`tax created: GST ${pct}%`);
+  }
 }
 console.log('Done. Set GST/tax preferences on items in the Zoho UI if your org is GST-registered, then run npm run zoho:check.');
