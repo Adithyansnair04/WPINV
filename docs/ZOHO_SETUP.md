@@ -14,7 +14,7 @@ These steps use the **India** data centre (`zoho.in`). For another DC, change th
 3. Open the *Generate Code* tab and enter these scopes:
 
    ```
-   ZohoBooks.contacts.READ,ZohoBooks.contacts.CREATE,ZohoBooks.settings.READ,ZohoBooks.settings.CREATE,ZohoBooks.invoices.READ,ZohoBooks.invoices.CREATE
+   ZohoBooks.contacts.READ,ZohoBooks.contacts.CREATE,ZohoBooks.settings.READ,ZohoBooks.settings.CREATE,ZohoBooks.invoices.READ,ZohoBooks.invoices.CREATE,ZohoBooks.invoices.UPDATE
    ```
 
    `settings` covers Items and Organizations. The `CREATE` scopes for contacts/settings are needed only for `zoho:seed`. Drop them if you import the CSVs instead.

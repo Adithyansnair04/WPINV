@@ -4,7 +4,7 @@ import { loadConfig } from '../config.js';
  * One-time exchange of a Zoho "Self Client" grant code for a refresh token.
  * Usage: npm run zoho:token -- <grant_code>
  * Generate the code at https://api-console.zoho.in (Self Client) with scopes:
- * ZohoBooks.contacts.READ,ZohoBooks.contacts.CREATE,ZohoBooks.settings.READ,ZohoBooks.settings.CREATE,ZohoBooks.invoices.READ,ZohoBooks.invoices.CREATE
+ * ZohoBooks.contacts.READ,ZohoBooks.contacts.CREATE,ZohoBooks.settings.READ,ZohoBooks.settings.CREATE,ZohoBooks.invoices.READ,ZohoBooks.invoices.CREATE,ZohoBooks.invoices.UPDATE
  */
 const code = process.argv[2];
 const cfg = loadConfig();
