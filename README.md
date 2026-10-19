@@ -34,6 +34,7 @@ The design principle: **the LLM reads language; deterministic code decides.** Th
 8. [Getting started](#getting-started)
 9. [Project layout](#project-layout)
 10. [Security, privacy and limitations](#security-privacy-and-limitations)
+11. [Future scope](#future-scope)
 
 ---
 
@@ -221,7 +222,7 @@ The full write-up, including model-selection rationale, safety mechanisms and th
 | Rates | Keep `RATE_POLICY=ask` | A missing rate is asked for, never filled from a price list, unless the client explicitly wants list prices |
 | Chat platform | **Telegram** for group workflows | Official API with groups and no ban risk. If WhatsApp is mandatory, use the **WhatsApp Cloud API** (official, 1:1) rather than Baileys (unofficial, ban risk). |
 | Before production | Label 100–200 real client messages and run `npm run eval` on them | The synthetic sets prove the mechanism; only real messages prove fit |
-| Also before production | Move to paid API tiers with no-training data terms; register the Zoho org for GST and set `DEFAULT_TAX_PERCENT=18` or item tax preferences; run one instance on an always-on host (pm2/Docker); restrict `CUSTOMER_CREATORS` | Free tiers may use data for training and have tight quotas; tax and access control need real settings |
+| Also before production | Move to paid API tiers with no-training data terms; register the Zoho org for GST and set `DEFAULT_TAX_PERCENT=18` or item tax preferences; run one instance on an always-on host (e.g. pm2); restrict `CUSTOMER_CREATORS` | Free tiers may use data for training and have tight quotas; tax and access control need real settings |
 
 ---
 
@@ -235,7 +236,6 @@ The full write-up, including model-selection rationale, safety mechanisms and th
 | Edits ("make it 6 pcs") | ✅ Tested offline; ⏳ not yet run against live Zoho |
 | 18% tax | ⏳ Implemented (`DEFAULT_TAX_PERCENT`); Zoho requires the org to be **registered for GST** before it accepts tax invoices |
 | Larger Gemini models | ⏳ Free tier allows 20 requests/day; resumable with `--retry-errors` |
-| Docker image | ⏳ Dockerfile written, not build-tested |
 
 ---
 
@@ -294,7 +294,6 @@ npm run eval -- --models oracle,rules
 
 **Deploying:** run a single instance per bot token on any always-on host. It only makes outbound connections.
 - pm2: `pm2 start "npm start" --name wpinv`
-- Docker: `docker build -t wpinv . && docker run -d --env-file .env -v wpinv-data:/app/.data -p 127.0.0.1:3001:3001 wpinv`
 
 ---
 
@@ -336,3 +335,13 @@ docs/                               DESIGN, TELEGRAM_SETUP, ZOHO_SETUP, WHATSAPP
 - Thresholds were tuned on a synthetic catalogue.
 
 The production hardening list is in [docs/DESIGN.md](docs/DESIGN.md#10-known-limitations).
+
+---
+
+## Future scope
+
+- **Docker packaging:** a container image with the `.data/` state on a volume and the dashboard bound to localhost, for one-command deployment.
+- **Real-data evaluation:** a labelled set of the client's own messages, run through `npm run eval` before go-live.
+- **GST invoices:** once the Zoho org is GST-registered, per-customer place of supply and intra/inter-state tax.
+- **Learned shorthand:** aliases confirmed through clarifications, promoted only after repeated confirmation (see [docs/DESIGN.md](docs/DESIGN.md#7-learning-aliases-and-shorthand-safely)).
+- **Persistent state:** a database with unique constraints in place of the local JSON state file.
