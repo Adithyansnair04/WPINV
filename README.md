@@ -1,6 +1,6 @@
-# WPINV — chat-group → Zoho Books invoice agent (prototype)
+# WPINV: chat-to-invoice agent for Zoho Books
 
-Add the bot to a **Telegram group** (official Bot API) and send messy invoice requests like
+WPINV turns informal invoice requests posted in a team chat into **draft invoices in Zoho Books**. It reads messages like
 
 ```
 VK
@@ -8,170 +8,331 @@ red lenzo alloy 18 inch x 4
 rate 5200
 ```
 
-and creates a **draft** invoice in Zoho Books. It resolves `VK` to *VK Enterprises* and the product to *Lenzo Alloy Wheel 18" Red*, then replies in the group with the invoice number, lines, totals/tax and the PDF. If a request is ambiguous (`VK red wheel 4`), it asks a short question with **tap-to-choose buttons** instead of guessing.
+resolves `VK` to the customer *VK Enterprises* and the product to the exact catalogue variant *Lenzo Alloy Wheel 18" Red* (among Lenzo/Lenza brands, three colours and three sizes), creates a draft invoice, and replies in the chat with the lines, totals and PDF. When a request is ambiguous, incomplete or refers to something it cannot verify, it **asks a short question instead of guessing**.
 
-- An LLM interprets the language. Deterministic code with transparent scores matches against the **real** Zoho customer and item records.
-- LLMs: **Gemini Flash-Lite** (primary) with automatic fallback to **Groq gpt-oss-20b** when Gemini is overloaded or failing. Both score 95.8% on the held-out set with 0 wrong invoices. Mistral, OpenRouter and any OpenAI-compatible endpoint (e.g. Ollama) plug in the same way. A regex baseline (`rules`) needs no key.
-- **"Rate same as last time"** looks up the customer's last invoice for that item and asks you to confirm the rate and its source invoice.
-- **Edits:** reply to the bot's invoice message with "make it 6 pcs" or "rate 5000" to update that draft (drafts only).
-- **Add customers from chat** (`add customer <name>`, or ➕ when a name is unknown) with a mandatory Yes/Cancel confirmation.
-- **Dashboard** at `http://127.0.0.1:3001`: live activity, the reasoning behind each decision, open questions, and evaluation results.
-- Safe defaults: Zoho is mocked; live mode only *previews* until `INVOICE_ALLOW_LIVE_CREATE=true`; invoices are drafts and are never sent to customers.
+The design principle: **the LLM reads language; deterministic code decides.** The model never sees database IDs and never chooses a record. Every customer, item, quantity and rate is checked against Zoho data and the original message before anything is written.
 
-Design, model comparison and evaluation write-up: [docs/DESIGN.md](docs/DESIGN.md) · Telegram setup: [docs/TELEGRAM_SETUP.md](docs/TELEGRAM_SETUP.md) · Zoho trial setup: [docs/ZOHO_SETUP.md](docs/ZOHO_SETUP.md) · Demo script: [docs/DEMO.md](docs/DEMO.md) · Latest results: [eval/results/summary.md](eval/results/summary.md)
+| | |
+|---|---|
+| **Chat** | Telegram groups (official Bot API) by default; WhatsApp via Baileys (groups, unofficial) or the WhatsApp Cloud API (1:1) as options |
+| **LLMs** | Gemini 3.1 Flash-Lite (primary), Groq gpt-oss-20b (automatic fallback) |
+| **Books** | Zoho Books REST API (India data centre), OAuth refresh tokens, draft invoices only |
+| **Stack** | Node.js 24 + TypeScript, Zod validation, no web framework; 62 offline tests |
+| **Result** | 98% correct actions (95.8% on a held-out set) and **0 wrong invoices across every model tested** |
 
-## Requirements
+---
 
-- Node.js ≥ 20 (developed on Node 24)
-- For live LLM runs: a free [Gemini](https://aistudio.google.com/apikey) API key. Alternatives: [Mistral](https://console.mistral.ai), [OpenRouter](https://openrouter.ai/keys), or local [Ollama](https://ollama.com)
-- For live Zoho: a Zoho Books trial organization (India DC by default)
-- For chat: a Telegram bot token from @BotFather (free). No tunnel or public URL is needed.
+## Contents
 
-## Install
+1. [How it behaves](#how-it-behaves)
+2. [Architecture](#architecture)
+3. [LLM vs deterministic code](#llm-vs-deterministic-code)
+4. [Evaluation methodology](#evaluation-methodology)
+5. [Results](#results)
+6. [Recommendation](#recommendation)
+7. [Current status](#current-status)
+8. [Getting started](#getting-started)
+9. [Project layout](#project-layout)
+10. [Security, privacy and limitations](#security-privacy-and-limitations)
+
+---
+
+## How it behaves
+
+| A user sends | WPINV does |
+|---|---|
+| `VK` / `red lenzo alloy 18 inch x 4` / `rate 5200` | Creates a **draft** invoice and replies with lines, tax, total, status and the PDF |
+| `VK red wheel 4` | Asks which of the four red wheels (tap-to-choose buttons) and the missing rate. Any member may answer by replying to the question. |
+| `Metro - 4 lenzo 18 red, 2 neo 16 red, rate 5200` | Asks: one rate was written for two different products |
+| `VK lenzo 18 red x 4 rate same as last time` | Looks up the customer's last invoice for that item and asks: *"Use ₹5,100 (invoice INV-000101, 28 Sep, paid)?"* with a Yes button |
+| Reply to an invoice message: `make it 6 pcs` | Updates that **draft** and shows old → new. Sent or paid invoices are refused. |
+| `add customer Zenith Motors` (or ➕ on an unknown name) | Asks for **explicit confirmation**, warning about similar existing names, then creates the customer and continues the waiting invoice |
+| `ok thanks`, `good morning` | Nothing |
+| `where is my invoice from yesterday?` | Explains what it can and cannot do; creates nothing |
+
+A read-only **dashboard** (`http://127.0.0.1:3001`) shows every decision with its match scores, open questions, latency, backup-model usage and the evaluation tables.
+
+---
+
+## Architecture
+
+```
+ Telegram group ──Bot API long polling──▶ telegram/bot.ts        (alt: whatsapp/baileys.ts, whatsapp/cloud.ts)
+                                            │ chat allowlist · ignore bots · text/captions · stale & duplicate filter
+                                            ▼  one message at a time per chat
+                                     pipeline/processor.ts
+   1. dedupe by message id ─────────────▶ pipeline/state.ts  (dedupe, pending questions, confirmations, invoice↔message map)
+   2. associate with a pending question (reply-to or same sender within TTL) / confirmation / edit target
+   3. extract ──▶ extraction/extract.ts ──▶ llm/provider.ts   Gemini Flash-Lite ──fails?──▶ Groq gpt-oss-20b     [LLM]
+                  └ Zod schema · one corrective retry · model output treated as untrusted
+   4. load master data ──▶ zoho/cached.ts ──▶ zoho/client.ts (live) | zoho/mock.ts (offline)
+   5. decide ──▶ pipeline/decide.ts + matching/* + pipeline/grounding.ts                                     [deterministic]
+                  ignore · respond · clarify (with buttons) · create
+   6. create ──▶ idempotency key → GET /invoices?reference_number → POST /invoices?send=false (draft)
+   7. reply in the chat (quoted): number, lines, subtotal/tax/total, status, PDF ──▶ dashboard/activity log
+```
+
+| Module | Responsibility |
+|---|---|
+| `telegram/`, `whatsapp/` | Transports. Each turns platform events into `IncomingMessage` and implements `send()`; the pipeline is platform-agnostic. |
+| `extraction/` | Prompt, Zod schema, LLM extractor with corrective retry, primary→fallback wrapper, regex baseline |
+| `llm/provider.ts` | Gemini and OpenAI-compatible providers (Groq, Mistral, OpenRouter, Ollama…), JSON mode, timeouts, backoff |
+| `matching/` | Text normalisation (rim sizes, tyre specs, pack counts, synonyms, typos incl. swapped letters) and scored customer/item matching |
+| `pipeline/decide.ts` | Turns an extraction plus master data into a decision; every problem becomes a question |
+| `pipeline/grounding.ts` | Every quantity and rate must appear in the message; one value cannot silently cover several items |
+| `pipeline/processor.ts` | Orchestration: dedupe, clarifications, confirmations, edits, idempotent creation, replies, structured logs |
+| `zoho/` | OAuth refresh (cached, single-flight), paginated reads, invoices, PDF, taxes, contacts; in-memory mock from seed data |
+| `dashboard/` | Read-only web view of activity, pending questions and evaluation results |
+| `eval/` | Labelled-case runner, metrics, markdown reports |
+
+---
+
+## LLM vs deterministic code
+
+| Concern | Owned by | How |
+|---|---|---|
+| Is this an invoice request, a reply to a question, an edit, chit-chat, or a follow-up we don't support? | **LLM** | Intent classification inside the extraction |
+| What customer mention, product words, quantities, rates and currency does the message contain? | **LLM** | Copies text as written; never sees the database |
+| Is the LLM output well-formed? | Deterministic | Zod schema; numeric strings coerced, anything else rejected; one corrective retry, then the fallback model |
+| Which Zoho customer is "VK" / "royl alloys" / "kwh"? | Deterministic | Exact name/alias → initials → token match with typo tolerance. Accepted only at score ≥ 0.9 **and** a 0.15 margin over the runner-up; ambiguous names (e.g. two "Sharma"s) always ask. |
+| Which exact item is "red lenzo 18"? | Deterministic | Token scoring where unmatched words count against an item (so `blue lenzo 18` never becomes the red one) and exact catalogue words are never typo-matched to another word (`lenzo` ≠ `lenza`) |
+| Are the numbers real? | Deterministic | Quantities and rates must appear in the message (`4pc`, `₹5,200`, `5.6k`, `four` understood); one rate written once cannot cover two products |
+| Is the quantity/rate/currency valid? | Deterministic | Positive integer quantity, positive rate, INR only; otherwise ask |
+| "Rate same as last time" | Deterministic + **user** | Zoho lookup of the last non-void invoice for that customer and item; the user confirms the rate and its source invoice |
+| Tax and totals | **Zoho** | Zoho calculates tax from its own tax setup; the bot never computes tax in live mode |
+| Creating customers, editing invoices | Deterministic + **user** | Explicit confirmation or reply-to-invoice; drafts only; single-use, expiring confirmations |
+| Duplicates and retries | Deterministic | Message-id dedupe plus an idempotency key stored as Zoho `reference_number` |
+
+Every decision carries a trace (query, candidates, scores, problems), which is logged and shown on the dashboard.
+
+---
+
+## Evaluation methodology
+
+- **Main set: 50 labelled cases** ([eval/cases.json](eval/cases.json)) across 12 categories:
+
+  | Category | Cases |
+  |---|---|
+  | Straightforward | 5 |
+  | Customer aliases | 5 |
+  | Word order and informal Hinglish/Tamil-English | 5 |
+  | Typos | 4 |
+  | Confusable variants | 4 |
+  | Missing fields | 5 |
+  | Ambiguous requests | 5 |
+  | Invalid values | 4 |
+  | Non-invoice chatter | 4 |
+  | Previous-invoice follow-ups | 4 |
+  | Multi-turn clarification flows | 5 |
+
+  The flows include a second group member trying to complete someone else's request.
+- **Held-out set: 24 cases** ([eval/holdout.json](eval/holdout.json)) with new phrasings, **committed before any model was run on them** (commit `e58cbc0`), to measure generalisation.
+- **Ground truth per case:** the expected action (`create`, `clarify`, `respond` or `ignore`, with explicitly acceptable alternatives for borderline cases), plus customer, items (by SKU), quantity and rate. Labels can say "must *not* resolve" for ambiguous customers or items.
+- **Isolation:** every case runs on a fresh in-memory copy of the Zoho data (12 customers, 20 items, a small invoice history). There is no network to Zoho and no chat; only the LLM call is real.
+- **Stage separation:**
+
+  | Stage | What it measures |
+  |---|---|
+  | Extraction | Intent, line count, quantity, rate |
+  | Record matching | Customer and item resolution |
+  | Decision | Action accuracy, clarification behaviour, wrong invoices |
+
+  An **oracle** run feeds hand-labelled ideal extractions ([eval/gold.json](eval/gold.json)) through the same pipeline, to measure matching and decision quality without the LLM. A **regex baseline** shows what the LLM adds.
+- **Key definitions:**
+  - *Confidently wrong invoice:* any invoice that should not exist, or differs in customer, item, quantity or rate.
+  - *Clarification recall:* cases that must ask, where the bot asked.
+  - *Unnecessary clarification:* cases that should invoice, where the bot asked instead.
+  - *Latency:* wall-clock time per model turn, including retries.
+- **Reproduce:**
+
+  ```bash
+  npm run eval                   # main set, every model in EVAL_MODELS
+  npm run eval -- --set holdout  # held-out set
+  ```
+
+  Results go to [eval/results/summary.md](eval/results/summary.md) and per-case JSON. Cases blocked by provider quota are excluded and reported as coverage, never as wrong answers.
+
+---
+
+## Results
+
+Measured 2026-10-18/19 against mocked Zoho data. All numbers are produced by `npm run eval`; nothing is estimated.
+
+### Main set (50 cases)
+
+| Metric | Gemini 3.1 Flash-Lite | Groq gpt-oss-20b | Groq gpt-oss-120b | Regex baseline | Oracle (no LLM) |
+|---|---|---|---|---|---|
+| **Correct action** | **98%** (49/50) | 94% (47/50) | 92% (46/50) | 72% (36/50) | 100% |
+| **Confidently wrong invoices** | **0** | **0** | **0** | **0** | 0 |
+| Exactly-correct invoices | **96.3%** (26/27) | 88.9% (24/27) | 85.2% (23/27) | 59.3% (16/27) | 100% |
+| *Extraction:* intent | 98% | 98% | 98% | 93.9% | 100% |
+| *Extraction:* quantity | 97.6% | 100% | 100% | 78.6% | 100% |
+| *Extraction:* rate | 92.9% | 100% | 100% | 88.1% | 100% |
+| *Extraction:* line count | 95.1% | 97.6% | 97.6% | 92.7% | 100% |
+| *Matching:* customer | **100%** (41/41) | 95.1% | 92.7% | 95.1% | 100% |
+| *Matching:* item | 97.7% (42/43) | 97.7% | 97.7% | 67.4% | 100% |
+| *Clarification:* recall (asked when it must) | 100% (19/19) | 100% | 100% | 100% | 100% |
+| *Clarification:* unnecessary questions | **3.7%** (1/27) | 11.1% | 14.8% | 40.7% | 0% |
+| Non-invoice messages treated as invoices | 0% | 0% | 0% | 25% | 0% |
+| Latency p50 / p95 / mean | **1.3 / 6.8 / 2.3 s** | 4.9 / 11.0 / 5.0 s* | 1.9 / 8.4 / 3.5 s* | <1 ms | <1 ms |
+| Model failures / invalid JSON / 429 retries | 0 / 0 / 0 | 0 / 0 / 32* | 0 / 0 / 26* | – | – |
+
+### Held-out set (24 unseen cases)
+
+| Metric | Gemini 3.1 Flash-Lite | Groq gpt-oss-20b | Groq gpt-oss-120b | Regex baseline |
+|---|---|---|---|---|
+| **Correct action** | **95.8%** (23/24) | **95.8%** (23/24) | 70.8% (17/24) | 45.8% (11/24) |
+| **Confidently wrong invoices** | **0** | **0** | **0** | **0** |
+| Exactly-correct invoices | 92.3% (12/13) | 92.3% (12/13) | 46.2% (6/13) | 15.4% (2/13) |
+| *Extraction:* intent / quantity / rate | 100 / 100 / 100% | 100 / 100 / 100% | 100 / 95 / 85% | 83 / 40 / 40% |
+| *Matching:* customer / item | 100 / 95% | 100 / 95% | 78.9 / 85% | 78.9 / 35% |
+| *Clarification:* recall / unnecessary | 100% / 7.7% | 100% / 7.7% | 100% / **53.8%** | 100% / 69.2% |
+| Latency p50 / p95 | 1.7 / 5.1 s | 1.6 / 8.7 s | 1.4 / 3.2 s | <1 ms |
+
+\* Groq runs hit the free tier's per-minute limit at evaluation pace (one call every 2.5 s). Every 429 was retried successfully, but the waits inflate latency. At normal chat pace, gpt-oss-20b answers in about 1–2 s.
+
+### What the numbers say
+
+1. **Safety comes from the deterministic layer, not the model.** Every LLM, and even the regex baseline, produced **zero wrong invoices** on both sets.
+   - Model mistakes became questions.
+   - Flash-Lite's 92.9% rate accuracy on the main set still gave 0 wrong invoices, because the grounding check caught a rate the model had spread across two products.
+2. **The LLM's value is fewer unnecessary questions.** Flash-Lite cuts them from 40.7% (regex) to 3.7% and raises exactly-correct invoices from 59% to 96%.
+3. **Bigger is not better for this task.** gpt-oss-20b matches Flash-Lite on held-out data, while gpt-oss-120b drops to 70.8%. The larger model tends to lose the customer when merging a clarification answer, and sometimes splits the customer name into a product line. The task is short structured extraction, where following the JSON contract matters more than size.
+4. **The held-out set did its job.** A heuristic tuned on the main set made one wrong invoice on unseen data. It was restricted before shipping, and the clean pre-tuning held-out score (95.8%) is the generalisation number. Run history is in [eval/results/holdout-history/](eval/results/holdout-history/).
+5. **Limits of this evaluation:**
+   - The catalogue is synthetic and small.
+   - One author wrote both case sets.
+   - The oracle's 100% is partly by construction: labels and matcher were written together.
+   - Free-tier latency includes occasional slow outliers.
+   - A real deployment needs a labelled sample of the client's own messages.
+
+The full write-up, including model-selection rationale, safety mechanisms and the automation policy, is in [docs/DESIGN.md](docs/DESIGN.md).
+
+---
+
+## Recommendation
+
+| Decision | Recommendation | Why |
+|---|---|---|
+| Primary model | **Gemini 3.1 Flash-Lite** | Highest accuracy on both sets (98% / 95.8%), fastest, generous free quota |
+| Fallback | **Groq gpt-oss-20b** | Different vendor (independent outages), equal held-out accuracy; covers Gemini's 503 overloads seen in practice |
+| Larger models | **Not needed** | They cannot improve safety, which is already enforced deterministically. The measured large model was worse. Re-evaluate only if the client's real messages show a gap. |
+| Automation level | **Create drafts automatically; humans send them** | Every invoice stays reviewable in Zoho. Ambiguity, missing data, new customers, previous rates and edits always go through the user. |
+| Rates | Keep `RATE_POLICY=ask` | A missing rate is asked for, never filled from a price list, unless the client explicitly wants list prices |
+| Chat platform | **Telegram** for group workflows | Official API with groups and no ban risk. If WhatsApp is mandatory, use the **WhatsApp Cloud API** (official, 1:1) rather than Baileys (unofficial, ban risk). |
+| Before production | Label 100–200 real client messages and run `npm run eval` on them | The synthetic sets prove the mechanism; only real messages prove fit |
+| Also before production | Move to paid API tiers with no-training data terms; register the Zoho org for GST and set `DEFAULT_TAX_PERCENT=18` or item tax preferences; run one instance on an always-on host (pm2/Docker); restrict `CUSTOMER_CREATORS` | Free tiers may use data for training and have tight quotas; tax and access control need real settings |
+
+---
+
+## Current status
+
+| Area | Status |
+|---|---|
+| Telegram bot (groups, buttons, replies, PDFs) | ✅ Running live |
+| Gemini primary + Groq fallback | ✅ Live; fallback verified by forcing a primary failure |
+| Zoho Books (India DC) | ✅ Verified live: OAuth refresh, customer/item reads, seeding, draft creation, PDF download, add-customer from chat, previous-rate lookup |
+| Edits ("make it 6 pcs") | ✅ Tested offline; ⏳ not yet run against live Zoho |
+| 18% tax | ⏳ Implemented (`DEFAULT_TAX_PERCENT`); Zoho requires the org to be **registered for GST** before it accepts tax invoices |
+| Larger Gemini models | ⏳ Free tier allows 20 requests/day; resumable with `--retry-errors` |
+| Docker image | ⏳ Dockerfile written, not build-tested |
+
+---
+
+## Getting started
+
+**Requirements:**
+- Node.js ≥ 20
+- A Telegram bot token from [@BotFather](https://t.me/BotFather)
+- A [Gemini API key](https://aistudio.google.com/apikey); a [Groq key](https://console.groq.com/keys) for the fallback is optional
+- For live invoices, a Zoho Books organization
 
 ```bash
 npm install
-cp .env.example .env      # then fill in keys as needed
+cp .env.example .env     # real values go in .env only; .env.example holds placeholders and is committed
 ```
 
-## Commands
-
-| Command | What it does |
-|---|---|
-| `npm test` | 62 offline tests: matcher, schema, decision engine, number grounding, processor (dedupe, idempotency, clarifications, previous rates, edits), Zoho client, Telegram/WhatsApp transports, dashboard. No network. |
-| `npm run typecheck` | `tsc --noEmit` |
-| `npm run simulate` | Interactive chat simulator using the same processor as the bot (mock Zoho by default). |
-| `npm run simulate -- --model rules -m "VK red wheel 4"` | One-shot simulation; `-m ">2"` replies to the last question. Add `--dashboard` to watch it on the dashboard. |
-| `npm run eval` | Runs the 50 labeled cases through every model in `EVAL_MODELS` against mocked Zoho and writes `eval/results/summary.md`. |
-| `npm run eval -- --set holdout` | Runs the 24-case held-out set (frozen before any tuning) into `eval/results/holdout/`. |
-| `npm run eval -- --retry-errors` | Re-runs only cases that were blocked by provider quota, keeping the rest. |
-| `npm start` | Starts the bot on the configured transport (Telegram long polling by default). |
-| `npm run zoho:token -- <grant_code>` | Exchanges a Zoho Self Client grant code for a refresh token. |
-| `npm run zoho:check` | Read-only Zoho check: token refresh, org list, customer/item counts, seed coverage. |
-| `npm run zoho:seed -- --confirm` | Creates the synthetic customers/items in a trial org (skips existing names). |
-| `npm run seed:csv` | Regenerates the importable CSVs in `data/seed/`. |
-
-## Configuration
-
-All configuration is in `.env`, validated with Zod at startup ([src/config.ts](src/config.ts)). Values in `.env` take precedence over variables already in the shell, so stale copies (e.g. from VS Code's `useEnvFile`) never win. See [.env.example](.env.example) for every option. Key ones:
-
-- `LLM_MODEL`: `provider:model`, e.g. `gemini:gemini-3.1-flash-lite`, `gemini:gemini-2.5-flash`, `mistral:<model>`, `groq:<model>`, `openrouter:<model>`, `compat:<model>` (any OpenAI-compatible endpoint via `COMPAT_BASE_URL`, e.g. Ollama), or `rules`.
-- `ZOHO_MODE`: `mock` (default) or `live`.
-- `INVOICE_ALLOW_LIVE_CREATE`: must be `true` before anything is written to a real Zoho org.
-- `ZOHO_API_BASE` / `ZOHO_ACCOUNTS_URL`: India DC by default (`https://www.zohoapis.in/books/v3`, `https://accounts.zoho.in`).
-- `CHAT_TRANSPORT`: `telegram` (default; groups, official API), `whatsapp_cloud` (official, 1:1 only), or `baileys` (unofficial WhatsApp groups, ban risk).
-- `TELEGRAM_BOT_TOKEN`, `TELEGRAM_ALLOWED_CHATS`: bot token and the group/chat ids the bot acts in. Every other chat is ignored.
-- `RATE_POLICY`: `ask` (default: missing rate → clarify) or `item_default` (use the item's Zoho selling rate).
-- `DEFAULT_TAX_PERCENT`: e.g. `18` to tax lines whose item has no tax. Needs a GST-registered Zoho org; see [docs/ZOHO_SETUP.md](docs/ZOHO_SETUP.md#tax-18-gst).
-- `LLM_FALLBACK_MODEL`: backup model used when `LLM_MODEL` fails, e.g. `groq:openai/gpt-oss-20b`.
-
-## Quick demo without any credentials
+**Try it offline, with no keys:**
 
 ```bash
-npm run simulate -- --model rules -m "VK\nred lenzo alloy 18 inch x 4\nrate 5200" -m "Royal Alloys - neo 16 x 4 rate 4000" -m ">2" -m "ok thanks"
+npm test                                            # 62 tests, no network
+npm run simulate -- --model rules --dashboard -m "VK\nred lenzo alloy 18 inch x 4\nrate 5200"
 npm run eval -- --models oracle,rules
 ```
 
-With a Gemini key in `.env`, drop `--model rules` to use the LLM.
+**Run it for real:**
+1. **Telegram.** Create the bot, disable privacy mode, add it to a group and allow the chat id. See [docs/TELEGRAM_SETUP.md](docs/TELEGRAM_SETUP.md).
+2. **Zoho.**
+   - `npm run zoho:token -- <grant code>` saves the refresh token and org id into `.env`.
+   - Then `npm run zoho:check` and `npm run zoho:seed -- --confirm`. See [docs/ZOHO_SETUP.md](docs/ZOHO_SETUP.md).
+3. **Go live in steps.**
+   - Start with `ZOHO_MODE=live` and `INVOICE_ALLOW_LIVE_CREATE=false` (preview replies only).
+   - Then set `INVOICE_ALLOW_LIVE_CREATE=true` to create drafts.
+4. **Start:** `npm start`. The dashboard is at `http://127.0.0.1:3001`.
 
-## Running in a Telegram group
+**Key settings** (all in `.env`, validated at startup; `.env` overrides stale shell variables):
 
-Full walkthrough: [docs/TELEGRAM_SETUP.md](docs/TELEGRAM_SETUP.md).
+| Setting | Default | Meaning |
+|---|---|---|
+| `LLM_MODEL` / `LLM_FALLBACK_MODEL` | `gemini:gemini-3.1-flash-lite` / – | `provider:model` for `gemini`, `groq`, `mistral`, `openrouter`, `compat` (any OpenAI-compatible URL), or `rules` |
+| `CHAT_TRANSPORT` | `telegram` | `telegram`, `whatsapp_cloud` or `baileys` |
+| `ZOHO_MODE`, `INVOICE_ALLOW_LIVE_CREATE` | `mock`, `false` | Live Zoho, and whether drafts may be created |
+| `RATE_POLICY` | `ask` | `item_default` uses the Zoho selling rate when none is given |
+| `DEFAULT_TAX_PERCENT` | – | Tax on lines whose item has none (needs a GST-registered org) |
+| `CUSTOMER_CREATE`, `CUSTOMER_CREATORS` | `confirm`, – | Add-customer from chat, and an optional allowlist (`/whoami` shows ids) |
+| `TELEGRAM_ALLOWED_CHATS` | – | Chats the bot acts in; others are ignored and logged once |
 
-1. Create a bot with **@BotFather** (`/newbot`) and put the token in `TELEGRAM_BOT_TOKEN`.
-2. In BotFather, `/setprivacy` → **Disable** (or make the bot a group admin) so it can read normal group messages, then add it to your group.
-3. `npm start`, write anything in the group, copy the logged `chatId` into `TELEGRAM_ALLOWED_CHATS`, and restart.
-4. Send requests in the group. Reply to the bot's question to answer a clarification (any member may answer that way); the next message from the **same person** within `CLARIFY_TTL_MINUTES` also counts.
+**Commands:**
 
-The bot ignores other bots, unlisted chats, messages older than `MAX_MESSAGE_AGE_SEC` and already-processed message ids.
-
-**Other transports.** The processor doesn't depend on the chat platform:
-- `CHAT_TRANSPORT=whatsapp_cloud` uses Meta's official WhatsApp Cloud API. It is 1:1 only and needs a public webhook URL; see [docs/WHATSAPP_CLOUD_SETUP.md](docs/WHATSAPP_CLOUD_SETUP.md).
-- `CHAT_TRANSPORT=baileys` uses unofficial WhatsApp groups, with a ban risk.
-
-## Using it in the group
-
-| You send | Bot does |
+| Command | Purpose |
 |---|---|
-| `VK` / `red lenzo alloy 18 inch x 4` / `rate 5200` | Creates a draft invoice and replies with lines, tax, total and the PDF. |
-| `VK red wheel 4` | Asks which wheel (buttons) and the rate. Tap a button or reply to the question. |
-| `VK lenzo 18 red x 4 rate same as last time` | "Use the last rate: ₹5,100 (invoice INV-000101)?" Tap **Yes** or reply with another rate. |
-| Reply to an invoice message: `make it 6 pcs` | Updates that draft and shows old → new. Refused for sent or paid invoices. |
-| `add customer Zenith Motors` | Asks **"Add new customer ‘Zenith Motors’? (similar: Sri Ganesh Motors)"** with ✅ Yes / ❌ Cancel. Created only after Yes. |
-| An invoice for an unknown customer | Offers **➕ Add new customer**; after you confirm, the same invoice continues. |
-| `/whoami` | Shows your user id and the chat id (for `CUSTOMER_CREATORS` / `TELEGRAM_ALLOWED_CHATS`). |
-| `ok thanks`, `good morning` | Nothing. |
-| `where is my invoice from yesterday?`, `cancel the last bill` | A short "can't do that here" reply. |
+| `npm start` | Run the bot |
+| `npm test` / `npm run typecheck` | Offline tests / type check |
+| `npm run simulate [-- --dashboard]` | Chat with the same pipeline in the terminal |
+| `npm run eval [-- --set holdout --models … --retry-errors]` | Evaluation |
+| `npm run zoho:token`, `zoho:check`, `zoho:seed` | Zoho setup |
 
-## Dashboard
+**Deploying:** run a single instance per bot token on any always-on host. It only makes outbound connections.
+- pm2: `pm2 start "npm start" --name wpinv`
+- Docker: `docker build -t wpinv . && docker run -d --env-file .env -v wpinv-data:/app/.data -p 127.0.0.1:3001:3001 wpinv`
 
-While the bot runs, open <http://127.0.0.1:3001>. It shows:
-- every message's outcome, with the matched customer and items (with scores), quantities, rates and latency;
-- the reason behind every question;
-- open clarifications and when they expire;
-- the latest evaluation tables.
-
-It is read-only, has no login, and listens only on your machine by default (`DASHBOARD_HOST`). Message text is shown only if `LOG_MESSAGE_TEXT=true`. To try it without Telegram: `npm run simulate -- --dashboard`.
-
-## Deploying
-
-The bot only makes outbound connections (Telegram long polling, the LLM, Zoho), so any always-on machine works. Run **one** instance per bot token.
-
-- **pm2 on a VPS:**
-
-  ```bash
-  npm ci && npm i -g pm2 && pm2 start "npm start" --name wpinv && pm2 save
-  ```
-
-- **Docker** (written, but not build-tested here because Docker wasn't installed):
-
-  ```bash
-  docker build -t wpinv .
-  docker run -d --name wpinv --env-file .env -v wpinv-data:/app/.data -p 127.0.0.1:3001:3001 wpinv
-  ```
-
-  The volume keeps dedupe and clarification state across restarts. The dashboard port is bound to localhost on the host; reach it from elsewhere with an SSH tunnel, never by exposing it.
-
-## Going live with Zoho Books
-
-Follow [docs/ZOHO_SETUP.md](docs/ZOHO_SETUP.md). In short: create a trial org, create a Self Client in the Zoho API console, run `npm run zoho:token`, import `data/seed/*.csv` (or `npm run zoho:seed -- --confirm`), then run `npm run zoho:check`. Next set `ZOHO_MODE=live`; the bot then replies with **dry-run previews**. Set `INVOICE_ALLOW_LIVE_CREATE=true` to create real **draft** invoices.
+---
 
 ## Project layout
 
 ```
 src/
-  config.ts, logger.ts, http.ts     env validation, redacting JSON logs, fetch with timeout/backoff/Retry-After
-  types.ts                          domain types + BooksApi interface
-  llm/provider.ts                   Mistral/Groq/OpenRouter/compat (OpenAI-style) and Gemini providers
-  extraction/                       prompt, Zod schema, LLM extractor with one corrective retry, regex baseline
-  matching/                         normalization (sizes, tyre specs, synonyms) + scored customer/item matcher
-  pipeline/                         decide (create/clarify/respond/ignore), processor, state (dedupe, pending), format
-  zoho/                             OAuth + REST client, catalogue cache, in-memory mock from seed data
-  telegram/bot.ts                   Telegram Bot API: long polling, chat allowlist, quoted replies, option buttons, PDFs (default)
-  dashboard/                        read-only web dashboard (activity log, pending questions, eval results)
-  whatsapp/cloud.ts                 WhatsApp Cloud API (1:1): signed webhook server, send text/PDF
-  whatsapp/baileys.ts               unofficial WhatsApp groups (CHAT_TRANSPORT=baileys)
+  index.ts, app.ts, config.ts       entry point, wiring, Zod-validated settings
+  telegram/, whatsapp/              chat transports
+  llm/, extraction/                 providers, prompt, schema, fallback, regex baseline
+  matching/, pipeline/              normalisation and scoring; decide, grounding, processor, state, format
+  zoho/                             Zoho Books client, cache, offline mock
+  dashboard/                        read-only web dashboard
   cli/                              simulator, Zoho token/check/seed, CSV export
-  eval/                             runner, metrics, markdown report
-data/seed/                          synthetic customers/items (JSON + Zoho-importable CSV)
-data/aliases.json                   business-approved customer shorthand (by name, no IDs)
-eval/cases.json, eval/gold.json     50 labeled cases + ideal extractions for the oracle run
-eval/holdout.json                   24 held-out cases, committed before any model was run on them
-data/seed/history.json              synthetic past invoices (for "rate same as last time" in mock mode)
-test/                               node:test suites
+  eval/                             evaluation runner, metrics, reports
+data/seed/                          synthetic customers, items, invoice history (JSON + Zoho-importable CSV)
+data/aliases.json                   business-approved customer shorthand
+eval/                               cases.json (50), holdout.json (24), gold.json, results/
+test/                               62 node:test tests
+docs/                               DESIGN, TELEGRAM_SETUP, ZOHO_SETUP, WHATSAPP_CLOUD_SETUP, DEMO
 ```
 
-## Security and privacy notes
+---
 
-- Secrets live only in `.env` (git-ignored). Logs redact token/secret/authorization fields. Message text is **not** logged unless `LOG_MESSAGE_TEXT=true`, and chat, sender and message IDs are hashed in logs.
-- `.data/` holds dedupe and pending-clarification state and simulator PDFs (plus the session if you use the legacy Baileys transport). It is git-ignored.
-- `TELEGRAM_BOT_TOKEN` (and the WhatsApp tokens, if used) are secrets: `.env` only. If a bot token leaks, revoke it with @BotFather `/revoke`.
-- Seed data is synthetic.
+## Security, privacy and limitations
 
-## Why Telegram
+**Security and privacy:**
+- Secrets live only in `.env` (git-ignored). Logs redact tokens and keys, and hash chat and sender ids.
+- Message text is not logged unless `LOG_MESSAGE_TEXT=true`.
+- The dashboard is read-only, has no authentication and binds to `127.0.0.1` by default. Never expose it publicly.
+- Invoices are always drafts created with `send=false`. The bot cannot send, void or delete anything in Zoho.
+- On free LLM tiers, prompts may be used for training. Use paid tiers with no-training terms for real customer data.
 
-The workflow needs a **shared group**. On WhatsApp the options are poor:
-- **Baileys** (unofficial): groups work, but it carries a ban risk and breaks easily.
-- **WhatsApp Cloud API** (official): groups need an Official Business Account, so in practice it's 1:1 only.
+**Prototype limits:**
+- State is a local JSON file, not a transactional database.
+- Authorization is a chat allowlist plus the optional creator allowlist.
+- Only text messages are processed, and quantities must be whole numbers.
+- One line is changed per edit.
+- Thresholds were tuned on a synthetic catalogue.
 
-Telegram's official Bot API supports groups, is free, has no ban risk, and needs no public URL. The trade-off: the team must use Telegram. The WhatsApp transports remain available. See [docs/DESIGN.md](docs/DESIGN.md#9-transport-choice).
+The production hardening list is in [docs/DESIGN.md](docs/DESIGN.md#10-known-limitations).
