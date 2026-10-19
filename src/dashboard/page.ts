@@ -56,7 +56,7 @@ function kpis(acts) {
   const n = (a) => acts.filter((x) => a.includes(x.action)).length;
   const lat = acts.filter((x) => x.model).map((x) => x.latencyMs).sort((a, b) => a - b);
   const p50 = lat.length ? lat[Math.floor(lat.length / 2)] : null;
-  const items = [['Messages', acts.length], ['Invoices', n(['created', 'existing'])], ['Questions asked', n(['clarify'])], ['Ignored / replied', n(['ignore', 'respond'])], ['Errors', n(['error'])], ['Median latency', p50 == null ? '–' : (p50 / 1000).toFixed(1) + ' s']];
+  const items = [['Messages', acts.length], ['Invoices', n(['created', 'existing'])], ['Questions asked', n(['clarify'])], ['Ignored / replied', n(['ignore', 'respond'])], ['Answered by backup model', acts.filter((x) => x.model && x.model.includes('(fallback)')).length], ['Errors', n(['error'])], ['Median latency', p50 == null ? '–' : (p50 / 1000).toFixed(1) + ' s']];
   document.getElementById('kpis').innerHTML = items.map(([l, v]) => '<div class="kpi"><div class="v">' + esc(v) + '</div><div class="l">' + esc(l) + '</div></div>').join('');
 }
 
@@ -95,7 +95,9 @@ async function refresh() {
     document.getElementById('updated').textContent = 'updated ' + new Date().toLocaleTimeString();
   } catch { document.getElementById('updated').textContent = 'bot not reachable'; }
 }
-get('/api/eval').then(evaluation).catch(() => {});
+const loadEval = () => get('/api/eval').then(evaluation).catch(() => {});
+loadEval();
+setInterval(loadEval, 30000);
 refresh();
 setInterval(refresh, 4000);
 </script>
