@@ -1,0 +1,1125 @@
+{
+  "model": "groq:openai/gpt-oss-120b",
+  "status": "ok",
+  "timestamp": "2026-10-19T13:30:43.378Z",
+  "caseCount": 24,
+  "casesScored": 24,
+  "blocked": [],
+  "partial": false,
+  "metrics": {
+    "headline": {
+      "action_accuracy": {
+        "num": 17,
+        "den": 24,
+        "pct": 70.8
+      },
+      "customer_match_accuracy": {
+        "num": 15,
+        "den": 19,
+        "pct": 78.9
+      },
+      "item_match_accuracy": {
+        "num": 17,
+        "den": 20,
+        "pct": 85
+      },
+      "quantity_accuracy": {
+        "num": 19,
+        "den": 20,
+        "pct": 95
+      },
+      "rate_accuracy": {
+        "num": 17,
+        "den": 20,
+        "pct": 85
+      },
+      "clarification_recall": {
+        "num": 9,
+        "den": 9,
+        "pct": 100
+      },
+      "unnecessary_clarification_rate": {
+        "num": 7,
+        "den": 13,
+        "pct": 53.8
+      },
+      "confidently_wrong_invoices": 0,
+      "non_invoice_false_positives": {
+        "num": 0,
+        "den": 5,
+        "pct": 0
+      },
+      "exact_invoice_rate": {
+        "num": 6,
+        "den": 13,
+        "pct": 46.2
+      }
+    },
+    "extraction": {
+      "intent_accuracy": {
+        "num": 24,
+        "den": 24,
+        "pct": 100
+      },
+      "line_count_accuracy": {
+        "num": 17,
+        "den": 19,
+        "pct": 89.5
+      },
+      "quantity_accuracy": {
+        "num": 19,
+        "den": 20,
+        "pct": 95
+      },
+      "rate_accuracy": {
+        "num": 17,
+        "den": 20,
+        "pct": 85
+      }
+    },
+    "matching": {
+      "customer_match_accuracy": {
+        "num": 15,
+        "den": 19,
+        "pct": 78.9
+      },
+      "item_match_accuracy": {
+        "num": 17,
+        "den": 20,
+        "pct": 85
+      }
+    },
+    "latency_ms": {
+      "model_turns": 27,
+      "mean": 1658,
+      "p50": 1432,
+      "p95": 3237,
+      "max": 3574,
+      "total": 44778
+    },
+    "reliability": {
+      "model_failures": 0,
+      "invalid_outputs": 0,
+      "http_retries": 0,
+      "rate_limit_events": 0
+    },
+    "confidently_wrong_case_ids": [],
+    "per_category": {
+      "straightforward": {
+        "ok": 2,
+        "n": 4
+      },
+      "alias": {
+        "ok": 1,
+        "n": 1
+      },
+      "typo": {
+        "ok": 0,
+        "n": 1
+      },
+      "informal": {
+        "ok": 1,
+        "n": 2
+      },
+      "word_order": {
+        "ok": 2,
+        "n": 2
+      },
+      "ambiguous": {
+        "ok": 2,
+        "n": 2
+      },
+      "missing": {
+        "ok": 2,
+        "n": 2
+      },
+      "invalid": {
+        "ok": 2,
+        "n": 2
+      },
+      "non_invoice": {
+        "ok": 3,
+        "n": 3
+      },
+      "previous_invoice": {
+        "ok": 2,
+        "n": 2
+      },
+      "clarification_flow": {
+        "ok": 0,
+        "n": 3
+      }
+    }
+  },
+  "results": [
+    {
+      "id": "H01",
+      "category": "straightforward",
+      "turns": [
+        {
+          "action": "clarify",
+          "reason": "unknown_item,missing_quantity,missing_rate",
+          "latencyMs": 2530,
+          "usedModel": true,
+          "meta": {
+            "model": "groq:openai/gpt-oss-120b",
+            "latencyMs": 2525.3306,
+            "attempts": 1,
+            "retries": 0,
+            "rateLimited": 0,
+            "invalidOutputs": 0
+          }
+        }
+      ],
+      "intent": "invoice_request",
+      "extractedItems": [
+        {
+          "description": "Kerala Wheel Hub",
+          "quantity": null,
+          "rate": null
+        },
+        {
+          "description": "Lenza 18 inch red alloys",
+          "quantity": 4,
+          "rate": 5400
+        }
+      ],
+      "resolvedCustomer": "Kerala Wheel Hub",
+      "resolvedLines": [
+        {
+          "status": "not_found",
+          "sku": null
+        },
+        {
+          "status": "matched",
+          "sku": "LZA-18-RED"
+        }
+      ],
+      "problems": [
+        "unknown_item",
+        "missing_quantity",
+        "missing_rate"
+      ]
+    },
+    {
+      "id": "H02",
+      "category": "straightforward",
+      "turns": [
+        {
+          "action": "create",
+          "latencyMs": 2374,
+          "usedModel": true,
+          "meta": {
+            "model": "groq:openai/gpt-oss-120b",
+            "latencyMs": 2357.1317,
+            "attempts": 1,
+            "retries": 0,
+            "rateLimited": 0,
+            "invalidOutputs": 0
+          }
+        }
+      ],
+      "intent": "invoice_request",
+      "extractedItems": [
+        {
+          "description": "durotrac 185/65r15",
+          "quantity": 2,
+          "rate": 4400
+        }
+      ],
+      "resolvedCustomer": "Bismi Auto World",
+      "resolvedLines": [
+        {
+          "status": "matched",
+          "sku": "DRT-185-65-15"
+        }
+      ],
+      "problems": [],
+      "invoice": {
+        "customer": "Bismi Auto World",
+        "lines": [
+          {
+            "sku": "DRT-185-65-15",
+            "quantity": 2,
+            "rate": 4400
+          }
+        ]
+      }
+    },
+    {
+      "id": "H03",
+      "category": "alias",
+      "turns": [
+        {
+          "action": "create",
+          "latencyMs": 784,
+          "usedModel": true,
+          "meta": {
+            "model": "groq:openai/gpt-oss-120b",
+            "latencyMs": 781.1675000000014,
+            "attempts": 1,
+            "retries": 0,
+            "rateLimited": 0,
+            "invalidOutputs": 0
+          }
+        }
+      ],
+      "intent": "invoice_request",
+      "extractedItems": [
+        {
+          "description": "VKS tyre valve sets",
+          "quantity": 6,
+          "rate": 120
+        }
+      ],
+      "resolvedCustomer": "VKS Auto Spares",
+      "resolvedLines": [
+        {
+          "status": "matched",
+          "sku": "VLV-4"
+        }
+      ],
+      "problems": [],
+      "invoice": {
+        "customer": "VKS Auto Spares",
+        "lines": [
+          {
+            "sku": "VLV-4",
+            "quantity": 6,
+            "rate": 120
+          }
+        ]
+      }
+    },
+    {
+      "id": "H04",
+      "category": "straightforward",
+      "turns": [
+        {
+          "action": "create",
+          "latencyMs": 1246,
+          "usedModel": true,
+          "meta": {
+            "model": "groq:openai/gpt-oss-120b",
+            "latencyMs": 1245.1813000000002,
+            "attempts": 1,
+            "retries": 0,
+            "rateLimited": 0,
+            "invalidOutputs": 0
+          }
+        }
+      ],
+      "intent": "invoice_request",
+      "extractedItems": [
+        {
+          "description": "apex 205/55 R16",
+          "quantity": 4,
+          "rate": 6100
+        },
+        {
+          "description": "black nut set",
+          "quantity": 1,
+          "rate": 650
+        }
+      ],
+      "resolvedCustomer": "Sharma Wheels & Tyres",
+      "resolvedLines": [
+        {
+          "status": "matched",
+          "sku": "APX-205-55-16"
+        },
+        {
+          "status": "matched",
+          "sku": "NUT-16-BLK"
+        }
+      ],
+      "problems": [],
+      "invoice": {
+        "customer": "Sharma Wheels & Tyres",
+        "lines": [
+          {
+            "sku": "APX-205-55-16",
+            "quantity": 4,
+            "rate": 6100
+          },
+          {
+            "sku": "NUT-16-BLK",
+            "quantity": 1,
+            "rate": 650
+          }
+        ]
+      }
+    },
+    {
+      "id": "H05",
+      "category": "typo",
+      "turns": [
+        {
+          "action": "clarify",
+          "reason": "unknown_item",
+          "latencyMs": 3574,
+          "usedModel": true,
+          "meta": {
+            "model": "groq:openai/gpt-oss-120b",
+            "latencyMs": 3573.1002000000008,
+            "attempts": 1,
+            "retries": 0,
+            "rateLimited": 0,
+            "invalidOutputs": 0
+          }
+        }
+      ],
+      "intent": "invoice_request",
+      "extractedItems": [
+        {
+          "description": "neo 17 chrome tyre",
+          "quantity": 2,
+          "rate": 4900
+        }
+      ],
+      "resolvedCustomer": "Vijay Kumar Tyres",
+      "resolvedLines": [
+        {
+          "status": "not_found",
+          "sku": null
+        }
+      ],
+      "problems": [
+        "unknown_item"
+      ]
+    },
+    {
+      "id": "H06",
+      "category": "informal",
+      "turns": [
+        {
+          "action": "create",
+          "latencyMs": 3237,
+          "usedModel": true,
+          "meta": {
+            "model": "groq:openai/gpt-oss-120b",
+            "latencyMs": 3235.864700000002,
+            "attempts": 1,
+            "retries": 0,
+            "rateLimited": 0,
+            "invalidOutputs": 0
+          }
+        }
+      ],
+      "intent": "invoice_request",
+      "extractedItems": [
+        {
+          "description": "lenzo 17 red",
+          "quantity": 4,
+          "rate": 4600
+        }
+      ],
+      "resolvedCustomer": "Al Ameen Tyre House",
+      "resolvedLines": [
+        {
+          "status": "matched",
+          "sku": "LNZ-17-RED"
+        }
+      ],
+      "problems": [],
+      "invoice": {
+        "customer": "Al Ameen Tyre House",
+        "lines": [
+          {
+            "sku": "LNZ-17-RED",
+            "quantity": 4,
+            "rate": 4600
+          }
+        ]
+      }
+    },
+    {
+      "id": "H07",
+      "category": "word_order",
+      "turns": [
+        {
+          "action": "create",
+          "latencyMs": 1609,
+          "usedModel": true,
+          "meta": {
+            "model": "groq:openai/gpt-oss-120b",
+            "latencyMs": 1608.0240000000013,
+            "attempts": 1,
+            "retries": 0,
+            "rateLimited": 0,
+            "invalidOutputs": 0
+          }
+        }
+      ],
+      "intent": "invoice_request",
+      "extractedItems": [
+        {
+          "description": "lenzo 18 slvr",
+          "quantity": 4,
+          "rate": 5000
+        }
+      ],
+      "resolvedCustomer": "Sri Ganesh Motors",
+      "resolvedLines": [
+        {
+          "status": "matched",
+          "sku": "LNZ-18-SLV"
+        }
+      ],
+      "problems": [],
+      "invoice": {
+        "customer": "Sri Ganesh Motors",
+        "lines": [
+          {
+            "sku": "LNZ-18-SLV",
+            "quantity": 4,
+            "rate": 5000
+          }
+        ]
+      }
+    },
+    {
+      "id": "H08",
+      "category": "word_order",
+      "turns": [
+        {
+          "action": "create",
+          "latencyMs": 1508,
+          "usedModel": true,
+          "meta": {
+            "model": "groq:openai/gpt-oss-120b",
+            "latencyMs": 1507.1156000000046,
+            "attempts": 1,
+            "retries": 0,
+            "rateLimited": 0,
+            "invalidOutputs": 0
+          }
+        }
+      ],
+      "intent": "invoice_request",
+      "extractedItems": [
+        {
+          "description": "chrome wheel nuts",
+          "quantity": 2,
+          "rate": 650
+        }
+      ],
+      "resolvedCustomer": "Royal Alloys",
+      "resolvedLines": [
+        {
+          "status": "matched",
+          "sku": "NUT-16-CHR"
+        }
+      ],
+      "problems": [],
+      "invoice": {
+        "customer": "Royal Alloys",
+        "lines": [
+          {
+            "sku": "NUT-16-CHR",
+            "quantity": 2,
+            "rate": 650
+          }
+        ]
+      }
+    },
+    {
+      "id": "H09",
+      "category": "ambiguous",
+      "turns": [
+        {
+          "action": "clarify",
+          "reason": "ambiguous_item",
+          "latencyMs": 1432,
+          "usedModel": true,
+          "meta": {
+            "model": "groq:openai/gpt-oss-120b",
+            "latencyMs": 1430.5918999999994,
+            "attempts": 1,
+            "retries": 0,
+            "rateLimited": 0,
+            "invalidOutputs": 0
+          }
+        }
+      ],
+      "intent": "invoice_request",
+      "extractedItems": [
+        {
+          "description": "metro vortex black",
+          "quantity": 4,
+          "rate": 4500
+        }
+      ],
+      "resolvedCustomer": "Metro Car Accessories",
+      "resolvedLines": [
+        {
+          "status": "ambiguous",
+          "sku": null
+        }
+      ],
+      "problems": [
+        "ambiguous_item"
+      ]
+    },
+    {
+      "id": "H10",
+      "category": "ambiguous",
+      "turns": [
+        {
+          "action": "clarify",
+          "reason": "ambiguous_customer",
+          "latencyMs": 1516,
+          "usedModel": true,
+          "meta": {
+            "model": "groq:openai/gpt-oss-120b",
+            "latencyMs": 1514.8407000000007,
+            "attempts": 1,
+            "retries": 0,
+            "rateLimited": 0,
+            "invalidOutputs": 0
+          }
+        }
+      ],
+      "intent": "invoice_request",
+      "extractedItems": [
+        {
+          "description": "lenzo 18 red",
+          "quantity": 4,
+          "rate": 5200
+        }
+      ],
+      "resolvedCustomer": null,
+      "resolvedLines": [
+        {
+          "status": "matched",
+          "sku": "LNZ-18-RED"
+        }
+      ],
+      "problems": [
+        "ambiguous_customer"
+      ]
+    },
+    {
+      "id": "H11",
+      "category": "missing",
+      "turns": [
+        {
+          "action": "clarify",
+          "reason": "missing_quantity",
+          "latencyMs": 957,
+          "usedModel": true,
+          "meta": {
+            "model": "groq:openai/gpt-oss-120b",
+            "latencyMs": 956.5616000000009,
+            "attempts": 1,
+            "retries": 0,
+            "rateLimited": 0,
+            "invalidOutputs": 0
+          }
+        }
+      ],
+      "intent": "invoice_request",
+      "extractedItems": [
+        {
+          "description": "apex 195/55 r16",
+          "quantity": null,
+          "rate": 5600
+        }
+      ],
+      "resolvedCustomer": "Al Ameen Tyre House",
+      "resolvedLines": [
+        {
+          "status": "matched",
+          "sku": "APX-195-55-16"
+        }
+      ],
+      "problems": [
+        "missing_quantity"
+      ]
+    },
+    {
+      "id": "H12",
+      "category": "missing",
+      "turns": [
+        {
+          "action": "clarify",
+          "reason": "missing_rate",
+          "latencyMs": 1287,
+          "usedModel": true,
+          "meta": {
+            "model": "groq:openai/gpt-oss-120b",
+            "latencyMs": 1286.7049000000043,
+            "attempts": 1,
+            "retries": 0,
+            "rateLimited": 0,
+            "invalidOutputs": 0
+          }
+        }
+      ],
+      "intent": "invoice_request",
+      "extractedItems": [
+        {
+          "description": "kwh neo 17 chrome",
+          "quantity": 4,
+          "rate": null
+        }
+      ],
+      "resolvedCustomer": "Kerala Wheel Hub",
+      "resolvedLines": [
+        {
+          "status": "matched",
+          "sku": "NEO-17-CHR"
+        }
+      ],
+      "problems": [
+        "missing_rate"
+      ]
+    },
+    {
+      "id": "H13",
+      "category": "invalid",
+      "turns": [
+        {
+          "action": "clarify",
+          "reason": "ambiguous_item,missing_rate,unknown_item,missing_quantity",
+          "latencyMs": 1309,
+          "usedModel": true,
+          "meta": {
+            "model": "groq:openai/gpt-oss-120b",
+            "latencyMs": 1307.8391000000047,
+            "attempts": 1,
+            "retries": 0,
+            "rateLimited": 0,
+            "invalidOutputs": 0
+          }
+        }
+      ],
+      "intent": "invoice_request",
+      "extractedItems": [
+        {
+          "description": "royal alloys",
+          "quantity": 4,
+          "rate": null
+        },
+        {
+          "description": "enkei 17 silver",
+          "quantity": null,
+          "rate": 4500
+        }
+      ],
+      "resolvedCustomer": "Royal Alloys",
+      "resolvedLines": [
+        {
+          "status": "ambiguous",
+          "sku": null
+        },
+        {
+          "status": "not_found",
+          "sku": null
+        }
+      ],
+      "problems": [
+        "ambiguous_item",
+        "missing_rate",
+        "unknown_item",
+        "missing_quantity"
+      ]
+    },
+    {
+      "id": "H14",
+      "category": "invalid",
+      "turns": [
+        {
+          "action": "clarify",
+          "reason": "invalid_quantity,ungrounded_quantity",
+          "latencyMs": 896,
+          "usedModel": true,
+          "meta": {
+            "model": "groq:openai/gpt-oss-120b",
+            "latencyMs": 895.5303000000058,
+            "attempts": 1,
+            "retries": 0,
+            "rateLimited": 0,
+            "invalidOutputs": 0
+          }
+        }
+      ],
+      "intent": "invoice_request",
+      "extractedItems": [
+        {
+          "description": "VK lenzo 18 black",
+          "quantity": -2,
+          "rate": 5100
+        }
+      ],
+      "resolvedCustomer": "VK Enterprises",
+      "resolvedLines": [
+        {
+          "status": "matched",
+          "sku": "LNZ-18-BLK"
+        }
+      ],
+      "problems": [
+        "invalid_quantity",
+        "ungrounded_quantity"
+      ]
+    },
+    {
+      "id": "H15",
+      "category": "non_invoice",
+      "turns": [
+        {
+          "action": "ignore",
+          "reason": "non_invoice",
+          "latencyMs": 1261,
+          "usedModel": true,
+          "meta": {
+            "model": "groq:openai/gpt-oss-120b",
+            "latencyMs": 1260.3136999999988,
+            "attempts": 1,
+            "retries": 0,
+            "rateLimited": 0,
+            "invalidOutputs": 0
+          }
+        }
+      ],
+      "intent": "non_invoice",
+      "extractedItems": [],
+      "resolvedCustomer": null,
+      "resolvedLines": [],
+      "problems": []
+    },
+    {
+      "id": "H16",
+      "category": "non_invoice",
+      "turns": [
+        {
+          "action": "ignore",
+          "reason": "non_invoice",
+          "latencyMs": 754,
+          "usedModel": true,
+          "meta": {
+            "model": "groq:openai/gpt-oss-120b",
+            "latencyMs": 754.0148999999947,
+            "attempts": 1,
+            "retries": 0,
+            "rateLimited": 0,
+            "invalidOutputs": 0
+          }
+        }
+      ],
+      "intent": "non_invoice",
+      "extractedItems": [],
+      "resolvedCustomer": null,
+      "resolvedLines": [],
+      "problems": []
+    },
+    {
+      "id": "H17",
+      "category": "non_invoice",
+      "turns": [
+        {
+          "action": "ignore",
+          "reason": "non_invoice",
+          "latencyMs": 980,
+          "usedModel": true,
+          "meta": {
+            "model": "groq:openai/gpt-oss-120b",
+            "latencyMs": 979.4141999999993,
+            "attempts": 1,
+            "retries": 0,
+            "rateLimited": 0,
+            "invalidOutputs": 0
+          }
+        }
+      ],
+      "intent": "non_invoice",
+      "extractedItems": [],
+      "resolvedCustomer": null,
+      "resolvedLines": [],
+      "problems": []
+    },
+    {
+      "id": "H18",
+      "category": "previous_invoice",
+      "turns": [
+        {
+          "action": "respond",
+          "reason": "unsupported_followup",
+          "latencyMs": 1377,
+          "usedModel": true,
+          "meta": {
+            "model": "groq:openai/gpt-oss-120b",
+            "latencyMs": 1376.4853000000003,
+            "attempts": 1,
+            "retries": 0,
+            "rateLimited": 0,
+            "invalidOutputs": 0
+          }
+        }
+      ],
+      "intent": "unsupported_followup",
+      "extractedItems": [],
+      "resolvedCustomer": null,
+      "resolvedLines": [],
+      "problems": []
+    },
+    {
+      "id": "H19",
+      "category": "previous_invoice",
+      "turns": [
+        {
+          "action": "respond",
+          "reason": "unsupported_followup",
+          "latencyMs": 1088,
+          "usedModel": true,
+          "meta": {
+            "model": "groq:openai/gpt-oss-120b",
+            "latencyMs": 1088.1444000000047,
+            "attempts": 1,
+            "retries": 0,
+            "rateLimited": 0,
+            "invalidOutputs": 0
+          }
+        }
+      ],
+      "intent": "unsupported_followup",
+      "extractedItems": [],
+      "resolvedCustomer": null,
+      "resolvedLines": [],
+      "problems": []
+    },
+    {
+      "id": "H20",
+      "category": "clarification_flow",
+      "turns": [
+        {
+          "action": "clarify",
+          "reason": "missing_customer,missing_rate",
+          "latencyMs": 2762,
+          "usedModel": true,
+          "meta": {
+            "model": "groq:openai/gpt-oss-120b",
+            "latencyMs": 2761.126199999999,
+            "attempts": 1,
+            "retries": 0,
+            "rateLimited": 0,
+            "invalidOutputs": 0
+          }
+        },
+        {
+          "action": "clarify",
+          "reason": "missing_customer",
+          "latencyMs": 2525,
+          "usedModel": true,
+          "meta": {
+            "model": "groq:openai/gpt-oss-120b",
+            "latencyMs": 2522.744200000001,
+            "attempts": 1,
+            "retries": 0,
+            "rateLimited": 0,
+            "invalidOutputs": 0
+          }
+        }
+      ],
+      "intent": "clarification_response",
+      "extractedItems": [
+        {
+          "description": "lenzo alloy wheel 15 black",
+          "quantity": 4,
+          "rate": 3800
+        }
+      ],
+      "resolvedCustomer": null,
+      "resolvedLines": [
+        {
+          "status": "matched",
+          "sku": "LNZ-15-BLK"
+        }
+      ],
+      "problems": [
+        "missing_customer"
+      ]
+    },
+    {
+      "id": "H21",
+      "category": "clarification_flow",
+      "turns": [
+        {
+          "action": "clarify",
+          "reason": "ambiguous_item",
+          "latencyMs": 1138,
+          "usedModel": true,
+          "meta": {
+            "model": "groq:openai/gpt-oss-120b",
+            "latencyMs": 1137.3224000000046,
+            "attempts": 1,
+            "retries": 0,
+            "rateLimited": 0,
+            "invalidOutputs": 0
+          }
+        },
+        {
+          "action": "clarify",
+          "reason": "missing_customer",
+          "latencyMs": 2723,
+          "usedModel": true,
+          "meta": {
+            "model": "groq:openai/gpt-oss-120b",
+            "latencyMs": 2721.1906000000017,
+            "attempts": 1,
+            "retries": 0,
+            "rateLimited": 0,
+            "invalidOutputs": 0
+          }
+        }
+      ],
+      "intent": "clarification_response",
+      "extractedItems": [
+        {
+          "description": "Lenzo Alloy Wheel 18\" Silver",
+          "quantity": 4,
+          "rate": 5000
+        }
+      ],
+      "resolvedCustomer": null,
+      "resolvedLines": [
+        {
+          "status": "matched",
+          "sku": "LNZ-18-SLV"
+        }
+      ],
+      "problems": [
+        "missing_customer"
+      ]
+    },
+    {
+      "id": "H22",
+      "category": "clarification_flow",
+      "turns": [
+        {
+          "action": "clarify",
+          "reason": "ambiguous_item",
+          "latencyMs": 728,
+          "usedModel": true,
+          "meta": {
+            "model": "groq:openai/gpt-oss-120b",
+            "latencyMs": 727.6780999999901,
+            "attempts": 1,
+            "retries": 0,
+            "rateLimited": 0,
+            "invalidOutputs": 0
+          }
+        },
+        {
+          "action": "clarify",
+          "reason": "missing_customer",
+          "latencyMs": 2098,
+          "usedModel": true,
+          "meta": {
+            "model": "groq:openai/gpt-oss-120b",
+            "latencyMs": 2097.186300000001,
+            "attempts": 1,
+            "retries": 0,
+            "rateLimited": 0,
+            "invalidOutputs": 0
+          }
+        }
+      ],
+      "intent": "clarification_response",
+      "extractedItems": [
+        {
+          "description": "Neo Alloy Wheel 16\" Red",
+          "quantity": 4,
+          "rate": 4000
+        }
+      ],
+      "resolvedCustomer": null,
+      "resolvedLines": [
+        {
+          "status": "matched",
+          "sku": "NEO-16-RED"
+        }
+      ],
+      "problems": [
+        "missing_customer"
+      ]
+    },
+    {
+      "id": "H23",
+      "category": "informal",
+      "turns": [
+        {
+          "action": "clarify",
+          "reason": "unknown_customer",
+          "latencyMs": 1603,
+          "usedModel": true,
+          "meta": {
+            "model": "groq:openai/gpt-oss-120b",
+            "latencyMs": 1601.7400999999954,
+            "attempts": 1,
+            "retries": 0,
+            "rateLimited": 0,
+            "invalidOutputs": 0
+          }
+        }
+      ],
+      "intent": "invoice_request",
+      "extractedItems": [
+        {
+          "description": "apex 195/55 R16",
+          "quantity": 4,
+          "rate": 5500
+        }
+      ],
+      "resolvedCustomer": null,
+      "resolvedLines": [
+        {
+          "status": "matched",
+          "sku": "APX-195-55-16"
+        }
+      ],
+      "problems": [
+        "unknown_customer"
+      ]
+    },
+    {
+      "id": "H24",
+      "category": "straightforward",
+      "turns": [
+        {
+          "action": "clarify",
+          "reason": "missing_rate",
+          "latencyMs": 1482,
+          "usedModel": true,
+          "meta": {
+            "model": "groq:openai/gpt-oss-120b",
+            "latencyMs": 1480.6570000000065,
+            "attempts": 1,
+            "retries": 0,
+            "rateLimited": 0,
+            "invalidOutputs": 0
+          }
+        }
+      ],
+      "intent": "invoice_request",
+      "extractedItems": [
+        {
+          "description": "Lenzo 18\" Black",
+          "quantity": 4,
+          "rate": null
+        }
+      ],
+      "resolvedCustomer": "VK Enterprises",
+      "resolvedLines": [
+        {
+          "status": "matched",
+          "sku": "LNZ-18-BLK"
+        }
+      ],
+      "problems": [
+        "missing_rate"
+      ]
+    }
+  ]
+}

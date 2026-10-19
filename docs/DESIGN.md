@@ -60,7 +60,7 @@ Every decision carries a `trace`: query, status, scores, candidates and problems
 | Messages from unknown chats or bots | Telegram: chat-id allowlist, bot senders dropped. WhatsApp Cloud: HMAC-SHA256 webhook signature check plus sender allowlist. |
 | Accidental live writes | `ZOHO_MODE=mock` by default. Live mode is dry-run unless `INVOICE_ALLOW_LIVE_CREATE=true`. Invoices are created as drafts with `send=false`. |
 | Secrets / PII in logs | Key-based redaction, `Zoho-oauthtoken`/`Bearer` scrubbing, hashed chat/sender/message IDs, message text off by default. |
-| Model outage | Error reply ("nothing was created") for invoice-like messages; never a fallback guess. |
+| Model outage | Primary fails fast (1 retry, ≤15 s), then the **fallback model** (another vendor) answers the same message. If both fail: an error reply ("nothing was created"), never a guess. |
 | Model invents or spreads numbers | **Grounding check:** every quantity and rate must appear in the message (`5.2k`, `₹5,200` and number words are understood). One value written once cannot silently apply to several items unless the message says "both"/"all". Added after Flash-Lite copied one rate onto two items in case B05. |
 | Model supplies a "previous" rate | Ignored unless the number is in the message. Previous rates come only from a Zoho lookup the user confirms. |
 
@@ -68,26 +68,19 @@ Every decision carries a `trace`: query, status, scores, candidates and problems
 
 ## 4. Model selection
 
-| Role | Model | Status |
+| Role | Model | Why |
 |---|---|---|
-| Fast/small (**production default**) | `gemini:gemini-3.1-flash-lite` | Fully evaluated (main + held-out). |
-| Larger | `gemini:gemini-2.5-flash` / `gemini:gemini-3-flash-preview` | **Not fully evaluated:** the free tier allows only **20 requests/day per model** (Google's 429 response: `GenerateRequestsPerDayPerProjectPerModel-FreeTier`, `quotaValue: 20`). One main-set run needs about 55. |
+| **Primary** (`LLM_MODEL`) | `gemini:gemini-3.1-flash-lite` | Best measured accuracy (98% main / 95.8% held-out), fastest (~1.3 s median), generous free quota. |
+| **Fallback** (`LLM_FALLBACK_MODEL`) | `groq:openai/gpt-oss-20b` | A different vendor, so independent outages and quotas. Matched Gemini on the held-out set (95.8%); answers in ~1–2 s at normal chat pace. Used automatically when Gemini is overloaded (503), rate-limited, times out or returns unusable output. |
+| Also evaluated | `groq:openai/gpt-oss-120b` | The larger model was **worse** here (92% main / 70.8% held-out). It tends to drop the customer when merging a clarification answer (H20–H22) and to treat the customer name as a product line (H01). All its misses were safe questions. |
 | Baseline | `rules` | No LLM: regex extraction plus the same matcher and checks. Shows what the LLM adds. |
 | Upper bound | `oracle` | Labeled ideal extraction. Measures matching and decisions on their own. |
-| Also wired | `mistral:…`, `groq:…`, `openrouter:…`, `compat:…` (e.g. local Ollama) | Same interface. Mistral's free plan returned 429 on every chat call for this account; Groq keys were unavailable. |
+| Not usable on free tiers | `gemini-2.5-flash`, `gemini-3-flash-preview` (20 requests/day per model); Mistral (429 on every call for this account) | Wired through the same interface; finish with `npm run eval -- --models <model> --retry-errors` once a day, or with a billed key. |
 
-**Why this pair:**
-- **Flash-Lite** is the smallest, fastest current Gemini tier: about 1.3 s median per message and a free daily quota large enough for real use and repeated evaluation.
-- **Flash** is the larger tier of the same family, with the same API and JSON mode, so any difference would come from model capacity rather than provider quirks.
-- The question the comparison answers: **is the small model good enough when deterministic checks catch its mistakes?** For this task, yes. Flash-Lite reaches 98% / 95.8% with zero wrong invoices, and every one of its misses is a safe question. A larger model can at most remove a few unnecessary questions; it cannot improve safety, which the checks already enforce.
-
-**Finishing the larger-model comparison:** the runner stops a model after 3 consecutive quota failures and records the blocked cases. Each day, run
-
-```bash
-npm run eval -- --models gemini:gemini-2.5-flash --retry-errors
-```
-
-It keeps earlier cases and adds about 18 more per day, so the main set completes in about 3 days (the held-out set needs `--set holdout` on 2 more). Quota-blocked cases are excluded from metrics and shown as "Cases scored", so partial runs never count as wrong answers. With a billed key or another provider, the whole run takes minutes.
+**Findings:**
+- **Small vs large:** on this task, **bigger was not better.** `gpt-oss-20b` beat `gpt-oss-120b` on both sets. The task is short, structured extraction, where instruction-following on the JSON contract matters more than model size.
+- **Safety doesn't depend on the model.** All three LLMs and the regex baseline produced **0 wrong invoices**, because the deterministic checks (matching thresholds, grounding, confirmations) catch every model error. What differs is how often the bot has to ask an unnecessary question (3.7% to 53.8%) and how often an invoice comes out exactly right.
+- **The fallback was chosen by measurement.** The 120b was configured first, then replaced once the held-out results came in.
 
 Models are configured as `provider:model` strings; switching needs no code change.
 
@@ -112,25 +105,36 @@ Models are configured as `provider:model` strings; switching needs no code chang
 
 Run: `npm run eval` (all of `EVAL_MODELS`), `npm run eval -- --set holdout`, or `npm run eval -- --models gemini:gemini-3.1-flash-lite --cases S01,B01 -v`. Use `EVAL_DELAY_MS` to stay under free-tier RPM. Results go to `eval/results/<model>.json` (per-case detail) and [eval/results/summary.md](../eval/results/summary.md).
 
-### Results (measured 2026-10-18, current code)
+### Results (measured 2026-10-19, current code)
 
 **Main set (50 cases)**
 
-| Metric | `gemini-3.1-flash-lite` | `oracle` (matching only) | `rules` (no LLM) |
-|---|---|---|---|
-| Action accuracy | **98%** (49/50) | 100% (50/50) | 72% (36/50) |
-| Customer match accuracy | 100% (41/41) | 100% | 95.1% (39/41) |
-| Item match accuracy | 97.7% (42/43) | 100% | 67.4% (29/43) |
-| Quantity / rate accuracy (extraction) | 97.6% / 92.9% | 100% / 100% | 78.6% / 88.1% |
-| Clarification recall | 100% (19/19) | 100% | 100% |
-| Unnecessary clarification rate | 3.7% (1/27) | 0% | 40.7% (11/27) |
-| Exactly-correct invoices | 96.3% (26/27) | 100% | 59.3% (16/27) |
-| **Confidently wrong invoices** | **0** | 0 | 0 |
-| Non-invoice false positives | 0% (0/8) | 0% | 25% (2/8) |
-| Latency p50 / p95 per message | 1.3 s / 6.8 s | – | – |
-| Model failures / invalid JSON / 429s | 0 / 0 / 0 | – | – |
+| Metric | `gemini-3.1-flash-lite` | `groq gpt-oss-20b` | `groq gpt-oss-120b` | `oracle` | `rules` |
+|---|---|---|---|---|---|
+| Action accuracy | **98%** | 94% | 92% | 100% | 72% |
+| Exactly-correct invoices (of 27) | **96.3%** | 88.9% | 85.2% | 100% | 59.3% |
+| Unnecessary clarification rate | **3.7%** | 11.1% | 14.8% | 0% | 40.7% |
+| Clarification recall | 100% | 100% | 100% | 100% | 100% |
+| **Confidently wrong invoices** | **0** | **0** | **0** | 0 | 0 |
+| Non-invoice false positives | 0% | 0% | 0% | 0% | 25% |
+| Latency p50 / p95 | 1.3 s / 6.8 s | 4.9 s / 11.0 s* | 1.9 s / 8.4 s* | – | – |
+| Model failures / 429s during run | 0 / 0 | 0 / 32* | 0 / 26* | – | – |
 
-**Held-out set (24 cases, committed in `e58cbc0` before any model ran on it)**
+\* The Groq runs hit the free tier's per-minute limit at evaluation pace (one call every 2.5 s). Every 429 was retried and none failed, but the waits inflate latency. On the held-out run, at a gentler pace, `gpt-oss-20b` had a 1.6 s median.
+
+Detailed per-metric tables (customer/item match, quantity/rate extraction, intent, per category) are in [eval/results/summary.md](../eval/results/summary.md).
+
+**Held-out set (24 cases, all models, current code)**
+
+| Metric | `gemini-3.1-flash-lite` | `groq gpt-oss-20b` | `groq gpt-oss-120b` | `rules` |
+|---|---|---|---|---|
+| Action accuracy | **95.8%** | **95.8%** | 70.8% | 45.8% |
+| Exactly-correct invoices (of 13) | 92.3% | 92.3% | 46.2% | 15.4% |
+| Unnecessary clarification rate | 7.7% | 7.7% | 53.8% | 69.2% |
+| **Confidently wrong invoices** | **0** | **0** | **0** | 0 |
+| Latency p50 | 1.7 s | 1.6 s | 1.4 s | – |
+
+**Held-out history for Flash-Lite (the set was committed in `e58cbc0` before any model ran on it)**
 
 | Run | Flash-Lite action accuracy | Wrong invoices | Notes |
 |---|---|---|---|
