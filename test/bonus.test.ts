@@ -92,3 +92,19 @@ test('rate same as last time uses the newest invoice including drafts, and says 
   await processor.handle(msg('yes', { quotedId: sent.at(-1)!.id }));
   assert.equal(books.created.at(-1)!.lines[0]!.rate, 5200);
 });
+
+test('default tax: lines without an item tax get DEFAULT_TAX_PERCENT; a missing Zoho tax blocks creation', async () => {
+  const { processor, books } = setup(scripted({ [VK]: VK_EX }), { options: { defaultTaxPercent: 18 } });
+  for (const i of books.items) i.taxPercentage = undefined; // like the live Zoho items: no tax of their own
+  const r = await processor.handle(msg(VK));
+  assert.equal(r.action, 'created');
+  assert.equal(books.created[0]!.taxTotal, 3744);
+  assert.equal(books.created[0]!.total, 24544);
+
+  const noTax = setup(scripted({ [VK]: VK_EX }), { options: { defaultTaxPercent: 12 } });
+  noTax.books.findTaxId = async () => null;
+  const r2 = await noTax.processor.handle(msg(VK));
+  assert.equal(r2.action, 'error');
+  assert.equal(noTax.books.createCalls, 0);
+  assert.match(noTax.sent.at(-1)!.out.text, /No 12% tax exists in Zoho Books/);
+});

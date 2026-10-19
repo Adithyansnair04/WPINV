@@ -52,7 +52,7 @@ interface StateShape {
 const PROCESSED_TTL_MS = 7 * 24 * 3600 * 1000;
 const MAX_PROCESSED = 5000;
 
-export const pendingKey = (chatId: string, senderId: string) => `${chatId}|${senderId}`;
+const pendingKey = (chatId: string, senderId: string) => `${chatId}|${senderId}`;
 
 /** Dedupe + pending-clarification state. In-memory when no file path is given. */
 export class StateStore {

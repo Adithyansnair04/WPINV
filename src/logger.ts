@@ -4,7 +4,7 @@ export type Fields = Record<string, unknown>;
 
 const SECRET_KEY = /token|secret|authorization|api[_-]?key|password|cookie/i;
 
-export function redact(value: unknown, depth = 0): unknown {
+function redact(value: unknown, depth = 0): unknown {
   if (depth > 5 || value === null || typeof value !== 'object') {
     if (typeof value === 'string') return value.replace(/(Zoho-oauthtoken|Bearer)\s+\S+/gi, '$1 [redacted]');
     return value;

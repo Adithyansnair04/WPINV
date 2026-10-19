@@ -147,3 +147,24 @@ test('zoho: createCustomer posts a customer contact and returns its id', async (
   assert.equal(c.id, '77');
   assert.equal(c.name, 'Zenith Motors');
 });
+
+test('zoho: findTaxId matches the exact percentage (cached) and invoice lines carry tax_id', async () => {
+  let taxCalls = 0;
+  let body: { line_items?: unknown[] } = {};
+  const { impl } = fakeFetch((url, init) => {
+    if (url.pathname === '/oauth/v2/token') return json({ access_token: 't', expires_in: 3600 });
+    if (url.pathname.endsWith('/settings/taxes')) {
+      taxCalls++;
+      return json({ code: 0, taxes: [{ tax_id: 5, tax_percentage: 5, tax_type: 'tax' }, { tax_id: 18, tax_percentage: 18, tax_type: 'tax' }] });
+    }
+    body = JSON.parse(String(init.body));
+    return json({ code: 0, invoice: { invoice_id: '1', invoice_number: 'INV-1', status: 'draft', customer_name: 'VK', total: 1, line_items: [] } });
+  });
+  const z = new ZohoBooks(creds, { fetchImpl: impl, sleep: noSleep });
+  assert.equal(await z.findTaxId(18), '18');
+  assert.equal(await z.findTaxId(18), '18');
+  assert.equal(await z.findTaxId(12), null);
+  assert.equal(taxCalls, 2);
+  await z.createInvoice({ customerId: 'c', referenceNumber: 'r', lines: [{ itemId: 'i', quantity: 1, rate: 1, taxId: '18' }] });
+  assert.deepEqual(body.line_items, [{ item_id: 'i', quantity: 1, rate: 1, tax_id: '18' }]);
+});

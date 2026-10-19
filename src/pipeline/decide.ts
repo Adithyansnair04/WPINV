@@ -60,7 +60,7 @@ const MAX_QTY = 10000;
 const MAX_RATE = 10_000_000;
 const CURRENCY_ALIASES = new Set(['inr', 'rs', 'rs.', 'rupees', 'rupee', '₹']);
 
-export const EDIT_HELP = 'To change an invoice, reply to my invoice message with the change, e.g. "make it 6 pcs" or "rate 5000". Only drafts can be changed.';
+const EDIT_HELP = 'To change an invoice, reply to my invoice message with the change, e.g. "make it 6 pcs" or "rate 5000". Only drafts can be changed.';
 
 export const fmtMoney = (n: number) => `₹${n.toLocaleString('en-IN', { maximumFractionDigits: 2 })}`;
 

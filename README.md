@@ -38,7 +38,7 @@ cp .env.example .env      # then fill in keys as needed
 
 | Command | What it does |
 |---|---|
-| `npm test` | 56 offline tests: matcher, schema, decision engine, number grounding, processor (dedupe, idempotency, clarifications, previous rates, edits), Zoho client, Telegram/WhatsApp transports, dashboard. No network. |
+| `npm test` | 62 offline tests: matcher, schema, decision engine, number grounding, processor (dedupe, idempotency, clarifications, previous rates, edits), Zoho client, Telegram/WhatsApp transports, dashboard. No network. |
 | `npm run typecheck` | `tsc --noEmit` |
 | `npm run simulate` | Interactive chat simulator using the same processor as the bot (mock Zoho by default). |
 | `npm run simulate -- --model rules -m "VK red wheel 4"` | One-shot simulation; `-m ">2"` replies to the last question. Add `--dashboard` to watch it on the dashboard. |
@@ -62,6 +62,8 @@ All configuration is in `.env`, validated with Zod at startup ([src/config.ts](s
 - `CHAT_TRANSPORT`: `telegram` (default; groups, official API), `whatsapp_cloud` (official, 1:1 only), or `baileys` (unofficial WhatsApp groups, ban risk).
 - `TELEGRAM_BOT_TOKEN`, `TELEGRAM_ALLOWED_CHATS`: bot token and the group/chat ids the bot acts in. Every other chat is ignored.
 - `RATE_POLICY`: `ask` (default: missing rate → clarify) or `item_default` (use the item's Zoho selling rate).
+- `DEFAULT_TAX_PERCENT`: e.g. `18` to tax lines whose item has no tax. Needs a GST-registered Zoho org; see [docs/ZOHO_SETUP.md](docs/ZOHO_SETUP.md#tax-18-gst).
+- `LLM_FALLBACK_MODEL`: backup model used when `LLM_MODEL` fails, e.g. `groq:openai/gpt-oss-120b`.
 
 ## Quick demo without any credentials
 

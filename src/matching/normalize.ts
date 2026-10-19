@@ -9,7 +9,7 @@ const SYNONYMS: Record<string, string> = {
 };
 
 /** Words that carry no identifying information in a product or customer reference. */
-export const STOPWORDS = new Set([
+const STOPWORDS = new Set([
   'a', 'an', 'the', 'of', 'for', 'to', 'and', 'with', 'in', 'inch', 'inches', 'size', 'pcs', 'pc', 'piece', 'pieces',
   'nos', 'no', 'qty', 'unit', 'units', 'each', 'rate', 'rs', 'inr', 'please', 'pls', 'plz', 'bill', 'invoice', 'ms', 'm/s',
   'sir', 'bhai', 'ji', 'ko', 'type', 'model', 'new', 'x',

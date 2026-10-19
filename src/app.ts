@@ -20,7 +20,7 @@ export function createExtractor(spec: string, cfg: Config, opts: { withFallback?
   return withFallback(primary, createExtractor(fallbackSpec, cfg));
 }
 
-export function createBooks(cfg: Config, log: Logger): BooksApi {
+function createBooks(cfg: Config, log: Logger): BooksApi {
   if (cfg.ZOHO_MODE === 'mock') return new MockBooks();
   return new CachedBooks(new ZohoBooks(requireZohoCredentials(cfg), { log: log.child({ component: 'zoho' }), aliases: loadAliases() }));
 }
@@ -42,6 +42,7 @@ export function createProcessor(cfg: Config, log: Logger, send: SendFn, opts: { 
       dryRun: isDryRun(cfg),
       logMessageText: cfg.LOG_MESSAGE_TEXT,
       customerCreate: cfg.CUSTOMER_CREATE,
+      defaultTaxPercent: cfg.DEFAULT_TAX_PERCENT,
       customerCreators: cfg.CUSTOMER_CREATORS,
     },
   });

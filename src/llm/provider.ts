@@ -36,7 +36,7 @@ async function postJson(url: string, headers: Record<string, string>, body: unkn
 }
 
 /** Mistral, Groq, OpenRouter and any other OpenAI-compatible /chat/completions endpoint. */
-export function openAiCompatible(id: string, baseUrl: string, apiKey: string, model: string, timeoutMs: number, maxRetries = 3): LlmProvider {
+function openAiCompatible(id: string, baseUrl: string, apiKey: string, model: string, timeoutMs: number, maxRetries = 3): LlmProvider {
   return {
     id,
     async complete(system, user) {

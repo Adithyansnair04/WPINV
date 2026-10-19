@@ -12,7 +12,7 @@ export type MatchResult<T> =
   | { status: 'ambiguous'; candidates: Candidate<T>[] }
   | { status: 'not_found'; candidates: Candidate<T>[] };
 
-export const THRESHOLDS = { accept: 0.9, margin: 0.15, candidate: 0.5 } as const;
+const THRESHOLDS = { accept: 0.9, margin: 0.15, candidate: 0.5 } as const;
 
 /**
  * Scores query tokens against a record's tokens. A query token that exactly exists somewhere in the

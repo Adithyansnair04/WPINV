@@ -69,6 +69,8 @@ const EnvSchema = z.object({
 
   CLARIFY_TTL_MINUTES: z.coerce.number().positive().default(15),
   RATE_POLICY: z.enum(['ask', 'item_default']).default('ask'),
+  // Tax applied to invoice lines whose item has no tax of its own (needs a tax with this % in Zoho). Empty = items' own tax only.
+  DEFAULT_TAX_PERCENT: z.preprocess((v) => (v === '' ? undefined : v), z.coerce.number().min(0).max(100).optional()),
   BASE_CURRENCY: z.string().default('INR'),
 });
 

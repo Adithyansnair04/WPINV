@@ -34,7 +34,7 @@ const CallbackQuery = z.object({
 const Update = z.object({ update_id: z.number(), message: Message.optional(), callback_query: CallbackQuery.optional() });
 type Update = z.infer<typeof Update>;
 
-export const msgKey = (chatId: string | number, messageId: number) => `${chatId}:${messageId}`;
+const msgKey = (chatId: string | number, messageId: number) => `${chatId}:${messageId}`;
 
 /** A tap on an option button becomes the same message as replying "<n>" to the question it belongs to. */
 export function parseCallback(u: Update): IncomingMessage | null {
