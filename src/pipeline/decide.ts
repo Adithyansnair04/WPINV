@@ -35,6 +35,8 @@ export interface ClarifyOption {
   name: string;
   /** Set when choosing this option confirms a rate taken from a previous invoice. */
   rate?: number;
+  /** Set when choosing this option starts the "add new customer" confirmation for this name. */
+  newCustomer?: string;
 }
 
 export type Decision =
@@ -50,6 +52,8 @@ export interface DecideOptions {
   sourceText?: string;
   /** Previous-invoice rates looked up for lines that asked for "rate same as last time" (by line index). Present = lookup was done. */
   previousRates?: Map<number, PreviousRate | null>;
+  /** Offer "add new customer" when the customer is not found. */
+  allowCustomerCreate?: boolean;
 }
 
 const MAX_QTY = 10000;
@@ -132,7 +136,15 @@ export function decide(input: Extraction, customers: Customer[], items: Item[], 
       questions.push(`Which customer is "${ex.customer}"? ${r.candidates.slice(0, 4).map((c) => c.record.name).join(' / ')}`);
       trace.problems.push('ambiguous_customer');
     } else {
-      questions.push(`I couldn't find a customer matching "${ex.customer}". Please send the full customer name.`);
+      const close = r.candidates.slice(0, 3).map((c) => c.record.name);
+      const hint = close.length ? ` Did you mean: ${close.join(' / ')}?` : '';
+      if (opts.allowCustomerCreate) {
+        options.push({ lineIndex: -1, itemId: '', name: `➕ Add new customer "${ex.customer}"`, newCustomer: ex.customer });
+        questions.push(`I couldn't find a customer matching "${ex.customer}".${hint} Reply with the right name, or:
+  ${options.length}) Add "${ex.customer}" as a new customer (I'll ask you to confirm)`);
+      } else {
+        questions.push(`I couldn't find a customer matching "${ex.customer}".${hint} Please send the full customer name.`);
+      }
       trace.problems.push('unknown_customer');
     }
   }

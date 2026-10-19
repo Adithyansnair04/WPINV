@@ -14,6 +14,7 @@ and creates a **draft** invoice in Zoho Books. It resolves `VK` to *VK Enterpris
 - Interchangeable LLM providers: Gemini (Flash-Lite is the evaluated default: 98% correct actions, 0 wrong invoices; the larger Flash tier is limited to 20 free requests/day), Mistral, Groq, OpenRouter, or any OpenAI-compatible endpoint such as local Ollama. A regex baseline (`rules`) needs no key.
 - **"Rate same as last time"** looks up the customer's last invoice for that item and asks you to confirm the rate and its source invoice.
 - **Edits:** reply to the bot's invoice message with "make it 6 pcs" or "rate 5000" to update that draft (drafts only).
+- **Add customers from chat** (`add customer <name>`, or ➕ when a name is unknown) with a mandatory Yes/Cancel confirmation.
 - **Dashboard** at `http://127.0.0.1:3001`: live activity, the reasoning behind each decision, open questions, and evaluation results.
 - Safe defaults: Zoho is mocked; live mode only *previews* until `INVOICE_ALLOW_LIVE_CREATE=true`; invoices are drafts and are never sent to customers.
 
@@ -37,7 +38,7 @@ cp .env.example .env      # then fill in keys as needed
 
 | Command | What it does |
 |---|---|
-| `npm test` | 49 offline tests: matcher, schema, decision engine, number grounding, processor (dedupe, idempotency, clarifications, previous rates, edits), Zoho client, Telegram/WhatsApp transports, dashboard. No network. |
+| `npm test` | 56 offline tests: matcher, schema, decision engine, number grounding, processor (dedupe, idempotency, clarifications, previous rates, edits), Zoho client, Telegram/WhatsApp transports, dashboard. No network. |
 | `npm run typecheck` | `tsc --noEmit` |
 | `npm run simulate` | Interactive chat simulator using the same processor as the bot (mock Zoho by default). |
 | `npm run simulate -- --model rules -m "VK red wheel 4"` | One-shot simulation; `-m ">2"` replies to the last question. Add `--dashboard` to watch it on the dashboard. |
@@ -94,6 +95,9 @@ The bot ignores other bots, unlisted chats, messages older than `MAX_MESSAGE_AGE
 | `VK red wheel 4` | Asks which wheel (buttons) and the rate. Tap a button or reply to the question. |
 | `VK lenzo 18 red x 4 rate same as last time` | "Use the last rate: ₹5,100 (invoice INV-000101)?" Tap **Yes** or reply with another rate. |
 | Reply to an invoice message: `make it 6 pcs` | Updates that draft and shows old → new. Refused for sent or paid invoices. |
+| `add customer Zenith Motors` | Asks **"Add new customer ‘Zenith Motors’? (similar: Sri Ganesh Motors)"** with ✅ Yes / ❌ Cancel. Created only after Yes. |
+| An invoice for an unknown customer | Offers **➕ Add new customer**; after you confirm, the same invoice continues. |
+| `/whoami` | Shows your user id and the chat id (for `CUSTOMER_CREATORS` / `TELEGRAM_ALLOWED_CHATS`). |
 | `ok thanks`, `good morning` | Nothing. |
 | `where is my invoice from yesterday?`, `cancel the last bill` | A short "can't do that here" reply. |
 

@@ -51,4 +51,10 @@ export class CachedBooks implements BooksApi {
   updateInvoiceLines(...args: Parameters<BooksApi['updateInvoiceLines']>) {
     return this.inner.updateInvoiceLines(...args);
   }
+
+  async createCustomer(name: string) {
+    const c = await this.inner.createCustomer(name);
+    this.customers = undefined; // the next lookup must see the new customer
+    return c;
+  }
 }

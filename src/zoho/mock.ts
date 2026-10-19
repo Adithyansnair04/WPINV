@@ -143,6 +143,12 @@ export class MockBooks implements BooksApi {
     return updated;
   }
 
+  async createCustomer(name: string): Promise<Customer> {
+    const c: Customer = { id: `mock-c${String(this.customers.length + 1).padStart(3, '0')}`, name, companyName: name, aliases: [], currency: 'INR', active: true };
+    this.customers.push(c);
+    return c;
+  }
+
   async getInvoicePdf() {
     return null;
   }

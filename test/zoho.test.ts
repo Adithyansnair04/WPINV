@@ -134,3 +134,16 @@ test('zoho: last rate scans newest non-void invoices for the item; update uses P
   const put = calls.find((c) => c.method === 'PUT')!;
   assert.deepEqual(put.body, { customer_id: 'c1', line_items: [{ item_id: 'i1', quantity: 6, rate: 5200 }] });
 });
+
+test('zoho: createCustomer posts a customer contact and returns its id', async () => {
+  let body: unknown;
+  const { impl } = fakeFetch((url, init) => {
+    if (url.pathname === '/oauth/v2/token') return json({ access_token: 't', expires_in: 3600 });
+    body = JSON.parse(String(init.body));
+    return json({ code: 0, contact: { contact_id: 77, contact_name: 'Zenith Motors', contact_type: 'customer', status: 'active' } });
+  });
+  const c = await new ZohoBooks(creds, { fetchImpl: impl, sleep: noSleep }).createCustomer('Zenith Motors');
+  assert.deepEqual(body, { contact_name: 'Zenith Motors', company_name: 'Zenith Motors', contact_type: 'customer' });
+  assert.equal(c.id, '77');
+  assert.equal(c.name, 'Zenith Motors');
+});

@@ -3,12 +3,12 @@ import type { ExtractMeta, Extractor } from '../extraction/extract.js';
 import type { Extraction } from '../extraction/schema.js';
 import { HttpError } from '../http.js';
 import type { Logger } from '../logger.js';
-import { ItemMatcher } from '../matching/matcher.js';
+import { CustomerMatcher, ItemMatcher } from '../matching/matcher.js';
 import type { BooksApi, IncomingMessage, Invoice, Outgoing, PreviousRate, SendFn } from '../types.js';
 import { decide, fmtMoney, type Decision } from './decide.js';
 import { dryRunSummary, invoiceSummary } from './format.js';
 import { numbersIn } from './grounding.js';
-import type { InvoiceRecord, PendingClarification, StateStore } from './state.js';
+import type { InvoiceRecord, PendingClarification, PendingConfirmation, StateStore } from './state.js';
 
 export interface ProcessorOptions {
   ratePolicy: 'ask' | 'item_default';
@@ -18,6 +18,10 @@ export interface ProcessorOptions {
   dryRun: boolean;
   maxClarifyRounds?: number;
   logMessageText?: boolean;
+  /** 'confirm' allows adding customers from chat after an explicit Yes. */
+  customerCreate?: 'confirm' | 'off';
+  /** If non-empty, only these sender ids may add customers. */
+  customerCreators?: string[];
 }
 
 export interface ProcessorDeps {
@@ -49,6 +53,21 @@ const MAX_TEXT = 2000;
 const MAX_QTY = 10000;
 const MAX_RATE = 10_000_000;
 const YES = /^\s*(yes|y|ok|okay|confirm|sure|haan|ha|ji)\b/i;
+const CONFIRM_YES = /^\s*(1|yes|y|ok|okay|confirm|haan|ha|ji)\b/i;
+const CONFIRM_NO = /^\s*(2|no|n|cancel|stop|nahi)\b/i;
+
+/** "add customer Zenith Motors", "new customer: X", "/addcustomer X" -> name ('' if no name given); null if not a command. */
+export function parseAddCustomer(text: string): string | null {
+  const m = text.match(/^\s*(?:\/addcustomer(?:@\w+)?|add\s+(?:a\s+)?(?:new\s+)?customer|new\s+customer)\b\s*[:\-–]?\s*(.*)$/is);
+  return m ? m[1]!.trim() : null;
+}
+
+/** Normalizes a customer name typed in chat; null if it is not a plausible name. */
+export function cleanCustomerName(raw: string): string | null {
+  const name = raw.replace(/^["'“”‘’]+|["'“”‘’]+$/g, '').replace(/\s+/g, ' ').trim();
+  if (name.length < 2 || name.length > 60 || !/[a-z]/i.test(name) || /[\n@<>]|https?:/i.test(name)) return null;
+  return name;
+}
 
 export const idempotencyKey = (chatId: string, messageId: string) =>
   `WA-${createHash('sha256').update(`${chatId}|${messageId}`).digest('hex').slice(0, 16).toUpperCase()}`;
@@ -81,8 +100,31 @@ export class InvoiceProcessor {
     log.info('message.received', { length: text.length, quoted: Boolean(msg.quotedId), ...(this.deps.options.logMessageText ? { text } : {}) });
 
     const { store } = this.deps;
+    if (text.toLowerCase() === '/whoami' || /^\/whoami@\w+$/i.test(text)) {
+      await this.reply(msg, `Your user id: ${msg.senderId}\nThis chat id: ${msg.chatId}`);
+      return result('respond', { reason: 'whoami' });
+    }
+    const command = parseAddCustomer(text);
+    if (command !== null) {
+      const r = await this.requestCustomerCreate(msg, command, undefined);
+      return result(r.action, { reason: r.reason });
+    }
+    let createdCustomer: string | undefined;
+    let confirmation: PendingConfirmation | undefined;
+    if (msg.quotedId && store.getConfirmation(msg.quotedId)) {
+      const r = await this.handleConfirmation(msg, text, msg.quotedId, log);
+      confirmation = r.confirmation;
+      if (!r.created || !confirmation?.resumeSourceMsgId) return result(r.action, { reason: r.reason });
+      createdCustomer = r.created;
+    }
+
     let pending: PendingClarification | undefined;
-    if (msg.quotedId) {
+    if (createdCustomer) {
+      // Continue the invoice that asked for this customer, if it is still waiting.
+      const p = store.getPending(msg.chatId, confirmation!.resumeRequesterId ?? confirmation!.requesterId);
+      pending = p?.sourceMsgId === confirmation!.resumeSourceMsgId ? p : undefined;
+      if (!pending) return result('respond', { reason: 'customer_created' });
+    } else if (msg.quotedId) {
       pending = store.findPendingByQuestion(msg.chatId, msg.quotedId);
       if (!pending && store.wasQuestion(msg.quotedId)) {
         await this.reply(msg, 'That request has expired or was already handled. Please send the full request again.');
@@ -97,11 +139,20 @@ export class InvoiceProcessor {
     const t0 = performance.now();
     const option = pending?.options.length ? text.match(/^\s*(?:option\s*)?#?(\d{1,2})\s*\.?\s*$/i) : null;
     const optionNo = option ? Number(option[1]) : pending?.options.length === 1 && YES.test(text) ? 1 : null;
-    if (pending && optionNo !== null) {
+    if (pending && createdCustomer) {
+      extraction = structuredClone(pending.extraction);
+      extraction.intent = 'clarification_response';
+      extraction.customer = createdCustomer;
+      log.info('customer.resume_request');
+    } else if (pending && optionNo !== null) {
       const chosen = pending.options[optionNo - 1];
       if (!chosen) {
         await this.reply(msg, `Please reply with a number between 1 and ${pending.options.length}.`);
         return result('clarify', { reason: 'invalid_option', associatedPending: true });
+      }
+      if (chosen.newCustomer) {
+        const r = await this.requestCustomerCreate(msg, chosen.newCustomer, pending);
+        return result(r.action, { reason: r.reason, associatedPending: true });
       }
       extraction = structuredClone(pending.extraction);
       extraction.intent = 'clarification_response';
@@ -158,7 +209,7 @@ export class InvoiceProcessor {
       const t1 = performance.now();
       const [customers, items] = await Promise.all([this.deps.books.listCustomers(), this.deps.books.listItems()]);
       timings.catalogue = Math.round(performance.now() - t1);
-      decision = decide(extraction, customers, items, { ...this.deps.options, sourceText });
+      decision = decide(extraction, customers, items, { ...this.deps.options, allowCustomerCreate: this.deps.options.customerCreate === 'confirm', sourceText });
       const customerId = decision.trace.customer?.id;
       if (decision.kind === 'clarify' && customerId && decision.trace.problems.includes('rate_from_previous')) {
         const previousRates = new Map<number, PreviousRate | null>();
@@ -171,7 +222,7 @@ export class InvoiceProcessor {
             log.warn('previous_rate.lookup_failed', { error: e });
           }
         }
-        if (previousRates.size) decision = decide(extraction, customers, items, { ...this.deps.options, sourceText, previousRates });
+        if (previousRates.size) decision = decide(extraction, customers, items, { ...this.deps.options, allowCustomerCreate: this.deps.options.customerCreate === 'confirm', sourceText, previousRates });
       }
     } catch (e) {
       log.error('catalogue.failed', { error: e });
@@ -316,6 +367,102 @@ export class InvoiceProcessor {
       const category = e instanceof HttpError ? e.category : 'unknown';
       log.error('invoice.edit_failed', { category, error: e });
       return respond(`edit_${category}`, `I couldn't update ${target.number} (${category}). Nothing was changed; please check Zoho Books.`);
+    }
+  }
+
+  private mayCreateCustomers(senderId: string): boolean {
+    const creators = this.deps.options.customerCreators ?? [];
+    return this.deps.options.customerCreate === 'confirm' && (!creators.length || creators.includes(senderId));
+  }
+
+  /** Step 1 of adding a customer: validate, check for duplicates, and ask for an explicit Yes/Cancel. Nothing is created here. */
+  private async requestCustomerCreate(msg: IncomingMessage, rawName: string, pending: PendingClarification | undefined): Promise<{ action: Action; reason: string }> {
+    const respond = async (reason: string, text: string) => {
+      await this.reply(msg, text);
+      return { action: 'respond' as Action, reason };
+    };
+    if (this.deps.options.customerCreate !== 'confirm') return respond('customer_create_off', 'Adding customers from chat is turned off. Please add them in Zoho Books.');
+    if (!this.mayCreateCustomers(msg.senderId)) return respond('customer_create_forbidden', 'Only authorised users can add customers. Please ask an admin.');
+    if (!rawName) return respond('customer_create_usage', 'To add a customer, send: add customer <full name>');
+    const name = cleanCustomerName(rawName);
+    if (!name) return respond('customer_create_invalid', 'That does not look like a customer name (2–60 characters, no links). Please send: add customer <full name>');
+
+    const r = new CustomerMatcher(await this.deps.books.listCustomers()).match(name);
+    if (r.status === 'matched') return respond('customer_exists', `"${r.record.name}" already exists, so there is no need to add it.`);
+    const similar = r.candidates.filter((c) => c.score >= 0.5).slice(0, 3).map((c) => c.record.name);
+    const text = [
+      `Add new customer "${name}" to Zoho Books?`,
+      ...(similar.length ? [`⚠️ Similar existing customers: ${similar.join(' / ')}`] : []),
+      'Please check the spelling: this creates a permanent customer record.',
+      `  1) Yes, add "${name}"`,
+      '  2) Cancel',
+      '',
+      'Tap a button or reply to this message with 1 or 2.',
+    ].join('\n');
+    const buttons = [[{ text: '✅ Yes, add customer', data: 'opt:1' }], [{ text: '❌ Cancel', data: 'opt:2' }]];
+    const id = await this.safeSend(msg.chatId, { text, buttons }, msg.id);
+    if (!id) return { action: 'error', reason: 'confirmation_not_sent' };
+    this.deps.store.setConfirmation(id, {
+      chatId: msg.chatId,
+      requesterId: msg.senderId,
+      name,
+      resumeSourceMsgId: pending?.sourceMsgId,
+      resumeRequesterId: pending?.senderId,
+      createdAt: this.now(),
+      expiresAt: this.now() + this.deps.options.clarifyTtlMs,
+    });
+    return { action: 'clarify', reason: 'confirm_new_customer' };
+  }
+
+  /** Step 2: Yes creates the customer (once), Cancel discards. Only the requester (or an authorised creator) may answer. */
+  private async handleConfirmation(
+    msg: IncomingMessage,
+    text: string,
+    confirmationId: string,
+    log: ReturnType<Logger['child']>,
+  ): Promise<{ action: Action; reason: string; created?: string; confirmation?: PendingConfirmation }> {
+    const { store, books } = this.deps;
+    const respond = async (reason: string, reply: string, confirmation?: PendingConfirmation) => {
+      await this.reply(msg, reply);
+      return { action: 'respond' as Action, reason, confirmation };
+    };
+    const conf = store.getConfirmation(confirmationId)!;
+    if (conf.chatId !== msg.chatId) return { action: 'ignore', reason: 'confirmation_other_chat' };
+    if (conf.expiresAt <= this.now()) {
+      store.takeConfirmation(confirmationId);
+      return respond('confirmation_expired', 'That confirmation has expired. Nothing was added. Send "add customer <name>" again.');
+    }
+    const creators = this.deps.options.customerCreators ?? [];
+    if (msg.senderId !== conf.requesterId && !(creators.length && creators.includes(msg.senderId))) {
+      return respond('confirmation_forbidden', 'Only the person who asked can confirm adding this customer.');
+    }
+    const yes = CONFIRM_YES.test(text);
+    if (!yes && !CONFIRM_NO.test(text)) {
+      await this.reply(msg, 'Please tap ✅ Yes or ❌ Cancel (or reply 1 / 2).');
+      return { action: 'clarify', reason: 'confirmation_unclear' };
+    }
+    const taken = store.takeConfirmation(confirmationId);
+    if (!taken) return { action: 'ignore', reason: 'confirmation_already_used' };
+    if (!yes) return respond('customer_create_cancelled', `Cancelled. "${taken.name}" was not added.`);
+    if (!this.mayCreateCustomers(msg.senderId) && msg.senderId !== taken.requesterId) {
+      return respond('customer_create_forbidden', 'Only authorised users can add customers.');
+    }
+
+    try {
+      const existing = new CustomerMatcher(await books.listCustomers()).match(taken.name);
+      if (existing.status === 'matched') {
+        await this.reply(msg, `"${existing.record.name}" already exists, so nothing new was added.`);
+        return { action: 'respond', reason: 'customer_exists', created: existing.record.name, confirmation: taken };
+      }
+      if (this.deps.options.dryRun) return respond('customer_create_dry_run', `DRY RUN: would add customer "${taken.name}".`, taken);
+      const c = await books.createCustomer(taken.name);
+      log.info('customer.created', { customerId: c.id });
+      await this.reply(msg, `✅ Added customer "${c.name}".${taken.resumeSourceMsgId ? ' Continuing your invoice…' : ''}`);
+      return { action: 'respond', reason: 'customer_created', created: c.name, confirmation: taken };
+    } catch (e) {
+      const category = e instanceof HttpError ? e.category : 'unknown';
+      log.error('customer.create_failed', { category, error: e });
+      return respond(`customer_create_${category}`, `I couldn't add "${taken.name}" (${(e as Error).message.slice(0, 140)}). Nothing was added; please add it in Zoho Books.`, taken);
     }
   }
 
