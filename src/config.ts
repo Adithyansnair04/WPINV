@@ -21,6 +21,8 @@ const EnvSchema = z.object({
   DATA_DIR: z.string().default('.data'),
 
   LLM_MODEL: z.string().default('gemini:gemini-3.1-flash-lite'),
+  // Used when LLM_MODEL fails (overloaded, rate-limited, timeout, unusable output). Empty = no fallback.
+  LLM_FALLBACK_MODEL: z.string().optional(),
   EVAL_MODELS: list,
   EVAL_DELAY_MS: z.coerce.number().int().min(0).default(0),
   LLM_TIMEOUT_MS: z.coerce.number().int().positive().default(30000),

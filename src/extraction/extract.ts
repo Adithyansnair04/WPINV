@@ -15,6 +15,9 @@ export interface ExtractMeta {
   retries: number;
   rateLimited: number;
   invalidOutputs: number;
+  /** Set when the primary model failed and this result came from the fallback model. */
+  fallbackFrom?: string;
+  primaryError?: string;
 }
 
 export type ExtractOutcome =
@@ -38,6 +41,29 @@ export function parseExtraction(raw: string): { ok: true; value: Extraction } | 
   const parsed = Extraction.safeParse(json);
   if (!parsed.success) return { ok: false, error: parsed.error.issues.map((i) => `${i.path.join('.')}: ${i.message}`).join('; ') };
   return { ok: true, value: parsed.data };
+}
+
+/** Tries the primary extractor; on any failure (overload, rate limit, timeout, unusable output) asks the fallback once. */
+export function withFallback(primary: Extractor, fallback: Extractor): Extractor {
+  return {
+    id: `${primary.id} (fallback ${fallback.id})`,
+    async extract(text, pending) {
+      const first = await primary.extract(text, pending);
+      if (first.ok) return first;
+      const second = await fallback.extract(text, pending);
+      const meta: ExtractMeta = {
+        ...second.meta,
+        latencyMs: first.meta.latencyMs + second.meta.latencyMs,
+        attempts: first.meta.attempts + second.meta.attempts,
+        retries: first.meta.retries + second.meta.retries,
+        rateLimited: first.meta.rateLimited + second.meta.rateLimited,
+        invalidOutputs: first.meta.invalidOutputs + second.meta.invalidOutputs,
+        fallbackFrom: primary.id,
+        primaryError: `${first.category}: ${first.error.slice(0, 120)}`,
+      };
+      return second.ok ? { ...second, meta } : { ...second, error: `primary: ${first.error.slice(0, 120)}; fallback: ${second.error}`, meta };
+    },
+  };
 }
 
 /** LLM-backed extractor: one corrective retry when the output is not valid JSON for the schema. */

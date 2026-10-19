@@ -1,6 +1,6 @@
 import { join } from 'node:path';
 import { requireZohoCredentials, type Config } from './config.js';
-import { llmExtractor, type Extractor } from './extraction/extract.js';
+import { llmExtractor, withFallback, type Extractor } from './extraction/extract.js';
 import { rulesExtractor } from './extraction/rules.js';
 import { createProvider } from './llm/provider.js';
 import type { Logger } from './logger.js';
@@ -11,8 +11,13 @@ import { CachedBooks } from './zoho/cached.js';
 import { ZohoBooks } from './zoho/client.js';
 import { loadAliases, MockBooks } from './zoho/mock.js';
 
-export function createExtractor(spec: string, cfg: Config): Extractor {
-  return spec === 'rules' || spec === 'rules:baseline' ? rulesExtractor : llmExtractor(createProvider(spec, cfg));
+export function createExtractor(spec: string, cfg: Config, opts: { withFallback?: boolean } = {}): Extractor {
+  if (spec === 'rules' || spec === 'rules:baseline') return rulesExtractor;
+  const fallbackSpec = opts.withFallback ? cfg.LLM_FALLBACK_MODEL?.trim() : undefined;
+  if (!fallbackSpec || fallbackSpec === spec) return llmExtractor(createProvider(spec, cfg));
+  // With a fallback available, the primary gets one retry and at most 15 s before the fallback answers.
+  const primary = llmExtractor(createProvider(spec, cfg, { maxRetries: 1, timeoutMs: Math.min(cfg.LLM_TIMEOUT_MS, 15000) }));
+  return withFallback(primary, createExtractor(fallbackSpec, cfg));
 }
 
 export function createBooks(cfg: Config, log: Logger): BooksApi {
@@ -25,7 +30,7 @@ export const isDryRun = (cfg: Config) => cfg.ZOHO_MODE === 'live' && !cfg.INVOIC
 
 export function createProcessor(cfg: Config, log: Logger, send: SendFn, opts: { persistState?: boolean; store?: StateStore } = {}) {
   return new InvoiceProcessor({
-    extractor: createExtractor(cfg.LLM_MODEL, cfg),
+    extractor: createExtractor(cfg.LLM_MODEL, cfg, { withFallback: true }),
     books: createBooks(cfg, log),
     store: opts.store ?? new StateStore(opts.persistState === false ? undefined : join(cfg.DATA_DIR, 'state.json')),
     send,
