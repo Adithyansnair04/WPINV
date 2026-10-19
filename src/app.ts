@@ -36,6 +36,8 @@ export function createProcessor(cfg: Config, log: Logger, send: SendFn, opts: { 
       clarifyTtlMs: cfg.CLARIFY_TTL_MINUTES * 60_000,
       dryRun: isDryRun(cfg),
       logMessageText: cfg.LOG_MESSAGE_TEXT,
+      customerCreate: cfg.CUSTOMER_CREATE,
+      customerCreators: cfg.CUSTOMER_CREATORS,
     },
   });
 }

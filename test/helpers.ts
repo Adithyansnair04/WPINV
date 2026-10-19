@@ -2,7 +2,7 @@ import type { Extractor } from '../src/extraction/extract.js';
 import { llmExtractor } from '../src/extraction/extract.js';
 import { fixture } from '../src/llm/provider.js';
 import { silentLogger } from '../src/logger.js';
-import { InvoiceProcessor } from '../src/pipeline/processor.js';
+import { InvoiceProcessor, type ProcessorOptions } from '../src/pipeline/processor.js';
 import { StateStore } from '../src/pipeline/state.js';
 import type { IncomingMessage, Outgoing } from '../src/types.js';
 import { MockBooks } from '../src/zoho/mock.js';
@@ -43,7 +43,7 @@ export const msg = (text: string, o: Partial<IncomingMessage> = {}): IncomingMes
   ...o,
 });
 
-export function setup(extractor: Extractor, opts: { dryRun?: boolean; now?: () => number; books?: MockBooks } = {}) {
+export function setup(extractor: Extractor, opts: { dryRun?: boolean; now?: () => number; books?: MockBooks; options?: Partial<ProcessorOptions> } = {}) {
   const books = opts.books ?? new MockBooks();
   const sent: { chatId: string; out: Outgoing; quoteId?: string; id: string }[] = [];
   const store = new StateStore(undefined, opts.now);
@@ -58,7 +58,7 @@ export function setup(extractor: Extractor, opts: { dryRun?: boolean; now?: () =
       sent.push({ chatId, out, quoteId, id });
       return id;
     },
-    options: { ratePolicy: 'ask', baseCurrency: 'INR', clarifyTtlMs: 15 * 60_000, dryRun: opts.dryRun ?? false },
+    options: { ratePolicy: 'ask', baseCurrency: 'INR', clarifyTtlMs: 15 * 60_000, dryRun: opts.dryRun ?? false, ...opts.options },
   });
   return { books, sent, store, processor };
 }

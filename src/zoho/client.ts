@@ -285,6 +285,15 @@ export class ZohoBooks implements BooksApi {
     return toInvoice(parsed.data.invoice);
   }
 
+  /** POST /contacts (customer). GST-registered orgs may additionally require gst_treatment; Zoho's error is surfaced to the user. */
+  async createCustomer(name: string): Promise<Customer> {
+    const { json } = await this.request('POST', '/contacts', { body: { contact_name: name, company_name: name, contact_type: 'customer' } });
+    const parsed = z.object({ contact: Contact }).safeParse(json);
+    if (!parsed.success) throw new HttpError('Customer created but response shape was unexpected; check Zoho', 'validation');
+    const c = parsed.data.contact;
+    return { id: c.contact_id, name: c.contact_name, companyName: c.company_name ?? undefined, aliases: [], currency: c.currency_code, active: true };
+  }
+
   /** GET /invoices/{id}?accept=pdf. Returns null if Zoho does not return a PDF body. */
   async getInvoicePdf(invoiceId: string): Promise<Buffer | null> {
     const r = await this.request('GET', `/invoices/${encodeURIComponent(invoiceId)}`, { accept: 'pdf' });

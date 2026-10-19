@@ -64,6 +64,8 @@ export interface BooksApi {
   findLastRate(customerId: string, itemId: string): Promise<PreviousRate | null>;
   /** Replaces the line items of an existing invoice (used only for drafts created by this bot). */
   updateInvoiceLines(invoiceId: string, customerId: string, lines: InvoiceLineInput[]): Promise<Invoice>;
+  /** Creates a customer contact. Only called after an explicit user confirmation. */
+  createCustomer(name: string): Promise<Customer>;
 }
 
 export interface IncomingMessage {

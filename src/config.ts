@@ -57,6 +57,11 @@ const EnvSchema = z.object({
   DASHBOARD_PORT: z.coerce.number().int().min(0).default(3001),
   DASHBOARD_HOST: z.string().default('127.0.0.1'),
 
+  // Adding customers from chat: 'confirm' = allowed after an explicit Yes; 'off' = disabled.
+  CUSTOMER_CREATE: z.enum(['confirm', 'off']).default('confirm'),
+  // Optional allowlist of sender ids who may add customers (empty = any member of an allowed chat).
+  CUSTOMER_CREATORS: list,
+
   CLARIFY_TTL_MINUTES: z.coerce.number().positive().default(15),
   RATE_POLICY: z.enum(['ask', 'item_default']).default('ask'),
   BASE_CURRENCY: z.string().default('INR'),
