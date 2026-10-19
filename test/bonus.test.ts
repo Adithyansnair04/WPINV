@@ -10,7 +10,7 @@ test('mock history: last rate skips void invoices and is per customer and item',
   const b = new MockBooks();
   const vk = b.customers.find((c) => c.name === 'VK Enterprises')!;
   const lnz = b.items.find((i) => i.sku === 'LNZ-18-RED')!;
-  assert.deepEqual(await b.findLastRate(vk.id, lnz.id), { rate: 5100, invoiceNumber: 'INV-000101', date: '2026-09-28' });
+  assert.deepEqual(await b.findLastRate(vk.id, lnz.id), { rate: 5100, invoiceNumber: 'INV-000101', date: '2026-09-28', status: 'paid' });
   const metro = b.customers.find((c) => c.name === 'Metro Car Accessories')!;
   assert.equal(await b.findLastRate(metro.id, lnz.id), null);
 });
@@ -20,7 +20,7 @@ test('rate same as last time: asks to confirm the looked-up rate with its source
   const r1 = await processor.handle(msg(SAME));
   assert.equal(r1.action, 'clarify');
   assert.ok(r1.decision!.trace.problems.includes('confirm_previous_rate'));
-  assert.match(sent[0]!.out.text, /₹5,100 \(invoice INV-000101, 2026-09-28\)/);
+  assert.match(sent[0]!.out.text, /₹5,100 \(invoice INV-000101, 2026-09-28, paid\)/);
   assert.deepEqual(sent[0]!.out.buttons, [[{ text: '1) Yes, ₹5,100 (INV-000101)', data: 'opt:1' }]]);
   assert.equal(books.createCalls, 0);
 
@@ -83,10 +83,12 @@ test('edit: refuses non-drafts and numbers not in the message', async () => {
   assert.equal(books.updateCalls, 0);
 });
 
-test('rate same as last time ignores drafts (they may never be sent)', async () => {
-  const { processor, sent } = setup(scripted({ [VK]: VK_EX, [SAME]: sameEx() }));
-  await processor.handle(msg(VK)); // creates a draft at ₹5,200
+test('rate same as last time uses the newest invoice including drafts, and says it is a draft', async () => {
+  const { processor, books, sent } = setup(scripted({ [VK]: VK_EX, [SAME]: sameEx() }));
+  await processor.handle(msg(VK)); // a draft at ₹5,200, newer than paid INV-000101 at ₹5,100
   const r = await processor.handle(msg(SAME));
   assert.equal(r.action, 'clarify');
-  assert.match(sent.at(-1)!.out.text, /₹5,100 \(invoice INV-000101/);
+  assert.match(sent.at(-1)!.out.text, /₹5,200 \(invoice MOCK-INV-00001, \d{4}-\d{2}-\d{2}, draft\)/);
+  await processor.handle(msg('yes', { quotedId: sent.at(-1)!.id }));
+  assert.equal(books.created.at(-1)!.lines[0]!.rate, 5200);
 });

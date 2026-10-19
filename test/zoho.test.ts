@@ -124,7 +124,7 @@ test('zoho: last rate scans newest non-void invoices for the item; update uses P
     return json({ code: 0 });
   });
   const z = new ZohoBooks(creds, { fetchImpl: impl, sleep: noSleep });
-  assert.deepEqual(await z.findLastRate('c1', 'i1'), { rate: 5100, invoiceNumber: 'INV-1', date: '2026-09-01' });
+  assert.deepEqual(await z.findLastRate('c1', 'i1'), { rate: 5100, invoiceNumber: 'INV-1', date: '2026-09-01', status: 'sent' });
   assert.equal(calls[0]!.query.get('customer_id'), 'c1');
   assert.equal(calls[0]!.query.get('sort_order'), 'D');
   assert.ok(!calls.some((c) => c.path === '/invoices/3'), 'void invoice must not be read');
