@@ -262,15 +262,15 @@ export class ZohoBooks implements BooksApi {
     return toInvoice(parsed.data.invoice);
   }
 
-  /** Scans the customer's most recent issued invoices (newest first, max 5 detail calls) for the item's last rate; drafts and void invoices are skipped. */
+  /** Scans the customer's most recent invoices (newest first, max 5 detail calls) for the item's last rate; void invoices are skipped, drafts count (the user confirms). */
   async findLastRate(customerId: string, itemId: string): Promise<PreviousRate | null> {
     const { json } = await this.request('GET', '/invoices', { query: { customer_id: customerId, sort_column: 'date', sort_order: 'D', per_page: 25 } });
     const list = z.object({ invoices: z.array(z.object({ invoice_id: z.coerce.string(), status: z.string() })) }).safeParse(json);
     if (!list.success) throw new HttpError('Unexpected Zoho invoice list shape', 'validation');
-    for (const summary of list.data.invoices.filter((i) => i.status !== 'void' && i.status !== 'draft').slice(0, 5)) {
+    for (const summary of list.data.invoices.filter((i) => i.status !== 'void').slice(0, 5)) {
       const inv = await this.getInvoice(summary.invoice_id);
       const line = inv.lines.find((l) => l.itemId === itemId);
-      if (line) return { rate: line.rate, invoiceNumber: inv.number, date: inv.date ?? '' };
+      if (line) return { rate: line.rate, invoiceNumber: inv.number, date: inv.date ?? '', status: inv.status };
     }
     return null;
   }

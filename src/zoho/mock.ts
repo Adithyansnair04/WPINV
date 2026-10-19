@@ -127,8 +127,8 @@ export class MockBooks implements BooksApi {
 
   async findLastRate(customerId: string, itemId: string): Promise<PreviousRate | null> {
     const hits = this.invoices
-      .filter((i) => i.customerId === customerId && i.status !== 'void' && i.status !== 'draft')
-      .flatMap((i) => i.lines.filter((l) => l.itemId === itemId).map((l) => ({ rate: l.rate, invoiceNumber: i.number, date: i.date })))
+      .filter((i) => i.customerId === customerId && i.status !== 'void')
+      .flatMap((i) => i.lines.filter((l) => l.itemId === itemId).map((l) => ({ rate: l.rate, invoiceNumber: i.number, date: i.date, status: i.status })))
       .sort((a, b) => b.date.localeCompare(a.date));
     return hits[0] ?? null;
   }

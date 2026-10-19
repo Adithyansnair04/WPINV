@@ -163,7 +163,7 @@ The regex baseline scores 45.8% on the held-out set (0 wrong invoices). The raw 
 | Any ambiguity, missing field, unknown record, foreign currency, invalid number | Ask in the group | Same. |
 | Rate deviates from the item's list rate by > X% (not implemented) | — | Ask for confirmation, or require approval. |
 | Large amount (> limit) or new customer | — | Draft + approval from a named approver. |
-| "Rate same as last time" | Look up the customer's latest issued invoice (not draft, not void) for that exact item and **ask to confirm** the rate and its source invoice (Yes button, or reply with another rate); if none is found, ask for the rate | Same. |
+| "Rate same as last time" | Look up the customer's latest invoice for that exact item (drafts included, void skipped; its status is shown) and **ask to confirm** the rate and its source invoice (Yes button, or reply with another rate); if none is found, ask for the rate | Same. |
 | "Make it 6 pcs" / "rate 5000" | Only as a **reply to the bot's invoice message**; drafts only; one line per edit; numbers must be in the message; reply shows old → new | Add an audit trail and restrict edits to the requester or an approver. |
 | New customer ("add customer X", or ➕ when a name is unknown) | Explicit **Yes/Cancel confirmation**: similar existing names shown as a warning, exact duplicates refused, single-use, expires with the clarification TTL; only the requester (or a `CUSTOMER_CREATORS` member) can confirm; `CUSTOMER_CREATE=off` disables it | Restrict to named admins; collect GSTIN and place of supply before creating. |
 | Cancellations, resends, "same order as last week" | Refuse politely | Human only. |

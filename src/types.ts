@@ -50,6 +50,8 @@ export interface PreviousRate {
   rate: number;
   invoiceNumber: string;
   date: string;
+  /** Invoice status (e.g. draft, sent, paid), shown to the user in the confirmation. */
+  status?: string;
 }
 
 /** Narrow interface over Zoho Books so the pipeline can run against a mock. */
@@ -60,7 +62,7 @@ export interface BooksApi {
   createInvoice(input: InvoiceInput): Promise<Invoice>;
   getInvoicePdf(invoiceId: string): Promise<Buffer | null>;
   getInvoice(invoiceId: string): Promise<Invoice>;
-  /** Most recent issued (not draft, not void) invoice line for this customer and item, used for "rate same as last time". */
+  /** Most recent non-void invoice line (drafts included) for this customer and item, used for "rate same as last time". The user confirms it. */
   findLastRate(customerId: string, itemId: string): Promise<PreviousRate | null>;
   /** Replaces the line items of an existing invoice (used only for drafts created by this bot). */
   updateInvoiceLines(invoiceId: string, customerId: string, lines: InvoiceLineInput[]): Promise<Invoice>;

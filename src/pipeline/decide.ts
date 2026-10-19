@@ -202,7 +202,7 @@ export function decide(input: Extraction, customers: Customer[], items: Item[], 
     if (rate === null && li.rate_from_previous && prev && r.status === 'matched') {
       // Never applied silently: the user confirms the exact rate and its source invoice.
       options.push({ lineIndex: idx, itemId: r.record.id, name: `Yes, ${fmtMoney(prev.rate)} (${prev.invoiceNumber})`, rate: prev.rate });
-      questions.push(`Use the last rate for ${label}: ${fmtMoney(prev.rate)} (invoice ${prev.invoiceNumber}${prev.date ? `, ${prev.date}` : ''})?
+      questions.push(`Use the last rate for ${label}: ${fmtMoney(prev.rate)} (invoice ${prev.invoiceNumber}${prev.date ? `, ${prev.date}` : ''}${prev.status ? `, ${prev.status}` : ''})?
   ${options.length}) Yes, use ${fmtMoney(prev.rate)}
 Or reply with a different rate.`);
       trace.problems.push('confirm_previous_rate');
