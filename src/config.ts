@@ -1,5 +1,8 @@
-import 'dotenv/config';
+import { config as loadDotenv } from 'dotenv';
 import { z } from 'zod';
+
+// .env is the source of truth: override stale values that editors (e.g. VS Code's useEnvFile) inject when a terminal opens.
+loadDotenv({ override: true, quiet: true });
 
 const bool = (def: boolean) =>
   z
@@ -17,7 +20,9 @@ const EnvSchema = z.object({
   LOG_MESSAGE_TEXT: bool(false),
   DATA_DIR: z.string().default('.data'),
 
-  LLM_MODEL: z.string().default('mistral:mistral-small-latest'),
+  LLM_MODEL: z.string().default('gemini:gemini-3.1-flash-lite'),
+  // Used when LLM_MODEL fails (overloaded, rate-limited, timeout, unusable output). Empty = no fallback.
+  LLM_FALLBACK_MODEL: z.string().optional(),
   EVAL_MODELS: list,
   EVAL_DELAY_MS: z.coerce.number().int().min(0).default(0),
   LLM_TIMEOUT_MS: z.coerce.number().int().positive().default(30000),
@@ -54,8 +59,18 @@ const EnvSchema = z.object({
   WA_AUTH_DIR: z.string().default('.data/wa-auth'),
   WA_ALLOWED_GROUPS: list,
 
+  DASHBOARD_PORT: z.coerce.number().int().min(0).default(3001),
+  DASHBOARD_HOST: z.string().default('127.0.0.1'),
+
+  // Adding customers from chat: 'confirm' = allowed after an explicit Yes; 'off' = disabled.
+  CUSTOMER_CREATE: z.enum(['confirm', 'off']).default('confirm'),
+  // Optional allowlist of sender ids who may add customers (empty = any member of an allowed chat).
+  CUSTOMER_CREATORS: list,
+
   CLARIFY_TTL_MINUTES: z.coerce.number().positive().default(15),
   RATE_POLICY: z.enum(['ask', 'item_default']).default('ask'),
+  // Tax applied to invoice lines whose item has no tax of its own (needs a tax with this % in Zoho). Empty = items' own tax only.
+  DEFAULT_TAX_PERCENT: z.preprocess((v) => (v === '' ? undefined : v), z.coerce.number().min(0).max(100).optional()),
   BASE_CURRENCY: z.string().default('INR'),
 });
 

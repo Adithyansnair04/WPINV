@@ -89,3 +89,32 @@ test('telegram: polling filters chats, skips stale messages, advances offset', a
   const second = calls.filter((c) => c.method === 'getUpdates')[1]!.body as { offset: number };
   assert.equal(second.offset, 4);
 });
+
+test('telegram: option button tap becomes a numbered reply to the question; buttons are sent and then cleared', async () => {
+  const { parseCallback } = await import('../src/telegram/bot.js');
+  const tap = { update_id: 9, callback_query: { id: 'cb1', from: { id: 42, is_bot: false }, data: 'opt:2', message: { message_id: 77, chat: { id: -100123, type: 'supergroup' } } } };
+  const m = parseCallback(tap as never)!;
+  assert.equal(m.text, '2');
+  assert.equal(m.quotedId, '-100123:77');
+  assert.equal(m.id, 'cb:cb1');
+  assert.equal(parseCallback({ update_id: 1, callback_query: { ...tap.callback_query, data: 'other' } } as never), null);
+
+  const { calls, fetchImpl } = fakeTelegram(() => ({ json: { ok: true, result: { message_id: 5 } } }));
+  await createTelegramApi({ token: 'T', fetchImpl }).send('-100123', { text: 'Which item?', buttons: [[{ text: '1) Neo Red', data: 'opt:1' }]] });
+  assert.deepEqual((calls[0]!.body as { reply_markup: unknown }).reply_markup, { inline_keyboard: [[{ text: '1) Neo Red', callback_data: 'opt:1' }]] });
+
+  const received: IncomingMessage[] = [];
+  let polls = 0;
+  const poll = fakeTelegram((method) => {
+    if (method === 'getMe') return { json: { ok: true, result: { id: BOT_ID } } };
+    if (method === 'getUpdates') return { json: { ok: true, result: ++polls === 1 ? [tap] : [] } };
+    return { json: { ok: true, result: true } };
+  });
+  const bot = await startTelegramPolling({ api: createTelegramApi({ token: 'T', fetchImpl: poll.fetchImpl }), allowedChats: ['-100123'], maxMessageAgeSec: 600, log: silentLogger, onMessage: (x) => received.push(x), pollTimeoutSec: 0 });
+  while (polls < 2) await new Promise((r) => setTimeout(r, 5));
+  await bot.stop();
+  await new Promise((r) => setTimeout(r, 10));
+  assert.deepEqual(received.map((x) => x.text), ['2']);
+  assert.ok(poll.calls.some((c) => c.method === 'answerCallbackQuery'));
+  assert.ok(poll.calls.some((c) => c.method === 'editMessageReplyMarkup'));
+});

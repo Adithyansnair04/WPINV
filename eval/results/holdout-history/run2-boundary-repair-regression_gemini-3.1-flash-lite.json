@@ -1,0 +1,1153 @@
+{
+  "model": "gemini:gemini-3.1-flash-lite",
+  "status": "ok",
+  "timestamp": "2026-10-18T20:17:01.959Z",
+  "caseCount": 24,
+  "casesScored": 24,
+  "blocked": [],
+  "partial": false,
+  "metrics": {
+    "headline": {
+      "action_accuracy": {
+        "num": 22,
+        "den": 24,
+        "pct": 91.7
+      },
+      "customer_match_accuracy": {
+        "num": 18,
+        "den": 19,
+        "pct": 94.7
+      },
+      "item_match_accuracy": {
+        "num": 19,
+        "den": 20,
+        "pct": 95
+      },
+      "quantity_accuracy": {
+        "num": 20,
+        "den": 20,
+        "pct": 100
+      },
+      "rate_accuracy": {
+        "num": 20,
+        "den": 20,
+        "pct": 100
+      },
+      "clarification_recall": {
+        "num": 8,
+        "den": 9,
+        "pct": 88.9
+      },
+      "unnecessary_clarification_rate": {
+        "num": 1,
+        "den": 13,
+        "pct": 7.7
+      },
+      "confidently_wrong_invoices": 1,
+      "non_invoice_false_positives": {
+        "num": 0,
+        "den": 5,
+        "pct": 0
+      },
+      "exact_invoice_rate": {
+        "num": 12,
+        "den": 13,
+        "pct": 92.3
+      }
+    },
+    "extraction": {
+      "intent_accuracy": {
+        "num": 24,
+        "den": 24,
+        "pct": 100
+      },
+      "line_count_accuracy": {
+        "num": 19,
+        "den": 19,
+        "pct": 100
+      },
+      "quantity_accuracy": {
+        "num": 20,
+        "den": 20,
+        "pct": 100
+      },
+      "rate_accuracy": {
+        "num": 20,
+        "den": 20,
+        "pct": 100
+      }
+    },
+    "matching": {
+      "customer_match_accuracy": {
+        "num": 18,
+        "den": 19,
+        "pct": 94.7
+      },
+      "item_match_accuracy": {
+        "num": 19,
+        "den": 20,
+        "pct": 95
+      }
+    },
+    "latency_ms": {
+      "model_turns": 27,
+      "mean": 1305,
+      "p50": 1199,
+      "p95": 2183,
+      "max": 2368,
+      "total": 35223
+    },
+    "reliability": {
+      "model_failures": 0,
+      "invalid_outputs": 0,
+      "http_retries": 0,
+      "rate_limit_events": 0
+    },
+    "confidently_wrong_case_ids": [
+      "H10"
+    ],
+    "per_category": {
+      "straightforward": {
+        "ok": 4,
+        "n": 4
+      },
+      "alias": {
+        "ok": 1,
+        "n": 1
+      },
+      "typo": {
+        "ok": 0,
+        "n": 1
+      },
+      "informal": {
+        "ok": 2,
+        "n": 2
+      },
+      "word_order": {
+        "ok": 2,
+        "n": 2
+      },
+      "ambiguous": {
+        "ok": 1,
+        "n": 2
+      },
+      "missing": {
+        "ok": 2,
+        "n": 2
+      },
+      "invalid": {
+        "ok": 2,
+        "n": 2
+      },
+      "non_invoice": {
+        "ok": 3,
+        "n": 3
+      },
+      "previous_invoice": {
+        "ok": 2,
+        "n": 2
+      },
+      "clarification_flow": {
+        "ok": 3,
+        "n": 3
+      }
+    }
+  },
+  "results": [
+    {
+      "id": "H01",
+      "category": "straightforward",
+      "turns": [
+        {
+          "action": "create",
+          "latencyMs": 1321,
+          "usedModel": true,
+          "meta": {
+            "model": "gemini:gemini-3.1-flash-lite",
+            "latencyMs": 1320.0173,
+            "attempts": 1,
+            "retries": 0,
+            "rateLimited": 0,
+            "invalidOutputs": 0
+          }
+        }
+      ],
+      "intent": "invoice_request",
+      "extractedItems": [
+        {
+          "description": "Lenza 18 inch red alloys",
+          "quantity": 4,
+          "rate": 5400
+        }
+      ],
+      "resolvedCustomer": "Kerala Wheel Hub",
+      "resolvedLines": [
+        {
+          "status": "matched",
+          "sku": "LZA-18-RED"
+        }
+      ],
+      "problems": [],
+      "invoice": {
+        "customer": "Kerala Wheel Hub",
+        "lines": [
+          {
+            "sku": "LZA-18-RED",
+            "quantity": 4,
+            "rate": 5400
+          }
+        ]
+      }
+    },
+    {
+      "id": "H02",
+      "category": "straightforward",
+      "turns": [
+        {
+          "action": "create",
+          "latencyMs": 1440,
+          "usedModel": true,
+          "meta": {
+            "model": "gemini:gemini-3.1-flash-lite",
+            "latencyMs": 1438.6799,
+            "attempts": 1,
+            "retries": 0,
+            "rateLimited": 0,
+            "invalidOutputs": 0
+          }
+        }
+      ],
+      "intent": "invoice_request",
+      "extractedItems": [
+        {
+          "description": "durotrac 185/65r15 tyre",
+          "quantity": 2,
+          "rate": 4400
+        }
+      ],
+      "resolvedCustomer": "Bismi Auto World",
+      "resolvedLines": [
+        {
+          "status": "matched",
+          "sku": "DRT-185-65-15"
+        }
+      ],
+      "problems": [],
+      "invoice": {
+        "customer": "Bismi Auto World",
+        "lines": [
+          {
+            "sku": "DRT-185-65-15",
+            "quantity": 2,
+            "rate": 4400
+          }
+        ]
+      }
+    },
+    {
+      "id": "H03",
+      "category": "alias",
+      "turns": [
+        {
+          "action": "create",
+          "latencyMs": 1593,
+          "usedModel": true,
+          "meta": {
+            "model": "gemini:gemini-3.1-flash-lite",
+            "latencyMs": 1591.9534999999996,
+            "attempts": 1,
+            "retries": 0,
+            "rateLimited": 0,
+            "invalidOutputs": 0
+          }
+        }
+      ],
+      "intent": "invoice_request",
+      "extractedItems": [
+        {
+          "description": "tyre valve sets",
+          "quantity": 6,
+          "rate": 120
+        }
+      ],
+      "resolvedCustomer": "VKS Auto Spares",
+      "resolvedLines": [
+        {
+          "status": "matched",
+          "sku": "VLV-4"
+        }
+      ],
+      "problems": [],
+      "invoice": {
+        "customer": "VKS Auto Spares",
+        "lines": [
+          {
+            "sku": "VLV-4",
+            "quantity": 6,
+            "rate": 120
+          }
+        ]
+      }
+    },
+    {
+      "id": "H04",
+      "category": "straightforward",
+      "turns": [
+        {
+          "action": "create",
+          "latencyMs": 1581,
+          "usedModel": true,
+          "meta": {
+            "model": "gemini:gemini-3.1-flash-lite",
+            "latencyMs": 1579.921000000002,
+            "attempts": 1,
+            "retries": 0,
+            "rateLimited": 0,
+            "invalidOutputs": 0
+          }
+        }
+      ],
+      "intent": "invoice_request",
+      "extractedItems": [
+        {
+          "description": "apex 205/55 R16",
+          "quantity": 4,
+          "rate": 6100
+        },
+        {
+          "description": "black nut set",
+          "quantity": 1,
+          "rate": 650
+        }
+      ],
+      "resolvedCustomer": "Sharma Wheels & Tyres",
+      "resolvedLines": [
+        {
+          "status": "matched",
+          "sku": "APX-205-55-16"
+        },
+        {
+          "status": "matched",
+          "sku": "NUT-16-BLK"
+        }
+      ],
+      "problems": [],
+      "invoice": {
+        "customer": "Sharma Wheels & Tyres",
+        "lines": [
+          {
+            "sku": "APX-205-55-16",
+            "quantity": 4,
+            "rate": 6100
+          },
+          {
+            "sku": "NUT-16-BLK",
+            "quantity": 1,
+            "rate": 650
+          }
+        ]
+      }
+    },
+    {
+      "id": "H05",
+      "category": "typo",
+      "turns": [
+        {
+          "action": "clarify",
+          "reason": "unknown_item",
+          "latencyMs": 1269,
+          "usedModel": true,
+          "meta": {
+            "model": "gemini:gemini-3.1-flash-lite",
+            "latencyMs": 1268.0077999999994,
+            "attempts": 1,
+            "retries": 0,
+            "rateLimited": 0,
+            "invalidOutputs": 0
+          }
+        }
+      ],
+      "intent": "invoice_request",
+      "extractedItems": [
+        {
+          "description": "tyers neo 17 crome",
+          "quantity": 2,
+          "rate": 4900
+        }
+      ],
+      "resolvedCustomer": "Vijay Kumar Tyres",
+      "resolvedLines": [
+        {
+          "status": "not_found",
+          "sku": null
+        }
+      ],
+      "problems": [
+        "unknown_item"
+      ]
+    },
+    {
+      "id": "H06",
+      "category": "informal",
+      "turns": [
+        {
+          "action": "create",
+          "latencyMs": 1656,
+          "usedModel": true,
+          "meta": {
+            "model": "gemini:gemini-3.1-flash-lite",
+            "latencyMs": 1655.0949,
+            "attempts": 1,
+            "retries": 0,
+            "rateLimited": 0,
+            "invalidOutputs": 0
+          }
+        }
+      ],
+      "intent": "invoice_request",
+      "extractedItems": [
+        {
+          "description": "lenzo 17 red",
+          "quantity": 4,
+          "rate": 4600
+        }
+      ],
+      "resolvedCustomer": "Al Ameen Tyre House",
+      "resolvedLines": [
+        {
+          "status": "matched",
+          "sku": "LNZ-17-RED"
+        }
+      ],
+      "problems": [],
+      "invoice": {
+        "customer": "Al Ameen Tyre House",
+        "lines": [
+          {
+            "sku": "LNZ-17-RED",
+            "quantity": 4,
+            "rate": 4600
+          }
+        ]
+      }
+    },
+    {
+      "id": "H07",
+      "category": "word_order",
+      "turns": [
+        {
+          "action": "create",
+          "latencyMs": 1050,
+          "usedModel": true,
+          "meta": {
+            "model": "gemini:gemini-3.1-flash-lite",
+            "latencyMs": 1048.4487000000008,
+            "attempts": 1,
+            "retries": 0,
+            "rateLimited": 0,
+            "invalidOutputs": 0
+          }
+        }
+      ],
+      "intent": "invoice_request",
+      "extractedItems": [
+        {
+          "description": "lenzo 18 slvr",
+          "quantity": 4,
+          "rate": 5000
+        }
+      ],
+      "resolvedCustomer": "Sri Ganesh Motors",
+      "resolvedLines": [
+        {
+          "status": "matched",
+          "sku": "LNZ-18-SLV"
+        }
+      ],
+      "problems": [],
+      "invoice": {
+        "customer": "Sri Ganesh Motors",
+        "lines": [
+          {
+            "sku": "LNZ-18-SLV",
+            "quantity": 4,
+            "rate": 5000
+          }
+        ]
+      }
+    },
+    {
+      "id": "H08",
+      "category": "word_order",
+      "turns": [
+        {
+          "action": "create",
+          "latencyMs": 2368,
+          "usedModel": true,
+          "meta": {
+            "model": "gemini:gemini-3.1-flash-lite",
+            "latencyMs": 2367.3776,
+            "attempts": 1,
+            "retries": 0,
+            "rateLimited": 0,
+            "invalidOutputs": 0
+          }
+        }
+      ],
+      "intent": "invoice_request",
+      "extractedItems": [
+        {
+          "description": "chrome wheel nuts",
+          "quantity": 2,
+          "rate": 650
+        }
+      ],
+      "resolvedCustomer": "Royal Alloys",
+      "resolvedLines": [
+        {
+          "status": "matched",
+          "sku": "NUT-16-CHR"
+        }
+      ],
+      "problems": [],
+      "invoice": {
+        "customer": "Royal Alloys",
+        "lines": [
+          {
+            "sku": "NUT-16-CHR",
+            "quantity": 2,
+            "rate": 650
+          }
+        ]
+      }
+    },
+    {
+      "id": "H09",
+      "category": "ambiguous",
+      "turns": [
+        {
+          "action": "clarify",
+          "reason": "ambiguous_item",
+          "latencyMs": 1318,
+          "usedModel": true,
+          "meta": {
+            "model": "gemini:gemini-3.1-flash-lite",
+            "latencyMs": 1316.8266999999978,
+            "attempts": 1,
+            "retries": 0,
+            "rateLimited": 0,
+            "invalidOutputs": 0
+          }
+        }
+      ],
+      "intent": "invoice_request",
+      "extractedItems": [
+        {
+          "description": "vortex black",
+          "quantity": 4,
+          "rate": 4500
+        }
+      ],
+      "resolvedCustomer": "Metro Car Accessories",
+      "resolvedLines": [
+        {
+          "status": "ambiguous",
+          "sku": null
+        }
+      ],
+      "problems": [
+        "ambiguous_item"
+      ]
+    },
+    {
+      "id": "H10",
+      "category": "ambiguous",
+      "turns": [
+        {
+          "action": "create",
+          "latencyMs": 975,
+          "usedModel": true,
+          "meta": {
+            "model": "gemini:gemini-3.1-flash-lite",
+            "latencyMs": 974.2482000000018,
+            "attempts": 1,
+            "retries": 0,
+            "rateLimited": 0,
+            "invalidOutputs": 0
+          }
+        }
+      ],
+      "intent": "invoice_request",
+      "extractedItems": [
+        {
+          "description": "lenzo 18 red",
+          "quantity": 4,
+          "rate": 5200
+        }
+      ],
+      "resolvedCustomer": "VK Enterprises",
+      "resolvedLines": [
+        {
+          "status": "matched",
+          "sku": "LNZ-18-RED"
+        }
+      ],
+      "problems": [],
+      "invoice": {
+        "customer": "VK Enterprises",
+        "lines": [
+          {
+            "sku": "LNZ-18-RED",
+            "quantity": 4,
+            "rate": 5200
+          }
+        ]
+      }
+    },
+    {
+      "id": "H11",
+      "category": "missing",
+      "turns": [
+        {
+          "action": "clarify",
+          "reason": "missing_quantity",
+          "latencyMs": 974,
+          "usedModel": true,
+          "meta": {
+            "model": "gemini:gemini-3.1-flash-lite",
+            "latencyMs": 973.3147000000026,
+            "attempts": 1,
+            "retries": 0,
+            "rateLimited": 0,
+            "invalidOutputs": 0
+          }
+        }
+      ],
+      "intent": "invoice_request",
+      "extractedItems": [
+        {
+          "description": "apex 195/55 r16",
+          "quantity": null,
+          "rate": 5600
+        }
+      ],
+      "resolvedCustomer": "Al Ameen Tyre House",
+      "resolvedLines": [
+        {
+          "status": "matched",
+          "sku": "APX-195-55-16"
+        }
+      ],
+      "problems": [
+        "missing_quantity"
+      ]
+    },
+    {
+      "id": "H12",
+      "category": "missing",
+      "turns": [
+        {
+          "action": "clarify",
+          "reason": "missing_rate",
+          "latencyMs": 926,
+          "usedModel": true,
+          "meta": {
+            "model": "gemini:gemini-3.1-flash-lite",
+            "latencyMs": 924.7293999999965,
+            "attempts": 1,
+            "retries": 0,
+            "rateLimited": 0,
+            "invalidOutputs": 0
+          }
+        }
+      ],
+      "intent": "invoice_request",
+      "extractedItems": [
+        {
+          "description": "neo 17 chrome",
+          "quantity": 4,
+          "rate": null
+        }
+      ],
+      "resolvedCustomer": "Kerala Wheel Hub",
+      "resolvedLines": [
+        {
+          "status": "matched",
+          "sku": "NEO-17-CHR"
+        }
+      ],
+      "problems": [
+        "missing_rate"
+      ]
+    },
+    {
+      "id": "H13",
+      "category": "invalid",
+      "turns": [
+        {
+          "action": "clarify",
+          "reason": "unknown_item",
+          "latencyMs": 2183,
+          "usedModel": true,
+          "meta": {
+            "model": "gemini:gemini-3.1-flash-lite",
+            "latencyMs": 2181.258799999996,
+            "attempts": 1,
+            "retries": 0,
+            "rateLimited": 0,
+            "invalidOutputs": 0
+          }
+        }
+      ],
+      "intent": "invoice_request",
+      "extractedItems": [
+        {
+          "description": "enkei 17 silver",
+          "quantity": 4,
+          "rate": 4500
+        }
+      ],
+      "resolvedCustomer": "Royal Alloys",
+      "resolvedLines": [
+        {
+          "status": "not_found",
+          "sku": null
+        }
+      ],
+      "problems": [
+        "unknown_item"
+      ]
+    },
+    {
+      "id": "H14",
+      "category": "invalid",
+      "turns": [
+        {
+          "action": "clarify",
+          "reason": "invalid_quantity,ungrounded_quantity",
+          "latencyMs": 1199,
+          "usedModel": true,
+          "meta": {
+            "model": "gemini:gemini-3.1-flash-lite",
+            "latencyMs": 1198.6964000000007,
+            "attempts": 1,
+            "retries": 0,
+            "rateLimited": 0,
+            "invalidOutputs": 0
+          }
+        }
+      ],
+      "intent": "invoice_request",
+      "extractedItems": [
+        {
+          "description": "lenzo 18 black",
+          "quantity": -2,
+          "rate": 5100
+        }
+      ],
+      "resolvedCustomer": "VK Enterprises",
+      "resolvedLines": [
+        {
+          "status": "matched",
+          "sku": "LNZ-18-BLK"
+        }
+      ],
+      "problems": [
+        "invalid_quantity",
+        "ungrounded_quantity"
+      ]
+    },
+    {
+      "id": "H15",
+      "category": "non_invoice",
+      "turns": [
+        {
+          "action": "ignore",
+          "reason": "non_invoice",
+          "latencyMs": 1272,
+          "usedModel": true,
+          "meta": {
+            "model": "gemini:gemini-3.1-flash-lite",
+            "latencyMs": 1271.7014000000054,
+            "attempts": 1,
+            "retries": 0,
+            "rateLimited": 0,
+            "invalidOutputs": 0
+          }
+        }
+      ],
+      "intent": "non_invoice",
+      "extractedItems": [],
+      "resolvedCustomer": null,
+      "resolvedLines": [],
+      "problems": []
+    },
+    {
+      "id": "H16",
+      "category": "non_invoice",
+      "turns": [
+        {
+          "action": "ignore",
+          "reason": "non_invoice",
+          "latencyMs": 1358,
+          "usedModel": true,
+          "meta": {
+            "model": "gemini:gemini-3.1-flash-lite",
+            "latencyMs": 1357.8418000000092,
+            "attempts": 1,
+            "retries": 0,
+            "rateLimited": 0,
+            "invalidOutputs": 0
+          }
+        }
+      ],
+      "intent": "non_invoice",
+      "extractedItems": [],
+      "resolvedCustomer": null,
+      "resolvedLines": [],
+      "problems": []
+    },
+    {
+      "id": "H17",
+      "category": "non_invoice",
+      "turns": [
+        {
+          "action": "ignore",
+          "reason": "non_invoice",
+          "latencyMs": 1646,
+          "usedModel": true,
+          "meta": {
+            "model": "gemini:gemini-3.1-flash-lite",
+            "latencyMs": 1646.0954999999958,
+            "attempts": 1,
+            "retries": 0,
+            "rateLimited": 0,
+            "invalidOutputs": 0
+          }
+        }
+      ],
+      "intent": "non_invoice",
+      "extractedItems": [],
+      "resolvedCustomer": null,
+      "resolvedLines": [],
+      "problems": []
+    },
+    {
+      "id": "H18",
+      "category": "previous_invoice",
+      "turns": [
+        {
+          "action": "respond",
+          "reason": "unsupported_followup",
+          "latencyMs": 1020,
+          "usedModel": true,
+          "meta": {
+            "model": "gemini:gemini-3.1-flash-lite",
+            "latencyMs": 1020.2652999999991,
+            "attempts": 1,
+            "retries": 0,
+            "rateLimited": 0,
+            "invalidOutputs": 0
+          }
+        }
+      ],
+      "intent": "unsupported_followup",
+      "extractedItems": [],
+      "resolvedCustomer": null,
+      "resolvedLines": [],
+      "problems": []
+    },
+    {
+      "id": "H19",
+      "category": "previous_invoice",
+      "turns": [
+        {
+          "action": "respond",
+          "reason": "unsupported_followup",
+          "latencyMs": 1283,
+          "usedModel": true,
+          "meta": {
+            "model": "gemini:gemini-3.1-flash-lite",
+            "latencyMs": 1282.7524999999878,
+            "attempts": 1,
+            "retries": 0,
+            "rateLimited": 0,
+            "invalidOutputs": 0
+          }
+        }
+      ],
+      "intent": "unsupported_followup",
+      "extractedItems": [],
+      "resolvedCustomer": null,
+      "resolvedLines": [],
+      "problems": []
+    },
+    {
+      "id": "H20",
+      "category": "clarification_flow",
+      "turns": [
+        {
+          "action": "clarify",
+          "reason": "missing_rate",
+          "latencyMs": 947,
+          "usedModel": true,
+          "meta": {
+            "model": "gemini:gemini-3.1-flash-lite",
+            "latencyMs": 945.8790000000008,
+            "attempts": 1,
+            "retries": 0,
+            "rateLimited": 0,
+            "invalidOutputs": 0
+          }
+        },
+        {
+          "action": "create",
+          "latencyMs": 1099,
+          "usedModel": true,
+          "meta": {
+            "model": "gemini:gemini-3.1-flash-lite",
+            "latencyMs": 1097.7206000000006,
+            "attempts": 1,
+            "retries": 0,
+            "rateLimited": 0,
+            "invalidOutputs": 0
+          }
+        }
+      ],
+      "intent": "clarification_response",
+      "extractedItems": [
+        {
+          "description": "lenzo 15 black",
+          "quantity": 4,
+          "rate": 3800
+        }
+      ],
+      "resolvedCustomer": "Bismi Auto World",
+      "resolvedLines": [
+        {
+          "status": "matched",
+          "sku": "LNZ-15-BLK"
+        }
+      ],
+      "problems": [],
+      "invoice": {
+        "customer": "Bismi Auto World",
+        "lines": [
+          {
+            "sku": "LNZ-15-BLK",
+            "quantity": 4,
+            "rate": 3800
+          }
+        ]
+      }
+    },
+    {
+      "id": "H21",
+      "category": "clarification_flow",
+      "turns": [
+        {
+          "action": "clarify",
+          "reason": "ambiguous_item",
+          "latencyMs": 1158,
+          "usedModel": true,
+          "meta": {
+            "model": "gemini:gemini-3.1-flash-lite",
+            "latencyMs": 1157.698000000004,
+            "attempts": 1,
+            "retries": 0,
+            "rateLimited": 0,
+            "invalidOutputs": 0
+          }
+        },
+        {
+          "action": "create",
+          "latencyMs": 1020,
+          "usedModel": true,
+          "meta": {
+            "model": "gemini:gemini-3.1-flash-lite",
+            "latencyMs": 1019.3947999999946,
+            "attempts": 1,
+            "retries": 0,
+            "rateLimited": 0,
+            "invalidOutputs": 0
+          }
+        }
+      ],
+      "intent": "clarification_response",
+      "extractedItems": [
+        {
+          "description": "Lenzo Alloy Wheel 18\" Silver",
+          "quantity": 4,
+          "rate": 5000
+        }
+      ],
+      "resolvedCustomer": "Kerala Wheel Hub",
+      "resolvedLines": [
+        {
+          "status": "matched",
+          "sku": "LNZ-18-SLV"
+        }
+      ],
+      "problems": [],
+      "invoice": {
+        "customer": "Kerala Wheel Hub",
+        "lines": [
+          {
+            "sku": "LNZ-18-SLV",
+            "quantity": 4,
+            "rate": 5000
+          }
+        ]
+      }
+    },
+    {
+      "id": "H22",
+      "category": "clarification_flow",
+      "turns": [
+        {
+          "action": "clarify",
+          "reason": "ambiguous_item",
+          "latencyMs": 1137,
+          "usedModel": true,
+          "meta": {
+            "model": "gemini:gemini-3.1-flash-lite",
+            "latencyMs": 1135.943100000004,
+            "attempts": 1,
+            "retries": 0,
+            "rateLimited": 0,
+            "invalidOutputs": 0
+          }
+        },
+        {
+          "action": "create",
+          "latencyMs": 1101,
+          "usedModel": true,
+          "meta": {
+            "model": "gemini:gemini-3.1-flash-lite",
+            "latencyMs": 1099.3350000000064,
+            "attempts": 1,
+            "retries": 0,
+            "rateLimited": 0,
+            "invalidOutputs": 0
+          }
+        }
+      ],
+      "intent": "clarification_response",
+      "extractedItems": [
+        {
+          "description": "Neo Alloy Wheel 16 inch Red",
+          "quantity": 4,
+          "rate": 4000
+        }
+      ],
+      "resolvedCustomer": "VK Enterprises",
+      "resolvedLines": [
+        {
+          "status": "matched",
+          "sku": "NEO-16-RED"
+        }
+      ],
+      "problems": [],
+      "invoice": {
+        "customer": "VK Enterprises",
+        "lines": [
+          {
+            "sku": "NEO-16-RED",
+            "quantity": 4,
+            "rate": 4000
+          }
+        ]
+      }
+    },
+    {
+      "id": "H23",
+      "category": "informal",
+      "turns": [
+        {
+          "action": "create",
+          "latencyMs": 1169,
+          "usedModel": true,
+          "meta": {
+            "model": "gemini:gemini-3.1-flash-lite",
+            "latencyMs": 1167.8908999999985,
+            "attempts": 1,
+            "retries": 0,
+            "rateLimited": 0,
+            "invalidOutputs": 0
+          }
+        }
+      ],
+      "intent": "invoice_request",
+      "extractedItems": [
+        {
+          "description": "apex 195/55 R16",
+          "quantity": 4,
+          "rate": 5500
+        }
+      ],
+      "resolvedCustomer": "Metro Car Accessories",
+      "resolvedLines": [
+        {
+          "status": "matched",
+          "sku": "APX-195-55-16"
+        }
+      ],
+      "problems": [],
+      "invoice": {
+        "customer": "Metro Car Accessories",
+        "lines": [
+          {
+            "sku": "APX-195-55-16",
+            "quantity": 4,
+            "rate": 5500
+          }
+        ]
+      }
+    },
+    {
+      "id": "H24",
+      "category": "straightforward",
+      "turns": [
+        {
+          "action": "create",
+          "latencyMs": 1160,
+          "usedModel": true,
+          "meta": {
+            "model": "gemini:gemini-3.1-flash-lite",
+            "latencyMs": 1158.5973999999987,
+            "attempts": 1,
+            "retries": 0,
+            "rateLimited": 0,
+            "invalidOutputs": 0
+          }
+        }
+      ],
+      "intent": "invoice_request",
+      "extractedItems": [
+        {
+          "description": "Lenzo 18 inch Black",
+          "quantity": 4,
+          "rate": 5100
+        }
+      ],
+      "resolvedCustomer": "VK Enterprises",
+      "resolvedLines": [
+        {
+          "status": "matched",
+          "sku": "LNZ-18-BLK"
+        }
+      ],
+      "problems": [],
+      "invoice": {
+        "customer": "VK Enterprises",
+        "lines": [
+          {
+            "sku": "LNZ-18-BLK",
+            "quantity": 4,
+            "rate": 5100
+          }
+        ]
+      }
+    }
+  ]
+}

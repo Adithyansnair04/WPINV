@@ -1,6 +1,6 @@
 import { z } from 'zod';
 
-export const Intent = z.enum(['invoice_request', 'clarification_response', 'non_invoice', 'unsupported_followup']);
+export const Intent = z.enum(['invoice_request', 'clarification_response', 'edit_request', 'non_invoice', 'unsupported_followup']);
 export type Intent = z.infer<typeof Intent>;
 
 // LLM output is untrusted: accept numeric strings like "5,200" but nothing else.

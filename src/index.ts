@@ -1,12 +1,18 @@
+import { join } from 'node:path';
 import { createProcessor, isDryRun } from './app.js';
 import { loadConfig, type Config } from './config.js';
+import { ActivityLog, toActivity } from './dashboard/activity.js';
+import { startDashboard } from './dashboard/server.js';
 import { createLogger } from './logger.js';
+import { StateStore } from './pipeline/state.js';
 import { createTelegramApi, startTelegramPolling } from './telegram/bot.js';
 import type { IncomingMessage, SendFn } from './types.js';
 
 let send: SendFn = async () => undefined;
 let cfg: Config;
 let processor: ReturnType<typeof createProcessor>;
+let store: StateStore;
+let activity: ActivityLog;
 const log = createLogger((process.env.LOG_LEVEL as 'info') ?? 'info', { app: 'wpinv' });
 
 function fail(message: string): never {
@@ -16,7 +22,9 @@ function fail(message: string): never {
 
 try {
   cfg = loadConfig();
-  processor = createProcessor(cfg, log, (...args) => send(...args));
+  store = new StateStore(join(cfg.DATA_DIR, 'state.json'));
+  activity = new ActivityLog(join(cfg.DATA_DIR, 'activity.json'));
+  processor = createProcessor(cfg, log, (...args) => send(...args), { store });
 } catch (e) {
   fail((e as Error).message);
 }
@@ -26,12 +34,19 @@ const queues = new Map<string, Promise<void>>();
 const enqueue = (msg: IncomingMessage) => {
   const next = (queues.get(msg.chatId) ?? Promise.resolve())
     .then(() => processor.handle(msg))
-    .then(() => undefined)
+    .then((r) => activity.add(toActivity(msg, r, cfg.LOG_MESSAGE_TEXT)))
     .catch((e) => log.error('message.unhandled', { error: e }));
   queues.set(msg.chatId, next);
 };
 
-log.info('startup', { transport: cfg.CHAT_TRANSPORT, zoho: cfg.ZOHO_MODE, dryRun: isDryRun(cfg), model: cfg.LLM_MODEL });
+const info = { transport: cfg.CHAT_TRANSPORT, model: cfg.LLM_MODEL, fallback: cfg.LLM_FALLBACK_MODEL || 'none', zoho: cfg.ZOHO_MODE, dryRun: isDryRun(cfg) };
+log.info('startup', info);
+
+if (cfg.DASHBOARD_PORT > 0) {
+  await startDashboard({ port: cfg.DASHBOARD_PORT, host: cfg.DASHBOARD_HOST, activity, store, info, log: log.child({ component: 'dashboard' }) })
+    .then(() => log.info('dashboard.listening', { url: `http://${cfg.DASHBOARD_HOST}:${cfg.DASHBOARD_PORT}` }))
+    .catch((e) => log.warn('dashboard.failed', { error: e }));
+}
 
 if (cfg.CHAT_TRANSPORT === 'telegram') {
   if (!cfg.TELEGRAM_BOT_TOKEN) fail('TELEGRAM_BOT_TOKEN is not set (create a bot with @BotFather)');

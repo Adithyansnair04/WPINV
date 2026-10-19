@@ -22,6 +22,8 @@ export interface InvoiceLineInput {
   itemId: string;
   quantity: number;
   rate: number;
+  /** Zoho tax to apply to this line (used when the item itself has no tax). */
+  taxId?: string;
 }
 
 export interface InvoiceInput {
@@ -41,7 +43,17 @@ export interface Invoice {
   taxTotal: number;
   total: number;
   url?: string;
-  lines: { name: string; quantity: number; rate: number; amount: number }[];
+  customerId?: string;
+  date?: string;
+  lines: { itemId?: string; name: string; quantity: number; rate: number; amount: number }[];
+}
+
+export interface PreviousRate {
+  rate: number;
+  invoiceNumber: string;
+  date: string;
+  /** Invoice status (e.g. draft, sent, paid), shown to the user in the confirmation. */
+  status?: string;
 }
 
 /** Narrow interface over Zoho Books so the pipeline can run against a mock. */
@@ -51,6 +63,15 @@ export interface BooksApi {
   findInvoiceByReference(referenceNumber: string): Promise<Invoice | null>;
   createInvoice(input: InvoiceInput): Promise<Invoice>;
   getInvoicePdf(invoiceId: string): Promise<Buffer | null>;
+  getInvoice(invoiceId: string): Promise<Invoice>;
+  /** Most recent non-void invoice line (drafts included) for this customer and item, used for "rate same as last time". The user confirms it. */
+  findLastRate(customerId: string, itemId: string): Promise<PreviousRate | null>;
+  /** Replaces the line items of an existing invoice (used only for drafts created by this bot). */
+  updateInvoiceLines(invoiceId: string, customerId: string, lines: InvoiceLineInput[]): Promise<Invoice>;
+  /** Id of the organization tax with this exact percentage, or null if none exists. */
+  findTaxId(percent: number): Promise<string | null>;
+  /** Creates a customer contact. Only called after an explicit user confirmation. */
+  createCustomer(name: string): Promise<Customer>;
 }
 
 export interface IncomingMessage {
@@ -66,6 +87,8 @@ export interface IncomingMessage {
 export interface Outgoing {
   text: string;
   document?: { data: Buffer; fileName: string; mimetype: string };
+  /** Optional tap-to-choose buttons (rows). Transports without button support ignore them; the text stays self-sufficient. */
+  buttons?: { text: string; data: string }[][];
 }
 
 /** Sends a message to a chat, optionally quoting a message; returns the sent message id when known. */

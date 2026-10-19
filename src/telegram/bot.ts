@@ -25,10 +25,31 @@ const Message = z.object({
   reply_to_message: z.object({ message_id: z.number() }).optional(),
   migrate_to_chat_id: z.number().optional(),
 });
-const Update = z.object({ update_id: z.number(), message: Message.optional() });
+const CallbackQuery = z.object({
+  id: z.string(),
+  from: User,
+  data: z.string().optional(),
+  message: z.object({ message_id: z.number(), chat: z.object({ id: z.number(), type: z.string(), title: z.string().optional() }) }).optional(),
+});
+const Update = z.object({ update_id: z.number(), message: Message.optional(), callback_query: CallbackQuery.optional() });
 type Update = z.infer<typeof Update>;
 
-export const msgKey = (chatId: string | number, messageId: number) => `${chatId}:${messageId}`;
+const msgKey = (chatId: string | number, messageId: number) => `${chatId}:${messageId}`;
+
+/** A tap on an option button becomes the same message as replying "<n>" to the question it belongs to. */
+export function parseCallback(u: Update): IncomingMessage | null {
+  const cq = u.callback_query;
+  if (!cq?.message || cq.from.is_bot || !cq.data?.startsWith('opt:')) return null;
+  return {
+    id: `cb:${cq.id}`,
+    chatId: String(cq.message.chat.id),
+    senderId: String(cq.from.id),
+    text: cq.data.slice(4),
+    timestamp: Date.now(),
+    fromMe: false,
+    quotedId: msgKey(cq.message.chat.id, cq.message.message_id),
+  };
+}
 
 export function parseUpdate(u: Update, botId: number): IncomingMessage | null {
   const m = u.message;
@@ -78,6 +99,9 @@ export function createTelegramApi(o: TelegramOptions) {
   async function send(chatId: string, out: Outgoing, quoteId?: string): Promise<string | undefined> {
     const replyTo = quoteId?.startsWith(`${chatId}:`) ? Number(quoteId.slice(chatId.length + 1)) : undefined;
     const reply = replyTo ? { reply_parameters: { message_id: replyTo, allow_sending_without_reply: true } } : {};
+    const markup = out.buttons?.length
+      ? { reply_markup: { inline_keyboard: out.buttons.map((row) => row.map((b) => ({ text: b.text.slice(0, 60), callback_data: b.data.slice(0, 64) }))) } }
+      : {};
     let sent: { message_id: number };
     if (out.document) {
       const form = new FormData();
@@ -87,7 +111,7 @@ export function createTelegramApi(o: TelegramOptions) {
       if (replyTo) form.set('reply_parameters', JSON.stringify(reply.reply_parameters));
       sent = await call('sendDocument', form, 60000);
     } else {
-      sent = await call('sendMessage', { chat_id: chatId, text: out.text.slice(0, 4096), ...reply });
+      sent = await call('sendMessage', { chat_id: chatId, text: out.text.slice(0, 4096), ...reply, ...markup });
     }
     return msgKey(chatId, sent.message_id);
   }
@@ -120,7 +144,7 @@ export async function startTelegramPolling(o: PollingOptions) {
   const loop = async () => {
     while (!stopped) {
       try {
-        const updates = await o.api.call<unknown[]>('getUpdates', { offset, timeout: pollTimeout, allowed_updates: ['message'] }, (pollTimeout + 15) * 1000);
+        const updates = await o.api.call<unknown[]>('getUpdates', { offset, timeout: pollTimeout, allowed_updates: ['message', 'callback_query'] }, (pollTimeout + 15) * 1000);
         failures = 0;
         for (const raw of updates) {
           const parsed = Update.safeParse(raw);
@@ -128,7 +152,17 @@ export async function startTelegramPolling(o: PollingOptions) {
           offset = Math.max(offset, parsed.data.update_id + 1);
           const m = parsed.data.message;
           if (m?.migrate_to_chat_id) o.log.warn('telegram.chat_migrated', { from: m.chat.id, to: m.migrate_to_chat_id, hint: 'Update TELEGRAM_ALLOWED_CHATS with the new id' });
-          const msg = parseUpdate(parsed.data, me.id);
+          const cq = parsed.data.callback_query;
+          const msg = cq ? parseCallback(parsed.data) : parseUpdate(parsed.data, me.id);
+          if (cq) {
+            // Stop the button spinner and remove the buttons so an option can only be chosen once.
+            void o.api.call('answerCallbackQuery', { callback_query_id: cq.id }).catch(() => {});
+            if (msg && o.allowedChats.includes(msg.chatId) && cq.message) {
+              void o.api
+                .call('editMessageReplyMarkup', { chat_id: cq.message.chat.id, message_id: cq.message.message_id, reply_markup: { inline_keyboard: [] } })
+                .catch(() => {});
+            }
+          }
           if (!msg || msg.fromMe) continue;
           if (!o.allowedChats.includes(msg.chatId)) {
             if (!unknownChats.has(msg.chatId)) {

@@ -3,10 +3,12 @@ import type { ExtractMeta, Extractor } from '../extraction/extract.js';
 import type { Extraction } from '../extraction/schema.js';
 import { HttpError } from '../http.js';
 import type { Logger } from '../logger.js';
-import type { BooksApi, IncomingMessage, Invoice, Outgoing, SendFn } from '../types.js';
-import { decide, type Decision } from './decide.js';
+import { CustomerMatcher, ItemMatcher } from '../matching/matcher.js';
+import type { BooksApi, IncomingMessage, Invoice, InvoiceLineInput, Outgoing, PreviousRate, SendFn } from '../types.js';
+import { decide, fmtMoney, type Decision } from './decide.js';
 import { dryRunSummary, invoiceSummary } from './format.js';
-import type { PendingClarification, StateStore } from './state.js';
+import { numbersIn } from './grounding.js';
+import type { InvoiceRecord, PendingClarification, PendingConfirmation, StateStore } from './state.js';
 
 export interface ProcessorOptions {
   ratePolicy: 'ask' | 'item_default';
@@ -16,6 +18,12 @@ export interface ProcessorOptions {
   dryRun: boolean;
   maxClarifyRounds?: number;
   logMessageText?: boolean;
+  /** 'confirm' allows adding customers from chat after an explicit Yes. */
+  customerCreate?: 'confirm' | 'off';
+  /** If non-empty, only these sender ids may add customers. */
+  customerCreators?: string[];
+  /** Tax % applied to lines whose item has no tax in Zoho. */
+  defaultTaxPercent?: number;
 }
 
 export interface ProcessorDeps {
@@ -28,7 +36,7 @@ export interface ProcessorDeps {
   now?: () => number;
 }
 
-export type Action = 'created' | 'existing' | 'dry_run' | 'clarify' | 'respond' | 'ignore' | 'duplicate' | 'error';
+export type Action = 'created' | 'existing' | 'edited' | 'dry_run' | 'clarify' | 'respond' | 'ignore' | 'duplicate' | 'error';
 
 export interface ProcessResult {
   messageId: string;
@@ -44,6 +52,24 @@ export interface ProcessResult {
 }
 
 const MAX_TEXT = 2000;
+const MAX_QTY = 10000;
+const MAX_RATE = 10_000_000;
+const YES = /^\s*(yes|y|ok|okay|confirm|sure|haan|ha|ji)\b/i;
+const CONFIRM_YES = /^\s*(1|yes|y|ok|okay|confirm|haan|ha|ji)\b/i;
+const CONFIRM_NO = /^\s*(2|no|n|cancel|stop|nahi)\b/i;
+
+/** "add customer Zenith Motors", "new customer: X", "/addcustomer X" -> name ('' if no name given); null if not a command. */
+export function parseAddCustomer(text: string): string | null {
+  const m = text.match(/^\s*(?:\/addcustomer(?:@\w+)?|add\s+(?:a\s+)?(?:new\s+)?customer|new\s+customer)\b\s*[:\-–]?\s*(.*)$/is);
+  return m ? m[1]!.trim() : null;
+}
+
+/** Normalizes a customer name typed in chat; null if it is not a plausible name. */
+export function cleanCustomerName(raw: string): string | null {
+  const name = raw.replace(/^["'“”‘’]+|["'“”‘’]+$/g, '').replace(/\s+/g, ' ').trim();
+  if (name.length < 2 || name.length > 60 || !/[a-z]/i.test(name) || /[\n@<>]|https?:/i.test(name)) return null;
+  return name;
+}
 
 export const idempotencyKey = (chatId: string, messageId: string) =>
   `WA-${createHash('sha256').update(`${chatId}|${messageId}`).digest('hex').slice(0, 16).toUpperCase()}`;
@@ -76,8 +102,31 @@ export class InvoiceProcessor {
     log.info('message.received', { length: text.length, quoted: Boolean(msg.quotedId), ...(this.deps.options.logMessageText ? { text } : {}) });
 
     const { store } = this.deps;
+    if (text.toLowerCase() === '/whoami' || /^\/whoami@\w+$/i.test(text)) {
+      await this.reply(msg, `Your user id: ${msg.senderId}\nThis chat id: ${msg.chatId}`);
+      return result('respond', { reason: 'whoami' });
+    }
+    const command = parseAddCustomer(text);
+    if (command !== null) {
+      const r = await this.requestCustomerCreate(msg, command, undefined);
+      return result(r.action, { reason: r.reason });
+    }
+    let createdCustomer: string | undefined;
+    let confirmation: PendingConfirmation | undefined;
+    if (msg.quotedId && store.getConfirmation(msg.quotedId)) {
+      const r = await this.handleConfirmation(msg, text, msg.quotedId, log);
+      confirmation = r.confirmation;
+      if (!r.created || !confirmation?.resumeSourceMsgId) return result(r.action, { reason: r.reason });
+      createdCustomer = r.created;
+    }
+
     let pending: PendingClarification | undefined;
-    if (msg.quotedId) {
+    if (createdCustomer) {
+      // Continue the invoice that asked for this customer, if it is still waiting.
+      const p = store.getPending(msg.chatId, confirmation!.resumeRequesterId ?? confirmation!.requesterId);
+      pending = p?.sourceMsgId === confirmation!.resumeSourceMsgId ? p : undefined;
+      if (!pending) return result('respond', { reason: 'customer_created' });
+    } else if (msg.quotedId) {
       pending = store.findPendingByQuestion(msg.chatId, msg.quotedId);
       if (!pending && store.wasQuestion(msg.quotedId)) {
         await this.reply(msg, 'That request has expired or was already handled. Please send the full request again.');
@@ -91,17 +140,33 @@ export class InvoiceProcessor {
     let extractMeta: ExtractMeta | undefined;
     const t0 = performance.now();
     const option = pending?.options.length ? text.match(/^\s*(?:option\s*)?#?(\d{1,2})\s*\.?\s*$/i) : null;
-    if (pending && option) {
-      const chosen = pending.options[Number(option[1]) - 1];
+    const optionNo = option ? Number(option[1]) : pending?.options.length === 1 && YES.test(text) ? 1 : null;
+    if (pending && createdCustomer) {
+      extraction = structuredClone(pending.extraction);
+      extraction.intent = 'clarification_response';
+      extraction.customer = createdCustomer;
+      log.info('customer.resume_request');
+    } else if (pending && optionNo !== null) {
+      const chosen = pending.options[optionNo - 1];
       if (!chosen) {
         await this.reply(msg, `Please reply with a number between 1 and ${pending.options.length}.`);
         return result('clarify', { reason: 'invalid_option', associatedPending: true });
       }
+      if (chosen.newCustomer) {
+        const r = await this.requestCustomerCreate(msg, chosen.newCustomer, pending);
+        return result(r.action, { reason: r.reason, associatedPending: true });
+      }
       extraction = structuredClone(pending.extraction);
       extraction.intent = 'clarification_response';
       const line = extraction.items[chosen.lineIndex];
-      if (line) line.description = `id:${chosen.itemId}`;
-      log.info('clarify.option_selected', { option: Number(option[1]) });
+      if (line) {
+        line.description = `id:${chosen.itemId}`;
+        if (chosen.rate !== undefined) {
+          line.rate = chosen.rate;
+          line.rate_from_previous = true;
+        }
+      }
+      log.info('clarify.option_selected', { option: optionNo, previousRate: chosen.rate !== undefined });
     } else {
       const outcome = await this.deps.extractor.extract(text, pending && { originalText: pending.originalText, question: pending.question });
       extractMeta = outcome.meta;
@@ -121,15 +186,46 @@ export class InvoiceProcessor {
     const associated = Boolean(pending) && extraction.intent === 'clarification_response';
     if (pending && !associated && extraction.intent === 'invoice_request') store.clearPending(pending.chatId, pending.senderId);
     if (!pending && extraction.intent === 'clarification_response') extraction.intent = 'invoice_request';
+    const sourceText = pending && (associated || optionNo !== null) ? `${pending.originalText}\n${text}` : text;
+
+    // The model may only flag "rate from previous invoice"; a number it attaches must be in the message (explicit rate) or is dropped.
+    if (extractMeta) {
+      const nums = numbersIn(sourceText);
+      for (const it of extraction.items) {
+        if (!it.rate_from_previous || it.rate === null) continue;
+        if (nums.includes(it.rate)) it.rate_from_previous = false;
+        else it.rate = null;
+      }
+    }
+
+    if (extraction.intent === 'edit_request' && msg.quotedId) {
+      const target = store.getInvoiceByMessage(msg.quotedId);
+      if (target) {
+        const r = await this.handleEdit(msg, text, extraction, target, msg.quotedId, log);
+        return result(r.action, { ...r, extraction, extractMeta });
+      }
+    }
 
     let decision: Decision;
     try {
       const t1 = performance.now();
       const [customers, items] = await Promise.all([this.deps.books.listCustomers(), this.deps.books.listItems()]);
       timings.catalogue = Math.round(performance.now() - t1);
-      const sourceText = pending && (associated || option) ? `${pending.originalText}
-${text}` : text;
-      decision = decide(extraction, customers, items, { ...this.deps.options, sourceText });
+      decision = decide(extraction, customers, items, { ...this.deps.options, allowCustomerCreate: this.deps.options.customerCreate === 'confirm', sourceText });
+      const customerId = decision.trace.customer?.id;
+      if (decision.kind === 'clarify' && customerId && decision.trace.problems.includes('rate_from_previous')) {
+        const previousRates = new Map<number, PreviousRate | null>();
+        for (const [idx, li] of extraction.items.entries()) {
+          const itemId = decision.trace.lines[idx]?.itemId;
+          if (!li.rate_from_previous || li.rate !== null || !itemId) continue;
+          try {
+            previousRates.set(idx, await this.deps.books.findLastRate(customerId, itemId));
+          } catch (e) {
+            log.warn('previous_rate.lookup_failed', { error: e });
+          }
+        }
+        if (previousRates.size) decision = decide(extraction, customers, items, { ...this.deps.options, allowCustomerCreate: this.deps.options.customerCreate === 'confirm', sourceText, previousRates });
+      }
     } catch (e) {
       log.error('catalogue.failed', { error: e });
       await this.reply(msg, 'Sorry, I could not reach Zoho Books to look up customers and items. Nothing was created; please retry shortly.');
@@ -151,7 +247,8 @@ ${text}` : text;
         await this.reply(msg, 'I still can’t resolve this request safely, so I have not created an invoice. Please resend the full request with customer, item, quantity and rate.');
         return result('respond', { ...base, reason: 'clarify_rounds_exceeded' });
       }
-      const questionMsgId = await this.reply(msg, decision.question);
+      const buttons = decision.options.map((o, i) => [{ text: `${i + 1}) ${o.name}`, data: `opt:${i + 1}` }]);
+      const questionMsgId = await this.safeSend(msg.chatId, { text: decision.question, ...(buttons.length ? { buttons } : {}) }, msg.id);
       store.setPending({
         chatId: msg.chatId,
         senderId: associated ? pending!.senderId : msg.senderId,
@@ -174,11 +271,12 @@ ${text}` : text;
     try {
       const existing = await this.deps.books.findInvoiceByReference(reference);
       if (existing) {
-        await this.reply(msg, invoiceSummary(existing, 'This request was already invoiced:'));
+        const sid = await this.reply(msg, invoiceSummary(existing, 'This request was already invoiced:'));
+        if (sid) store.setInvoiceMessage(sid, this.record(existing, decision, msg.chatId));
         return result('existing', { ...base, invoice: existing, reason: 'idempotent_hit' });
       }
       if (this.deps.options.dryRun) {
-        await this.reply(msg, dryRunSummary(decision.customer.name, decision.lines));
+        await this.reply(msg, dryRunSummary(decision.customer.name, decision.lines, this.deps.options.defaultTaxPercent));
         return result('dry_run', { ...base, reason: 'dry_run' });
       }
       const invoice = await this.createOnce(reference, decision, log);
@@ -191,7 +289,8 @@ ${text}` : text;
         log.warn('invoice.pdf_failed', { error: e });
       }
       const summary = invoiceSummary(invoice, invoice.status === 'draft' ? 'Draft invoice created:' : 'Invoice created:');
-      await this.reply(msg, summary);
+      const sid = await this.reply(msg, summary);
+      if (sid) store.setInvoiceMessage(sid, this.record(invoice, decision, msg.chatId));
       if (pdf) await this.safeSend(msg.chatId, { text: '', document: { data: pdf, fileName: `${invoice.number}.pdf`, mimetype: 'application/pdf' } });
       return result('created', { ...base, invoice });
     } catch (e) {
@@ -208,12 +307,185 @@ ${text}` : text;
     }
   }
 
+  private record(inv: Invoice, d: Extract<Decision, { kind: 'create' }>, chatId: string): InvoiceRecord {
+    return {
+      invoiceId: inv.id,
+      number: inv.number,
+      chatId,
+      customerId: d.customer.id,
+      lines: d.lines.map((l) => ({ itemId: l.item.id, name: l.item.name, quantity: l.quantity, rate: l.rate })),
+      createdAt: this.now(),
+    };
+  }
+
+  /**
+   * "make it 6 pcs" as a reply to the bot's invoice message. Only drafts, only one line per edit, and the new
+   * numbers must appear in the message. The updated summary shows old -> new.
+   */
+  private async handleEdit(msg: IncomingMessage, text: string, ex: Extraction, target: InvoiceRecord, targetMsgId: string, log: ReturnType<Logger['child']>) {
+    const respond = async (reason: string, reply: string) => {
+      await this.reply(msg, reply);
+      return { action: 'respond' as Action, reason };
+    };
+    const changes = ex.items.filter((i) => i.quantity !== null || i.rate !== null);
+    if (!changes.length) return respond('edit_unclear', 'What should I change? For example "make it 6 pcs" or "rate 5000".');
+    if (changes.length > 1) return respond('edit_unclear', 'Please change one item per message.');
+    const ch = changes[0]!;
+
+    let idx = target.lines.length === 1 ? 0 : -1;
+    if (idx < 0 && ch.description) {
+      const r = new ItemMatcher(target.lines.map((l) => ({ id: l.itemId, name: l.name, rate: l.rate, active: true }))).match(ch.description);
+      if (r.status === 'matched') idx = target.lines.findIndex((l) => l.itemId === r.record.id);
+    }
+    if (idx < 0) return respond('edit_unclear', `Which line should change? ${target.lines.map((l) => l.name).join(' / ')}`);
+
+    const nums = numbersIn(text);
+    if (ch.quantity !== null && (!nums.includes(ch.quantity) || !Number.isInteger(ch.quantity) || ch.quantity <= 0 || ch.quantity > MAX_QTY)) {
+      return respond('edit_invalid', 'Please send the new quantity as a whole number above 0, e.g. "make it 6 pcs".');
+    }
+    if (ch.rate !== null && (!nums.includes(ch.rate) || ch.rate <= 0 || ch.rate > MAX_RATE)) {
+      return respond('edit_invalid', 'Please send the new rate as a number, e.g. "rate 5000".');
+    }
+    const old = target.lines[idx]!;
+    const next = { ...old, quantity: ch.quantity ?? old.quantity, rate: ch.rate ?? old.rate };
+    if (next.quantity === old.quantity && next.rate === old.rate) return respond('edit_noop', `${target.number} already has ${old.quantity} × ${fmtMoney(old.rate)} for ${old.name}.`);
+    const lines = target.lines.map((l, i) => (i === idx ? next : l));
+    const change = `${old.name}: ${old.quantity} × ${fmtMoney(old.rate)} → ${next.quantity} × ${fmtMoney(next.rate)}`;
+
+    try {
+      const current = await this.deps.books.getInvoice(target.invoiceId);
+      if (current.status !== 'draft') {
+        return respond('edit_not_draft', `${target.number} is ${current.status}, so I won't change it here. Please edit it in Zoho Books.`);
+      }
+      if (this.deps.options.dryRun) return respond('edit_dry_run', `DRY RUN: would update ${target.number}: ${change}`);
+      const updated = await this.deps.books.updateInvoiceLines(target.invoiceId, target.customerId, await this.withTax(lines.map((l) => ({ itemId: l.itemId, quantity: l.quantity, rate: l.rate }))));
+      log.info('invoice.edited', { invoiceId: updated.id, number: updated.number, line: idx });
+      const rec = { ...target, lines, createdAt: this.now() };
+      this.deps.store.setInvoiceMessage(targetMsgId, rec);
+      const sid = await this.reply(msg, `Changed ${change}\n\n${invoiceSummary(updated, 'Updated draft invoice:')}`);
+      if (sid) this.deps.store.setInvoiceMessage(sid, rec);
+      return { action: 'edited' as Action, reason: 'edited', invoice: updated };
+    } catch (e) {
+      const category = e instanceof HttpError ? e.category : 'unknown';
+      log.error('invoice.edit_failed', { category, error: e });
+      return respond(`edit_${category}`, `I couldn't update ${target.number} (${category}). Nothing was changed; please check Zoho Books.`);
+    }
+  }
+
+  private mayCreateCustomers(senderId: string): boolean {
+    const creators = this.deps.options.customerCreators ?? [];
+    return this.deps.options.customerCreate === 'confirm' && (!creators.length || creators.includes(senderId));
+  }
+
+  /** Step 1 of adding a customer: validate, check for duplicates, and ask for an explicit Yes/Cancel. Nothing is created here. */
+  private async requestCustomerCreate(msg: IncomingMessage, rawName: string, pending: PendingClarification | undefined): Promise<{ action: Action; reason: string }> {
+    const respond = async (reason: string, text: string) => {
+      await this.reply(msg, text);
+      return { action: 'respond' as Action, reason };
+    };
+    if (this.deps.options.customerCreate !== 'confirm') return respond('customer_create_off', 'Adding customers from chat is turned off. Please add them in Zoho Books.');
+    if (!this.mayCreateCustomers(msg.senderId)) return respond('customer_create_forbidden', 'Only authorised users can add customers. Please ask an admin.');
+    if (!rawName) return respond('customer_create_usage', 'To add a customer, send: add customer <full name>');
+    const name = cleanCustomerName(rawName);
+    if (!name) return respond('customer_create_invalid', 'That does not look like a customer name (2–60 characters, no links). Please send: add customer <full name>');
+
+    const r = new CustomerMatcher(await this.deps.books.listCustomers()).match(name);
+    if (r.status === 'matched') return respond('customer_exists', `"${r.record.name}" already exists, so there is no need to add it.`);
+    const similar = r.candidates.filter((c) => c.score >= 0.5).slice(0, 3).map((c) => c.record.name);
+    const text = [
+      `Add new customer "${name}" to Zoho Books?`,
+      ...(similar.length ? [`⚠️ Similar existing customers: ${similar.join(' / ')}`] : []),
+      'Please check the spelling: this creates a permanent customer record.',
+      `  1) Yes, add "${name}"`,
+      '  2) Cancel',
+      '',
+      'Tap a button or reply to this message with 1 or 2.',
+    ].join('\n');
+    const buttons = [[{ text: '✅ Yes, add customer', data: 'opt:1' }], [{ text: '❌ Cancel', data: 'opt:2' }]];
+    const id = await this.safeSend(msg.chatId, { text, buttons }, msg.id);
+    if (!id) return { action: 'error', reason: 'confirmation_not_sent' };
+    this.deps.store.setConfirmation(id, {
+      chatId: msg.chatId,
+      requesterId: msg.senderId,
+      name,
+      resumeSourceMsgId: pending?.sourceMsgId,
+      resumeRequesterId: pending?.senderId,
+      createdAt: this.now(),
+      expiresAt: this.now() + this.deps.options.clarifyTtlMs,
+    });
+    return { action: 'clarify', reason: 'confirm_new_customer' };
+  }
+
+  /** Step 2: Yes creates the customer (once), Cancel discards. Only the requester (or an authorised creator) may answer. */
+  private async handleConfirmation(
+    msg: IncomingMessage,
+    text: string,
+    confirmationId: string,
+    log: ReturnType<Logger['child']>,
+  ): Promise<{ action: Action; reason: string; created?: string; confirmation?: PendingConfirmation }> {
+    const { store, books } = this.deps;
+    const respond = async (reason: string, reply: string, confirmation?: PendingConfirmation) => {
+      await this.reply(msg, reply);
+      return { action: 'respond' as Action, reason, confirmation };
+    };
+    const conf = store.getConfirmation(confirmationId)!;
+    if (conf.chatId !== msg.chatId) return { action: 'ignore', reason: 'confirmation_other_chat' };
+    if (conf.expiresAt <= this.now()) {
+      store.takeConfirmation(confirmationId);
+      return respond('confirmation_expired', 'That confirmation has expired. Nothing was added. Send "add customer <name>" again.');
+    }
+    const creators = this.deps.options.customerCreators ?? [];
+    if (msg.senderId !== conf.requesterId && !(creators.length && creators.includes(msg.senderId))) {
+      return respond('confirmation_forbidden', 'Only the person who asked can confirm adding this customer.');
+    }
+    const yes = CONFIRM_YES.test(text);
+    if (!yes && !CONFIRM_NO.test(text)) {
+      await this.reply(msg, 'Please tap ✅ Yes or ❌ Cancel (or reply 1 / 2).');
+      return { action: 'clarify', reason: 'confirmation_unclear' };
+    }
+    const taken = store.takeConfirmation(confirmationId);
+    if (!taken) return { action: 'ignore', reason: 'confirmation_already_used' };
+    if (!yes) return respond('customer_create_cancelled', `Cancelled. "${taken.name}" was not added.`);
+    if (!this.mayCreateCustomers(msg.senderId) && msg.senderId !== taken.requesterId) {
+      return respond('customer_create_forbidden', 'Only authorised users can add customers.');
+    }
+
+    try {
+      const existing = new CustomerMatcher(await books.listCustomers()).match(taken.name);
+      if (existing.status === 'matched') {
+        await this.reply(msg, `"${existing.record.name}" already exists, so nothing new was added.`);
+        return { action: 'respond', reason: 'customer_exists', created: existing.record.name, confirmation: taken };
+      }
+      if (this.deps.options.dryRun) return respond('customer_create_dry_run', `DRY RUN: would add customer "${taken.name}".`, taken);
+      const c = await books.createCustomer(taken.name);
+      log.info('customer.created', { customerId: c.id });
+      await this.reply(msg, `✅ Added customer "${c.name}".${taken.resumeSourceMsgId ? ' Continuing your invoice…' : ''}`);
+      return { action: 'respond', reason: 'customer_created', created: c.name, confirmation: taken };
+    } catch (e) {
+      const category = e instanceof HttpError ? e.category : 'unknown';
+      log.error('customer.create_failed', { category, error: e });
+      return respond(`customer_create_${category}`, `I couldn't add "${taken.name}" (${(e as Error).message.slice(0, 140)}). Nothing was added; please add it in Zoho Books.`, taken);
+    }
+  }
+
+  /** Adds DEFAULT_TAX_PERCENT to lines whose item has no tax in Zoho. Fails (nothing created) if that tax does not exist. */
+  private async withTax(lines: InvoiceLineInput[]): Promise<InvoiceLineInput[]> {
+    const pct = this.deps.options.defaultTaxPercent;
+    if (pct === undefined) return lines;
+    const items = await this.deps.books.listItems();
+    const untaxed = (l: InvoiceLineInput) => !items.find((i) => i.id === l.itemId)?.taxId;
+    if (!lines.some(untaxed)) return lines;
+    const taxId = await this.deps.books.findTaxId(pct);
+    if (!taxId) throw new HttpError(`No ${pct}% tax exists in Zoho Books. Create it under Settings → Taxes (or run npm run zoho:seed -- --confirm --tax ${pct}).`, 'client');
+    return lines.map((l) => (untaxed(l) ? { ...l, taxId } : l));
+  }
+
   /** Creates the invoice; on an uncertain failure, checks the reference before a single retry. */
   private async createOnce(reference: string, d: Extract<Decision, { kind: 'create' }>, log: Logger): Promise<Invoice> {
     const input = {
       customerId: d.customer.id,
       referenceNumber: reference,
-      lines: d.lines.map((l) => ({ itemId: l.item.id, quantity: l.quantity, rate: l.rate })),
+      lines: await this.withTax(d.lines.map((l) => ({ itemId: l.item.id, quantity: l.quantity, rate: l.rate }))),
       notes: d.notes,
     };
     try {

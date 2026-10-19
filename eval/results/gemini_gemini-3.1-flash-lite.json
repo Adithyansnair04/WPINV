@@ -1,128 +1,128 @@
 {
   "model": "gemini:gemini-3.1-flash-lite",
   "status": "ok",
-  "timestamp": "2026-10-18T16:06:52.775Z",
+  "timestamp": "2026-10-18T20:23:34.520Z",
   "caseCount": 50,
+  "casesScored": 50,
+  "blocked": [],
   "partial": false,
   "metrics": {
     "headline": {
       "action_accuracy": {
-        "num": 43,
+        "num": 49,
         "den": 50,
-        "pct": 86
+        "pct": 98
       },
       "customer_match_accuracy": {
-        "num": 36,
+        "num": 41,
         "den": 41,
-        "pct": 87.8
-      },
-      "item_match_accuracy": {
-        "num": 40,
-        "den": 43,
-        "pct": 93
-      },
-      "quantity_accuracy": {
-        "num": 42,
-        "den": 42,
         "pct": 100
       },
-      "rate_accuracy": {
-        "num": 40,
+      "item_match_accuracy": {
+        "num": 42,
+        "den": 43,
+        "pct": 97.7
+      },
+      "quantity_accuracy": {
+        "num": 41,
         "den": 42,
-        "pct": 95.2
+        "pct": 97.6
+      },
+      "rate_accuracy": {
+        "num": 39,
+        "den": 42,
+        "pct": 92.9
       },
       "clarification_recall": {
-        "num": 18,
+        "num": 19,
         "den": 19,
-        "pct": 94.7
+        "pct": 100
       },
       "unnecessary_clarification_rate": {
-        "num": 5,
+        "num": 1,
         "den": 27,
-        "pct": 18.5
+        "pct": 3.7
       },
-      "confidently_wrong_invoices": 1,
+      "confidently_wrong_invoices": 0,
       "non_invoice_false_positives": {
         "num": 0,
         "den": 8,
         "pct": 0
       },
       "exact_invoice_rate": {
-        "num": 22,
+        "num": 26,
         "den": 27,
-        "pct": 81.5
+        "pct": 96.3
       }
     },
     "extraction": {
       "intent_accuracy": {
         "num": 48,
-        "den": 48,
-        "pct": 100
+        "den": 49,
+        "pct": 98
       },
       "line_count_accuracy": {
-        "num": 40,
+        "num": 39,
         "den": 41,
-        "pct": 97.6
+        "pct": 95.1
       },
       "quantity_accuracy": {
-        "num": 42,
+        "num": 41,
         "den": 42,
-        "pct": 100
+        "pct": 97.6
       },
       "rate_accuracy": {
-        "num": 40,
+        "num": 39,
         "den": 42,
-        "pct": 95.2
+        "pct": 92.9
       }
     },
     "matching": {
       "customer_match_accuracy": {
-        "num": 36,
+        "num": 41,
         "den": 41,
-        "pct": 87.8
+        "pct": 100
       },
       "item_match_accuracy": {
-        "num": 40,
+        "num": 42,
         "den": 43,
-        "pct": 93
+        "pct": 97.7
       }
     },
     "latency_ms": {
       "model_turns": 54,
-      "mean": 2892,
-      "p50": 1986,
-      "p95": 7416,
-      "max": 11713,
-      "total": 156167
+      "mean": 2274,
+      "p50": 1324,
+      "p95": 6767,
+      "max": 28125,
+      "total": 122814
     },
     "reliability": {
-      "model_failures": 1,
-      "invalid_outputs": 3,
-      "http_retries": 1,
+      "model_failures": 0,
+      "invalid_outputs": 0,
+      "http_retries": 0,
       "rate_limit_events": 0
     },
-    "confidently_wrong_case_ids": [
-      "B05"
-    ],
+    "confidently_wrong_case_ids": [],
     "per_category": {
       "straightforward": {
         "ok": 5,
         "n": 5
       },
       "alias": {
-        "ok": 4,
+        "ok": 5,
         "n": 5
       },
       "word_order": {
-        "ok": 3,
+        "ok": 2,
         "n": 3
       },
       "informal": {
-        "ok": 1,
+        "ok": 2,
         "n": 2
       },
       "typo": {
-        "ok": 2,
+        "ok": 4,
         "n": 4
       },
       "confusable": {
@@ -134,7 +134,7 @@
         "n": 5
       },
       "ambiguous": {
-        "ok": 4,
+        "ok": 5,
         "n": 5
       },
       "invalid": {
@@ -146,11 +146,11 @@
         "n": 4
       },
       "previous_invoice": {
-        "ok": 3,
+        "ok": 4,
         "n": 4
       },
       "clarification_flow": {
-        "ok": 4,
+        "ok": 5,
         "n": 5
       }
     }
@@ -162,11 +162,11 @@
       "turns": [
         {
           "action": "create",
-          "latencyMs": 3605,
+          "latencyMs": 2232,
           "usedModel": true,
           "meta": {
             "model": "gemini:gemini-3.1-flash-lite",
-            "latencyMs": 3604.3249,
+            "latencyMs": 2215.5262000000002,
             "attempts": 1,
             "retries": 0,
             "rateLimited": 0,
@@ -207,11 +207,11 @@
       "turns": [
         {
           "action": "create",
-          "latencyMs": 1483,
+          "latencyMs": 1414,
           "usedModel": true,
           "meta": {
             "model": "gemini:gemini-3.1-flash-lite",
-            "latencyMs": 1482.5306,
+            "latencyMs": 1413.1625999999997,
             "attempts": 1,
             "retries": 0,
             "rateLimited": 0,
@@ -252,11 +252,11 @@
       "turns": [
         {
           "action": "create",
-          "latencyMs": 11713,
+          "latencyMs": 1262,
           "usedModel": true,
           "meta": {
             "model": "gemini:gemini-3.1-flash-lite",
-            "latencyMs": 11712.7052,
+            "latencyMs": 1260.8212000000003,
             "attempts": 1,
             "retries": 0,
             "rateLimited": 0,
@@ -297,11 +297,11 @@
       "turns": [
         {
           "action": "create",
-          "latencyMs": 3193,
+          "latencyMs": 6767,
           "usedModel": true,
           "meta": {
             "model": "gemini:gemini-3.1-flash-lite",
-            "latencyMs": 3191.9846000000034,
+            "latencyMs": 6764.5115000000005,
             "attempts": 1,
             "retries": 0,
             "rateLimited": 0,
@@ -356,13 +356,13 @@
       "turns": [
         {
           "action": "create",
-          "latencyMs": 3742,
+          "latencyMs": 1417,
           "usedModel": true,
           "meta": {
             "model": "gemini:gemini-3.1-flash-lite",
-            "latencyMs": 3741.736499999999,
+            "latencyMs": 1415.5742999999966,
             "attempts": 1,
-            "retries": 1,
+            "retries": 0,
             "rateLimited": 0,
             "invalidOutputs": 0
           }
@@ -400,13 +400,12 @@
       "category": "alias",
       "turns": [
         {
-          "action": "clarify",
-          "reason": "missing_customer",
-          "latencyMs": 1740,
+          "action": "create",
+          "latencyMs": 947,
           "usedModel": true,
           "meta": {
             "model": "gemini:gemini-3.1-flash-lite",
-            "latencyMs": 1739.965999999993,
+            "latencyMs": 945.6213000000062,
             "attempts": 1,
             "retries": 0,
             "rateLimited": 0,
@@ -422,16 +421,24 @@
           "rate": 4700
         }
       ],
-      "resolvedCustomer": null,
+      "resolvedCustomer": "Kerala Wheel Hub",
       "resolvedLines": [
         {
           "status": "matched",
           "sku": "LZA-17-GUN"
         }
       ],
-      "problems": [
-        "missing_customer"
-      ]
+      "problems": [],
+      "invoice": {
+        "customer": "Kerala Wheel Hub",
+        "lines": [
+          {
+            "sku": "LZA-17-GUN",
+            "quantity": 4,
+            "rate": 4700
+          }
+        ]
+      }
     },
     {
       "id": "A02",
@@ -439,11 +446,11 @@
       "turns": [
         {
           "action": "create",
-          "latencyMs": 1471,
+          "latencyMs": 1138,
           "usedModel": true,
           "meta": {
             "model": "gemini:gemini-3.1-flash-lite",
-            "latencyMs": 1470.0509999999995,
+            "latencyMs": 1136.4733999999953,
             "attempts": 1,
             "retries": 0,
             "rateLimited": 0,
@@ -484,11 +491,11 @@
       "turns": [
         {
           "action": "create",
-          "latencyMs": 4732,
+          "latencyMs": 2029,
           "usedModel": true,
           "meta": {
             "model": "gemini:gemini-3.1-flash-lite",
-            "latencyMs": 4731.234600000011,
+            "latencyMs": 2027.5957999999955,
             "attempts": 1,
             "retries": 0,
             "rateLimited": 0,
@@ -529,11 +536,11 @@
       "turns": [
         {
           "action": "create",
-          "latencyMs": 1427,
+          "latencyMs": 1011,
           "usedModel": true,
           "meta": {
             "model": "gemini:gemini-3.1-flash-lite",
-            "latencyMs": 1425.6824000000051,
+            "latencyMs": 1010.5139000000054,
             "attempts": 1,
             "retries": 0,
             "rateLimited": 0,
@@ -574,11 +581,11 @@
       "turns": [
         {
           "action": "create",
-          "latencyMs": 1764,
+          "latencyMs": 1640,
           "usedModel": true,
           "meta": {
             "model": "gemini:gemini-3.1-flash-lite",
-            "latencyMs": 1763.3104999999923,
+            "latencyMs": 1638.6313999999984,
             "attempts": 1,
             "retries": 0,
             "rateLimited": 0,
@@ -619,11 +626,11 @@
       "turns": [
         {
           "action": "create",
-          "latencyMs": 3672,
+          "latencyMs": 1592,
           "usedModel": true,
           "meta": {
             "model": "gemini:gemini-3.1-flash-lite",
-            "latencyMs": 3671.502899999992,
+            "latencyMs": 1590.4311000000016,
             "attempts": 1,
             "retries": 0,
             "rateLimited": 0,
@@ -664,11 +671,11 @@
       "turns": [
         {
           "action": "create",
-          "latencyMs": 6985,
+          "latencyMs": 1024,
           "usedModel": true,
           "meta": {
             "model": "gemini:gemini-3.1-flash-lite",
-            "latencyMs": 6984.321800000005,
+            "latencyMs": 1023.0124000000069,
             "attempts": 1,
             "retries": 0,
             "rateLimited": 0,
@@ -708,12 +715,13 @@
       "category": "word_order",
       "turns": [
         {
-          "action": "create",
-          "latencyMs": 1493,
+          "action": "clarify",
+          "reason": "ambiguous_item,missing_quantity,missing_rate",
+          "latencyMs": 1312,
           "usedModel": true,
           "meta": {
             "model": "gemini:gemini-3.1-flash-lite",
-            "latencyMs": 1492.3361999999906,
+            "latencyMs": 1310.692200000005,
             "attempts": 1,
             "retries": 0,
             "rateLimited": 0,
@@ -724,6 +732,11 @@
       "intent": "invoice_request",
       "extractedItems": [
         {
+          "description": "alloys",
+          "quantity": null,
+          "rate": null
+        },
+        {
           "description": "tyre valve set",
           "quantity": 2,
           "rate": 120
@@ -732,21 +745,19 @@
       "resolvedCustomer": "Royal Alloys",
       "resolvedLines": [
         {
+          "status": "ambiguous",
+          "sku": null
+        },
+        {
           "status": "matched",
           "sku": "VLV-4"
         }
       ],
-      "problems": [],
-      "invoice": {
-        "customer": "Royal Alloys",
-        "lines": [
-          {
-            "sku": "VLV-4",
-            "quantity": 2,
-            "rate": 120
-          }
-        ]
-      }
+      "problems": [
+        "ambiguous_item",
+        "missing_quantity",
+        "missing_rate"
+      ]
     },
     {
       "id": "W04",
@@ -754,11 +765,11 @@
       "turns": [
         {
           "action": "create",
-          "latencyMs": 1614,
+          "latencyMs": 1371,
           "usedModel": true,
           "meta": {
             "model": "gemini:gemini-3.1-flash-lite",
-            "latencyMs": 1613.5060000000085,
+            "latencyMs": 1369.6466999999975,
             "attempts": 1,
             "retries": 0,
             "rateLimited": 0,
@@ -798,13 +809,12 @@
       "category": "informal",
       "turns": [
         {
-          "action": "clarify",
-          "reason": "unknown_customer",
-          "latencyMs": 7416,
+          "action": "create",
+          "latencyMs": 1405,
           "usedModel": true,
           "meta": {
             "model": "gemini:gemini-3.1-flash-lite",
-            "latencyMs": 7415.0738999999885,
+            "latencyMs": 1403.0455999999976,
             "attempts": 1,
             "retries": 0,
             "rateLimited": 0,
@@ -820,16 +830,24 @@
           "rate": 5600
         }
       ],
-      "resolvedCustomer": null,
+      "resolvedCustomer": "Ganesh Wheel Care",
       "resolvedLines": [
         {
           "status": "matched",
           "sku": "APX-195-55-16"
         }
       ],
-      "problems": [
-        "unknown_customer"
-      ]
+      "problems": [],
+      "invoice": {
+        "customer": "Ganesh Wheel Care",
+        "lines": [
+          {
+            "sku": "APX-195-55-16",
+            "quantity": 2,
+            "rate": 5600
+          }
+        ]
+      }
     },
     {
       "id": "T01",
@@ -837,11 +855,11 @@
       "turns": [
         {
           "action": "create",
-          "latencyMs": 1166,
+          "latencyMs": 932,
           "usedModel": true,
           "meta": {
             "model": "gemini:gemini-3.1-flash-lite",
-            "latencyMs": 1165.3699000000197,
+            "latencyMs": 931.3687999999966,
             "attempts": 1,
             "retries": 0,
             "rateLimited": 0,
@@ -881,13 +899,12 @@
       "category": "typo",
       "turns": [
         {
-          "action": "clarify",
-          "reason": "missing_customer,ambiguous_item",
-          "latencyMs": 2293,
+          "action": "create",
+          "latencyMs": 1145,
           "usedModel": true,
           "meta": {
             "model": "gemini:gemini-3.1-flash-lite",
-            "latencyMs": 2292.927400000015,
+            "latencyMs": 1143.439400000003,
             "attempts": 1,
             "retries": 0,
             "rateLimited": 0,
@@ -898,22 +915,29 @@
       "intent": "invoice_request",
       "extractedItems": [
         {
-          "description": "royl alloys vortx 18 mat black",
+          "description": "vortx 18 mat black",
           "quantity": 4,
           "rate": 5600
         }
       ],
-      "resolvedCustomer": null,
+      "resolvedCustomer": "Royal Alloys",
       "resolvedLines": [
         {
-          "status": "ambiguous",
-          "sku": null
+          "status": "matched",
+          "sku": "VTX-18-MBK"
         }
       ],
-      "problems": [
-        "missing_customer",
-        "ambiguous_item"
-      ]
+      "problems": [],
+      "invoice": {
+        "customer": "Royal Alloys",
+        "lines": [
+          {
+            "sku": "VTX-18-MBK",
+            "quantity": 4,
+            "rate": 5600
+          }
+        ]
+      }
     },
     {
       "id": "T03",
@@ -921,11 +945,11 @@
       "turns": [
         {
           "action": "create",
-          "latencyMs": 2172,
+          "latencyMs": 1081,
           "usedModel": true,
           "meta": {
             "model": "gemini:gemini-3.1-flash-lite",
-            "latencyMs": 2171.7513000000035,
+            "latencyMs": 1078.9833000000071,
             "attempts": 1,
             "retries": 0,
             "rateLimited": 0,
@@ -965,13 +989,12 @@
       "category": "typo",
       "turns": [
         {
-          "action": "clarify",
-          "reason": "missing_customer,ambiguous_item",
-          "latencyMs": 3806,
+          "action": "create",
+          "latencyMs": 1056,
           "usedModel": true,
           "meta": {
             "model": "gemini:gemini-3.1-flash-lite",
-            "latencyMs": 3805.1735000000044,
+            "latencyMs": 1054.5243999999948,
             "attempts": 1,
             "retries": 0,
             "rateLimited": 0,
@@ -982,22 +1005,29 @@
       "intent": "invoice_request",
       "extractedItems": [
         {
-          "description": "kerla wheel hub neo 16 slvr",
+          "description": "wheel hub neo 16 slvr",
           "quantity": 4,
           "rate": 3900
         }
       ],
-      "resolvedCustomer": null,
+      "resolvedCustomer": "Kerala Wheel Hub",
       "resolvedLines": [
         {
-          "status": "ambiguous",
-          "sku": null
+          "status": "matched",
+          "sku": "NEO-16-SLV"
         }
       ],
-      "problems": [
-        "missing_customer",
-        "ambiguous_item"
-      ]
+      "problems": [],
+      "invoice": {
+        "customer": "Kerala Wheel Hub",
+        "lines": [
+          {
+            "sku": "NEO-16-SLV",
+            "quantity": 4,
+            "rate": 3900
+          }
+        ]
+      }
     },
     {
       "id": "C01",
@@ -1005,11 +1035,11 @@
       "turns": [
         {
           "action": "create",
-          "latencyMs": 1805,
+          "latencyMs": 1127,
           "usedModel": true,
           "meta": {
             "model": "gemini:gemini-3.1-flash-lite",
-            "latencyMs": 1804.3647000000055,
+            "latencyMs": 1125.3019000000058,
             "attempts": 1,
             "retries": 0,
             "rateLimited": 0,
@@ -1050,11 +1080,11 @@
       "turns": [
         {
           "action": "create",
-          "latencyMs": 6412,
+          "latencyMs": 923,
           "usedModel": true,
           "meta": {
             "model": "gemini:gemini-3.1-flash-lite",
-            "latencyMs": 6410.1728,
+            "latencyMs": 921.5896999999968,
             "attempts": 1,
             "retries": 0,
             "rateLimited": 0,
@@ -1095,11 +1125,11 @@
       "turns": [
         {
           "action": "create",
-          "latencyMs": 3374,
+          "latencyMs": 1193,
           "usedModel": true,
           "meta": {
             "model": "gemini:gemini-3.1-flash-lite",
-            "latencyMs": 3373.4402999999875,
+            "latencyMs": 1192.2565000000031,
             "attempts": 1,
             "retries": 0,
             "rateLimited": 0,
@@ -1140,11 +1170,11 @@
       "turns": [
         {
           "action": "create",
-          "latencyMs": 1734,
+          "latencyMs": 1828,
           "usedModel": true,
           "meta": {
             "model": "gemini:gemini-3.1-flash-lite",
-            "latencyMs": 1733.2866000000213,
+            "latencyMs": 1827.4674999999988,
             "attempts": 1,
             "retries": 0,
             "rateLimited": 0,
@@ -1186,11 +1216,11 @@
         {
           "action": "clarify",
           "reason": "missing_customer",
-          "latencyMs": 1554,
+          "latencyMs": 1061,
           "usedModel": true,
           "meta": {
             "model": "gemini:gemini-3.1-flash-lite",
-            "latencyMs": 1553.417300000001,
+            "latencyMs": 1060.4046999999991,
             "attempts": 1,
             "retries": 0,
             "rateLimited": 0,
@@ -1224,11 +1254,11 @@
         {
           "action": "clarify",
           "reason": "ambiguous_item",
-          "latencyMs": 3556,
+          "latencyMs": 28125,
           "usedModel": true,
           "meta": {
             "model": "gemini:gemini-3.1-flash-lite",
-            "latencyMs": 3555.2253999999957,
+            "latencyMs": 28123.795400000003,
             "attempts": 1,
             "retries": 0,
             "rateLimited": 0,
@@ -1262,11 +1292,11 @@
         {
           "action": "clarify",
           "reason": "missing_quantity",
-          "latencyMs": 1986,
+          "latencyMs": 3006,
           "usedModel": true,
           "meta": {
             "model": "gemini:gemini-3.1-flash-lite",
-            "latencyMs": 1984.9873999999836,
+            "latencyMs": 3004.890299999999,
             "attempts": 1,
             "retries": 0,
             "rateLimited": 0,
@@ -1300,11 +1330,11 @@
         {
           "action": "clarify",
           "reason": "missing_rate",
-          "latencyMs": 1439,
+          "latencyMs": 1345,
           "usedModel": true,
           "meta": {
             "model": "gemini:gemini-3.1-flash-lite",
-            "latencyMs": 1438.591000000015,
+            "latencyMs": 1343.7774999999965,
             "attempts": 1,
             "retries": 0,
             "rateLimited": 0,
@@ -1338,11 +1368,11 @@
         {
           "action": "clarify",
           "reason": "missing_customer,missing_rate",
-          "latencyMs": 2249,
+          "latencyMs": 1204,
           "usedModel": true,
           "meta": {
             "model": "gemini:gemini-3.1-flash-lite",
-            "latencyMs": 2248.5081000000064,
+            "latencyMs": 1203.1704000000027,
             "attempts": 1,
             "retries": 0,
             "rateLimited": 0,
@@ -1377,11 +1407,11 @@
         {
           "action": "clarify",
           "reason": "ambiguous_item,missing_rate",
-          "latencyMs": 8148,
+          "latencyMs": 1730,
           "usedModel": true,
           "meta": {
             "model": "gemini:gemini-3.1-flash-lite",
-            "latencyMs": 8147.790599999978,
+            "latencyMs": 1729.7508999999845,
             "attempts": 1,
             "retries": 0,
             "rateLimited": 0,
@@ -1416,11 +1446,11 @@
         {
           "action": "clarify",
           "reason": "ambiguous_customer",
-          "latencyMs": 2422,
+          "latencyMs": 8725,
           "usedModel": true,
           "meta": {
             "model": "gemini:gemini-3.1-flash-lite",
-            "latencyMs": 2421.261300000013,
+            "latencyMs": 8724.268500000006,
             "attempts": 1,
             "retries": 0,
             "rateLimited": 0,
@@ -1454,11 +1484,11 @@
         {
           "action": "clarify",
           "reason": "ambiguous_customer,ambiguous_item",
-          "latencyMs": 1588,
+          "latencyMs": 1315,
           "usedModel": true,
           "meta": {
             "model": "gemini:gemini-3.1-flash-lite",
-            "latencyMs": 1587.1524999999674,
+            "latencyMs": 1314.273599999986,
             "attempts": 1,
             "retries": 0,
             "rateLimited": 0,
@@ -1469,7 +1499,7 @@
       "intent": "invoice_request",
       "extractedItems": [
         {
-          "description": "lenzo 18 inch",
+          "description": "lenzo 18",
           "quantity": 4,
           "rate": 5100
         }
@@ -1493,11 +1523,11 @@
         {
           "action": "clarify",
           "reason": "ambiguous_item",
-          "latencyMs": 3246,
+          "latencyMs": 1702,
           "usedModel": true,
           "meta": {
             "model": "gemini:gemini-3.1-flash-lite",
-            "latencyMs": 3245.382500000007,
+            "latencyMs": 1701.2975999999908,
             "attempts": 1,
             "retries": 0,
             "rateLimited": 0,
@@ -1529,12 +1559,13 @@
       "category": "ambiguous",
       "turns": [
         {
-          "action": "create",
-          "latencyMs": 1466,
+          "action": "clarify",
+          "reason": "shared_rate",
+          "latencyMs": 4256,
           "usedModel": true,
           "meta": {
             "model": "gemini:gemini-3.1-flash-lite",
-            "latencyMs": 1465.0239999999758,
+            "latencyMs": 4255.0970999999845,
             "attempts": 1,
             "retries": 0,
             "rateLimited": 0,
@@ -1566,22 +1597,9 @@
           "sku": "NEO-16-RED"
         }
       ],
-      "problems": [],
-      "invoice": {
-        "customer": "Metro Car Accessories",
-        "lines": [
-          {
-            "sku": "LNZ-18-RED",
-            "quantity": 4,
-            "rate": 5200
-          },
-          {
-            "sku": "NEO-16-RED",
-            "quantity": 2,
-            "rate": 5200
-          }
-        ]
-      }
+      "problems": [
+        "shared_rate"
+      ]
     },
     {
       "id": "I01",
@@ -1590,11 +1608,11 @@
         {
           "action": "clarify",
           "reason": "invalid_quantity",
-          "latencyMs": 1614,
+          "latencyMs": 5191,
           "usedModel": true,
           "meta": {
             "model": "gemini:gemini-3.1-flash-lite",
-            "latencyMs": 1613.117900000012,
+            "latencyMs": 5190.210300000006,
             "attempts": 1,
             "retries": 0,
             "rateLimited": 0,
@@ -1628,11 +1646,11 @@
         {
           "action": "clarify",
           "reason": "currency_mismatch",
-          "latencyMs": 1223,
+          "latencyMs": 2106,
           "usedModel": true,
           "meta": {
             "model": "gemini:gemini-3.1-flash-lite",
-            "latencyMs": 1222.2087000000174,
+            "latencyMs": 2105.2428000000073,
             "attempts": 1,
             "retries": 0,
             "rateLimited": 0,
@@ -1666,11 +1684,11 @@
         {
           "action": "clarify",
           "reason": "ambiguous_item",
-          "latencyMs": 1219,
+          "latencyMs": 1226,
           "usedModel": true,
           "meta": {
             "model": "gemini:gemini-3.1-flash-lite",
-            "latencyMs": 1218.338300000003,
+            "latencyMs": 1225.3119999999763,
             "attempts": 1,
             "retries": 0,
             "rateLimited": 0,
@@ -1704,11 +1722,11 @@
         {
           "action": "clarify",
           "reason": "unknown_customer",
-          "latencyMs": 1324,
+          "latencyMs": 2687,
           "usedModel": true,
           "meta": {
             "model": "gemini:gemini-3.1-flash-lite",
-            "latencyMs": 1323.1957999999868,
+            "latencyMs": 2686.5792000000074,
             "attempts": 1,
             "retries": 0,
             "rateLimited": 0,
@@ -1742,11 +1760,11 @@
         {
           "action": "ignore",
           "reason": "non_invoice",
-          "latencyMs": 2895,
+          "latencyMs": 1191,
           "usedModel": true,
           "meta": {
             "model": "gemini:gemini-3.1-flash-lite",
-            "latencyMs": 2894.8557000000146,
+            "latencyMs": 1190.9986000000208,
             "attempts": 1,
             "retries": 0,
             "rateLimited": 0,
@@ -1767,11 +1785,11 @@
         {
           "action": "ignore",
           "reason": "non_invoice",
-          "latencyMs": 3629,
+          "latencyMs": 1107,
           "usedModel": true,
           "meta": {
             "model": "gemini:gemini-3.1-flash-lite",
-            "latencyMs": 3628.581499999971,
+            "latencyMs": 1106.3034000000043,
             "attempts": 1,
             "retries": 0,
             "rateLimited": 0,
@@ -1792,11 +1810,11 @@
         {
           "action": "ignore",
           "reason": "non_invoice",
-          "latencyMs": 1756,
+          "latencyMs": 1348,
           "usedModel": true,
           "meta": {
             "model": "gemini:gemini-3.1-flash-lite",
-            "latencyMs": 1755.4756000000052,
+            "latencyMs": 1347.983500000002,
             "attempts": 1,
             "retries": 0,
             "rateLimited": 0,
@@ -1817,11 +1835,11 @@
         {
           "action": "ignore",
           "reason": "non_invoice",
-          "latencyMs": 1340,
+          "latencyMs": 948,
           "usedModel": true,
           "meta": {
             "model": "gemini:gemini-3.1-flash-lite",
-            "latencyMs": 1340.1551000000327,
+            "latencyMs": 948.0910000000149,
             "attempts": 1,
             "retries": 0,
             "rateLimited": 0,
@@ -1842,11 +1860,11 @@
         {
           "action": "respond",
           "reason": "unsupported_followup",
-          "latencyMs": 3722,
+          "latencyMs": 1194,
           "usedModel": true,
           "meta": {
             "model": "gemini:gemini-3.1-flash-lite",
-            "latencyMs": 3722.1498999999603,
+            "latencyMs": 1193.4521999999997,
             "attempts": 1,
             "retries": 0,
             "rateLimited": 0,
@@ -1866,12 +1884,12 @@
       "turns": [
         {
           "action": "clarify",
-          "reason": "rate_from_previous",
-          "latencyMs": 2761,
+          "reason": "confirm_previous_rate",
+          "latencyMs": 875,
           "usedModel": true,
           "meta": {
             "model": "gemini:gemini-3.1-flash-lite",
-            "latencyMs": 2760.6261000000522,
+            "latencyMs": 873.2935000000289,
             "attempts": 1,
             "retries": 0,
             "rateLimited": 0,
@@ -1895,7 +1913,7 @@
         }
       ],
       "problems": [
-        "rate_from_previous"
+        "confirm_previous_rate"
       ]
     },
     {
@@ -1903,22 +1921,28 @@
       "category": "previous_invoice",
       "turns": [
         {
-          "action": "error",
-          "reason": "extract_validation",
-          "latencyMs": 3271,
+          "action": "respond",
+          "reason": "edit_without_target",
+          "latencyMs": 2148,
           "usedModel": true,
           "meta": {
             "model": "gemini:gemini-3.1-flash-lite",
-            "latencyMs": 3268.5820999999996,
-            "attempts": 2,
+            "latencyMs": 2147.602499999979,
+            "attempts": 1,
             "retries": 0,
             "rateLimited": 0,
-            "invalidOutputs": 2
-          },
-          "error": "items.0.description: Invalid input: expected string, received null"
+            "invalidOutputs": 0
+          }
         }
       ],
-      "extractedItems": [],
+      "intent": "edit_request",
+      "extractedItems": [
+        {
+          "description": null,
+          "quantity": 6,
+          "rate": null
+        }
+      ],
       "resolvedCustomer": null,
       "resolvedLines": [],
       "problems": []
@@ -1930,11 +1954,11 @@
         {
           "action": "respond",
           "reason": "unsupported_followup",
-          "latencyMs": 1191,
+          "latencyMs": 999,
           "usedModel": true,
           "meta": {
             "model": "gemini:gemini-3.1-flash-lite",
-            "latencyMs": 1191.2044999999925,
+            "latencyMs": 999.1534000000102,
             "attempts": 1,
             "retries": 0,
             "rateLimited": 0,
@@ -1955,11 +1979,11 @@
         {
           "action": "clarify",
           "reason": "ambiguous_item,missing_rate",
-          "latencyMs": 5667,
+          "latencyMs": 1382,
           "usedModel": true,
           "meta": {
             "model": "gemini:gemini-3.1-flash-lite",
-            "latencyMs": 5667.071799999976,
+            "latencyMs": 1381.1655000000028,
             "attempts": 1,
             "retries": 0,
             "rateLimited": 0,
@@ -1968,11 +1992,11 @@
         },
         {
           "action": "create",
-          "latencyMs": 1170,
+          "latencyMs": 1719,
           "usedModel": true,
           "meta": {
             "model": "gemini:gemini-3.1-flash-lite",
-            "latencyMs": 1169.4317000000156,
+            "latencyMs": 1717.7591000000248,
             "attempts": 1,
             "retries": 0,
             "rateLimited": 0,
@@ -1983,7 +2007,7 @@
       "intent": "clarification_response",
       "extractedItems": [
         {
-          "description": "Lenzo Alloy Wheel 18 inch Red",
+          "description": "Lenzo Alloy Wheel 18\" Red",
           "quantity": 4,
           "rate": 5200
         }
@@ -2014,11 +2038,11 @@
         {
           "action": "clarify",
           "reason": "missing_rate",
-          "latencyMs": 1463,
+          "latencyMs": 1348,
           "usedModel": true,
           "meta": {
             "model": "gemini:gemini-3.1-flash-lite",
-            "latencyMs": 1461.7115999999805,
+            "latencyMs": 1347.1184000000358,
             "attempts": 1,
             "retries": 0,
             "rateLimited": 0,
@@ -2027,11 +2051,11 @@
         },
         {
           "action": "create",
-          "latencyMs": 2488,
+          "latencyMs": 1192,
           "usedModel": true,
           "meta": {
             "model": "gemini:gemini-3.1-flash-lite",
-            "latencyMs": 2487.4515000000247,
+            "latencyMs": 1191.2575999999535,
             "attempts": 1,
             "retries": 0,
             "rateLimited": 0,
@@ -2073,11 +2097,11 @@
         {
           "action": "clarify",
           "reason": "ambiguous_item",
-          "latencyMs": 5033,
+          "latencyMs": 1324,
           "usedModel": true,
           "meta": {
             "model": "gemini:gemini-3.1-flash-lite",
-            "latencyMs": 5032.996999999974,
+            "latencyMs": 1323.3425999999745,
             "attempts": 1,
             "retries": 0,
             "rateLimited": 0,
@@ -2124,11 +2148,11 @@
         {
           "action": "clarify",
           "reason": "missing_rate",
-          "latencyMs": 1578,
+          "latencyMs": 2697,
           "usedModel": true,
           "meta": {
             "model": "gemini:gemini-3.1-flash-lite",
-            "latencyMs": 1577.1935999999987,
+            "latencyMs": 2695.9222999999765,
             "attempts": 1,
             "retries": 0,
             "rateLimited": 0,
@@ -2137,23 +2161,23 @@
         },
         {
           "action": "clarify",
-          "reason": "missing_customer,unknown_item,missing_quantity",
-          "latencyMs": 3535,
+          "reason": "missing_customer,missing_item,missing_quantity",
+          "latencyMs": 1185,
           "usedModel": true,
           "meta": {
             "model": "gemini:gemini-3.1-flash-lite",
-            "latencyMs": 3534.221900000004,
-            "attempts": 2,
+            "latencyMs": 1184.1681000000099,
+            "attempts": 1,
             "retries": 0,
             "rateLimited": 0,
-            "invalidOutputs": 1
+            "invalidOutputs": 0
           }
         }
       ],
       "intent": "invoice_request",
       "extractedItems": [
         {
-          "description": "unknown product",
+          "description": null,
           "quantity": null,
           "rate": 5200
         }
@@ -2167,7 +2191,7 @@
       ],
       "problems": [
         "missing_customer",
-        "unknown_item",
+        "missing_item",
         "missing_quantity"
       ]
     },
@@ -2178,11 +2202,11 @@
         {
           "action": "clarify",
           "reason": "missing_quantity",
-          "latencyMs": 1574,
+          "latencyMs": 1154,
           "usedModel": true,
           "meta": {
             "model": "gemini:gemini-3.1-flash-lite",
-            "latencyMs": 1573.0908000000054,
+            "latencyMs": 1152.7388999999966,
             "attempts": 1,
             "retries": 0,
             "rateLimited": 0,
@@ -2190,13 +2214,12 @@
           }
         },
         {
-          "action": "clarify",
-          "reason": "missing_customer,ambiguous_item",
-          "latencyMs": 1248,
+          "action": "create",
+          "latencyMs": 1478,
           "usedModel": true,
           "meta": {
             "model": "gemini:gemini-3.1-flash-lite",
-            "latencyMs": 1247.8035000000382,
+            "latencyMs": 1476.5862000000197,
             "attempts": 1,
             "retries": 0,
             "rateLimited": 0,
@@ -2207,22 +2230,29 @@
       "intent": "clarification_response",
       "extractedItems": [
         {
-          "description": "Royal Alloys neo 16 red",
+          "description": "neo 16 red alloy wheel",
           "quantity": 4,
           "rate": 4100
         }
       ],
-      "resolvedCustomer": null,
+      "resolvedCustomer": "Royal Alloys",
       "resolvedLines": [
         {
-          "status": "ambiguous",
-          "sku": null
+          "status": "matched",
+          "sku": "NEO-16-RED"
         }
       ],
-      "problems": [
-        "missing_customer",
-        "ambiguous_item"
-      ]
+      "problems": [],
+      "invoice": {
+        "customer": "Royal Alloys",
+        "lines": [
+          {
+            "sku": "NEO-16-RED",
+            "quantity": 4,
+            "rate": 4100
+          }
+        ]
+      }
     }
   ]
 }

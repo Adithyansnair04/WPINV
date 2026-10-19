@@ -17,21 +17,46 @@ export interface PendingClarification {
   expiresAt: number;
 }
 
+/** An invoice the bot created, keyed by the id of the bot message that announced it (so replies to it can edit it). */
+export interface InvoiceRecord {
+  invoiceId: string;
+  number: string;
+  chatId: string;
+  customerId: string;
+  lines: { itemId: string; name: string; quantity: number; rate: number }[];
+  createdAt: number;
+}
+
+/** A "create customer?" question waiting for Yes/Cancel, keyed by the id of the confirmation message. */
+export interface PendingConfirmation {
+  chatId: string;
+  requesterId: string;
+  name: string;
+  /** Set when the request came from an invoice clarification that should continue after creation. */
+  resumeSourceMsgId?: string;
+  /** Whose pending invoice request to continue (may differ from the person adding the customer). */
+  resumeRequesterId?: string;
+  createdAt: number;
+  expiresAt: number;
+}
+
 interface StateShape {
   processed: Record<string, number>;
   pending: Record<string, PendingClarification>;
   /** ids of clarification questions we sent, for detecting replies to expired questions */
   questions: Record<string, number>;
+  invoices: Record<string, InvoiceRecord>;
+  confirmations: Record<string, PendingConfirmation>;
 }
 
 const PROCESSED_TTL_MS = 7 * 24 * 3600 * 1000;
 const MAX_PROCESSED = 5000;
 
-export const pendingKey = (chatId: string, senderId: string) => `${chatId}|${senderId}`;
+const pendingKey = (chatId: string, senderId: string) => `${chatId}|${senderId}`;
 
 /** Dedupe + pending-clarification state. In-memory when no file path is given. */
 export class StateStore {
-  private state: StateShape = { processed: {}, pending: {}, questions: {} };
+  private state: StateShape = { processed: {}, pending: {}, questions: {}, invoices: {}, confirmations: {} };
 
   constructor(
     private readonly file?: string,
@@ -81,12 +106,46 @@ export class StateStore {
     this.save();
   }
 
+  /** Open (non-expired) clarifications, for the dashboard. */
+  listPending(): PendingClarification[] {
+    return Object.values(this.state.pending).filter((p) => p.expiresAt > this.now());
+  }
+
+  setInvoiceMessage(messageId: string, rec: InvoiceRecord) {
+    this.state.invoices[messageId] = rec;
+    this.save();
+  }
+
+  getInvoiceByMessage(messageId: string): InvoiceRecord | undefined {
+    return this.state.invoices[messageId];
+  }
+
+  setConfirmation(messageId: string, c: PendingConfirmation) {
+    this.state.confirmations[messageId] = c;
+    this.save();
+  }
+
+  getConfirmation(messageId: string): PendingConfirmation | undefined {
+    return this.state.confirmations[messageId];
+  }
+
+  /** Removes and returns the confirmation, so it can be used only once. */
+  takeConfirmation(messageId: string): PendingConfirmation | undefined {
+    const c = this.state.confirmations[messageId];
+    delete this.state.confirmations[messageId];
+    this.save();
+    return c;
+  }
+
   wasQuestion(messageId: string): boolean {
     return Boolean(this.state.questions[messageId]);
   }
 
   private prune() {
     const cutoff = this.now() - PROCESSED_TTL_MS;
+    for (const [id, rec] of Object.entries(this.state.invoices)) if (rec.createdAt < cutoff) delete this.state.invoices[id];
+    // Kept a day past expiry so a late reply gets "expired" instead of being treated as a new message.
+    for (const [id, c] of Object.entries(this.state.confirmations)) if (c.expiresAt + 24 * 3600 * 1000 < this.now()) delete this.state.confirmations[id];
     for (const bucket of [this.state.processed, this.state.questions]) {
       const entries = Object.entries(bucket);
       for (const [id, ts] of entries) if (ts < cutoff) delete bucket[id];

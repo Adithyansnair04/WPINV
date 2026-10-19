@@ -14,7 +14,7 @@ These steps use the **India** data centre (`zoho.in`). For another DC, change th
 3. Open the *Generate Code* tab and enter these scopes:
 
    ```
-   ZohoBooks.contacts.READ,ZohoBooks.contacts.CREATE,ZohoBooks.settings.READ,ZohoBooks.settings.CREATE,ZohoBooks.invoices.READ,ZohoBooks.invoices.CREATE
+   ZohoBooks.contacts.READ,ZohoBooks.contacts.CREATE,ZohoBooks.settings.READ,ZohoBooks.settings.CREATE,ZohoBooks.invoices.READ,ZohoBooks.invoices.CREATE,ZohoBooks.invoices.UPDATE
    ```
 
    `settings` covers Items and Organizations. The `CREATE` scopes for contacts/settings are needed only for `zoho:seed`. Drop them if you import the CSVs instead.
@@ -55,6 +55,16 @@ Then verify:
 npm run zoho:check   # all seed customers/items present?
 ```
 
+## Tax (18% GST)
+
+Zoho only allows tax on invoices in an India org that is **registered for GST**. Otherwise it rejects them with *"You are not allowed to create tax invoice in GST Regime, as you're not registered for GST"*, and the bot reports that and creates nothing.
+
+1. In Zoho Books, open **Settings → Taxes → GST Settings**, choose *registered for GST*, and enter the GSTIN and state.
+2. Make sure an 18% tax exists. `npm run zoho:seed -- --confirm --tax 18` creates "GST 18%" if missing.
+3. In `.env`, set `DEFAULT_TAX_PERCENT=18`. The bot then adds that tax to every invoice line whose item has no tax of its own. Zoho calculates the tax total; the bot never computes tax itself in live mode.
+
+Alternatively, set the GST rate on each item in Zoho (intra/inter-state preferences) and leave `DEFAULT_TAX_PERCENT` empty.
+
 ## 5. Turn on live mode safely
 
 ```env
@@ -82,7 +92,9 @@ Verified against the Zoho Books v3 docs:
 | Create | `POST /invoices?send=false` with `customer_id`, `reference_number`, `line_items[{item_id, quantity, rate}]`; new invoices are `draft` |
 | Rate limits | 100 req/min/org; HTTP 429 with codes 44 (per-minute), 45 (daily, not retried), 1070 (concurrency) |
 
-Implemented but **not verified against a live org** (no credentials were available while building), isolated in [src/zoho/client.ts](../src/zoho/client.ts):
+**Verified against a live India-DC trial org (2026-10-19):** token exchange and refresh, `/organizations`, customer and item listing, seeding via `/contacts` and `/items`, draft creation (`INV-000001`, `send=false`), and **PDF download via `GET /invoices/{id}?accept=pdf`** (valid PDF, about 30 KB). The response also included an `invoice_url` secure-pay link.
+
+**Implemented but not yet exercised live:** `PUT /invoices/{id}` (edits), the last-rate lookup over `/invoices?customer_id=`, `POST /contacts` from chat, and GST tax on lines (the seeded items have no tax preference, so tax was ₹0). Notes on these, isolated in [src/zoho/client.ts](../src/zoho/client.ts):
 
 - **PDF**: `GET /invoices/{id}?accept=pdf`. The code checks the `content-type` and falls back to a text-only reply when Zoho does not return a PDF.
 - **Tax**: no `tax_id` is sent per line, so Zoho applies the item's default tax / GST preference and the customer's place of supply. The bot reports Zoho's `sub_total`, `tax_total` and `total` from the response. It never computes tax itself in live mode.

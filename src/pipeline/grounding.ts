@@ -6,7 +6,7 @@ const SHARED = /\b(both|all|same (?:rate|price)|each of them|for all)\b/i;
 /** Every number written in the message, e.g. "x4 @ ₹5,200, 5.6k" -> [4, 5200, 5600]. */
 export function numbersIn(text: string): number[] {
   const out: number[] = [];
-  for (const m of text.toLowerCase().matchAll(/\d[\d,]*(?:\.\d+)?\s*k?\b/g)) {
+  for (const m of text.toLowerCase().matchAll(/\d[\d,]*(?:\.\d+)?(?:\s*k(?![a-z]))?/g)) {
     const raw = m[0].replace(/\s/g, '');
     const n = Number(raw.replace(/,/g, '').replace(/k$/, ''));
     if (Number.isFinite(n)) out.push(raw.endsWith('k') ? n * 1000 : n);
@@ -32,7 +32,8 @@ export function checkGrounding(items: ExtractedItem[], text: string, fmt: (field
     const used = new Map<number, number>();
     for (const it of items) {
       const v = it[field];
-      if (v !== null) used.set(v, (used.get(v) ?? 0) + 1);
+      // A confirmed previous-invoice rate legitimately does not appear in the message.
+      if (v !== null && !(field === 'rate' && it.rate_from_previous)) used.set(v, (used.get(v) ?? 0) + 1);
     }
     for (const [v, uses] of used) {
       if (!count(v)) {

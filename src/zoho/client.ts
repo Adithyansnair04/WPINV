@@ -1,7 +1,7 @@
 import { z } from 'zod';
 import { categorize, fetchWithRetry, HttpError, type RetryStats } from '../http.js';
 import { silentLogger, type Logger } from '../logger.js';
-import type { BooksApi, Customer, Invoice, InvoiceInput, Item } from '../types.js';
+import type { BooksApi, Customer, Invoice, InvoiceInput, InvoiceLineInput, Item, PreviousRate } from '../types.js';
 
 export interface ZohoCredentials {
   clientId: string;
@@ -23,7 +23,7 @@ interface Opts {
 const TokenResponse = z.object({ access_token: z.string().min(1), expires_in: z.number().optional(), api_domain: z.string().optional() });
 
 /** Exchanges the long-lived refresh token for 1-hour access tokens; caches and single-flights refreshes. */
-export class ZohoAuth {
+class ZohoAuth {
   private token?: { value: string; expiresAt: number };
   private inflight?: Promise<string>;
 
@@ -95,6 +95,8 @@ const ZInvoice = z.object({
   invoice_number: z.string(),
   status: z.string(),
   customer_name: z.string(),
+  customer_id: z.coerce.string().optional(),
+  date: z.string().optional(),
   currency_code: z.string().default('INR'),
   sub_total: z.coerce.number().default(0),
   tax_total: z.coerce.number().default(0),
@@ -102,7 +104,7 @@ const ZInvoice = z.object({
   invoice_url: z.string().optional().nullable(),
   reference_number: z.string().optional().nullable(),
   line_items: z
-    .array(z.object({ name: z.string(), quantity: z.coerce.number(), rate: z.coerce.number(), item_total: z.coerce.number() }))
+    .array(z.object({ item_id: z.coerce.string().optional(), name: z.string(), quantity: z.coerce.number(), rate: z.coerce.number(), item_total: z.coerce.number() }))
     .default([]),
 });
 
@@ -116,14 +118,19 @@ const toInvoice = (i: z.infer<typeof ZInvoice>): Invoice => ({
   taxTotal: i.tax_total,
   total: i.total,
   url: i.invoice_url ?? undefined,
-  lines: i.line_items.map((l) => ({ name: l.name, quantity: l.quantity, rate: l.rate, amount: l.item_total })),
+  customerId: i.customer_id,
+  date: i.date,
+  lines: i.line_items.map((l) => ({ itemId: l.item_id, name: l.name, quantity: l.quantity, rate: l.rate, amount: l.item_total })),
 });
 
 const MAX_PAGES = 25;
 
+const toLineItem = (l: InvoiceLineInput) => ({ item_id: l.itemId, quantity: l.quantity, rate: l.rate, ...(l.taxId ? { tax_id: l.taxId } : {}) });
+
 export class ZohoBooks implements BooksApi {
   readonly stats: RetryStats = { retries: 0, rateLimited: 0 };
   private readonly auth: ZohoAuth;
+  private readonly taxIds = new Map<number, string | null>();
   private readonly log: Logger;
 
   constructor(
@@ -249,13 +256,56 @@ export class ZohoBooks implements BooksApi {
       body: {
         customer_id: input.customerId,
         reference_number: input.referenceNumber,
-        line_items: input.lines.map((l) => ({ item_id: l.itemId, quantity: l.quantity, rate: l.rate })),
+        line_items: input.lines.map(toLineItem),
         ...(input.notes ? { notes: input.notes.slice(0, 500) } : {}),
       },
     });
     const parsed = z.object({ invoice: ZInvoice }).safeParse(json);
     if (!parsed.success) throw new HttpError('Invoice created but response shape was unexpected; check Zoho before retrying', 'validation');
     return toInvoice(parsed.data.invoice);
+  }
+
+  /** Scans the customer's most recent invoices (newest first, max 5 detail calls) for the item's last rate; void invoices are skipped, drafts count (the user confirms). */
+  async findLastRate(customerId: string, itemId: string): Promise<PreviousRate | null> {
+    const { json } = await this.request('GET', '/invoices', { query: { customer_id: customerId, sort_column: 'date', sort_order: 'D', per_page: 25 } });
+    const list = z.object({ invoices: z.array(z.object({ invoice_id: z.coerce.string(), status: z.string() })) }).safeParse(json);
+    if (!list.success) throw new HttpError('Unexpected Zoho invoice list shape', 'validation');
+    for (const summary of list.data.invoices.filter((i) => i.status !== 'void').slice(0, 5)) {
+      const inv = await this.getInvoice(summary.invoice_id);
+      const line = inv.lines.find((l) => l.itemId === itemId);
+      if (line) return { rate: line.rate, invoiceNumber: inv.number, date: inv.date ?? '', status: inv.status };
+    }
+    return null;
+  }
+
+  /** PUT /invoices/{id}: replaces line items. Callers must only use this for drafts created by this bot. */
+  async updateInvoiceLines(invoiceId: string, customerId: string, lines: InvoiceLineInput[]): Promise<Invoice> {
+    const { json } = await this.request('PUT', `/invoices/${encodeURIComponent(invoiceId)}`, {
+      body: { customer_id: customerId, line_items: lines.map(toLineItem) },
+    });
+    const parsed = z.object({ invoice: ZInvoice }).safeParse(json);
+    if (!parsed.success) throw new HttpError('Invoice updated but response shape was unexpected; check Zoho', 'validation');
+    return toInvoice(parsed.data.invoice);
+  }
+
+  /** GET /settings/taxes, cached per percentage. Only exact matches are used; nothing is created here. */
+  async findTaxId(percent: number): Promise<string | null> {
+    if (this.taxIds.has(percent)) return this.taxIds.get(percent)!;
+    const { json } = await this.request('GET', '/settings/taxes');
+    const parsed = z.object({ taxes: z.array(z.object({ tax_id: z.coerce.string(), tax_percentage: z.coerce.number(), tax_type: z.string().optional() })).default([]) }).safeParse(json);
+    if (!parsed.success) throw new HttpError('Unexpected Zoho taxes response shape', 'validation');
+    const hit = parsed.data.taxes.find((t) => t.tax_percentage === percent && t.tax_type !== 'compound_tax');
+    this.taxIds.set(percent, hit?.tax_id ?? null);
+    return hit?.tax_id ?? null;
+  }
+
+  /** POST /contacts (customer). GST-registered orgs may additionally require gst_treatment; Zoho's error is surfaced to the user. */
+  async createCustomer(name: string): Promise<Customer> {
+    const { json } = await this.request('POST', '/contacts', { body: { contact_name: name, company_name: name, contact_type: 'customer' } });
+    const parsed = z.object({ contact: Contact }).safeParse(json);
+    if (!parsed.success) throw new HttpError('Customer created but response shape was unexpected; check Zoho', 'validation');
+    const c = parsed.data.contact;
+    return { id: c.contact_id, name: c.contact_name, companyName: c.company_name ?? undefined, aliases: [], currency: c.currency_code, active: true };
   }
 
   /** GET /invoices/{id}?accept=pdf. Returns null if Zoho does not return a PDF body. */

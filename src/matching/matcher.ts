@@ -12,7 +12,7 @@ export type MatchResult<T> =
   | { status: 'ambiguous'; candidates: Candidate<T>[] }
   | { status: 'not_found'; candidates: Candidate<T>[] };
 
-export const THRESHOLDS = { accept: 0.9, margin: 0.15, candidate: 0.5 } as const;
+const THRESHOLDS = { accept: 0.9, margin: 0.15, candidate: 0.5 } as const;
 
 /**
  * Scores query tokens against a record's tokens. A query token that exactly exists somewhere in the
@@ -75,6 +75,11 @@ export class CustomerMatcher {
         };
       });
     this.vocab = new Set(this.entries.flatMap((e) => [...e.tokens]));
+  }
+
+  /** True if the word means something in the customer list (exactly or as a typo of a name word). */
+  knowsWord(word: string): boolean {
+    return significantTokens(word).some((t) => this.vocab.has(t) || [...this.vocab].some((v) => typoBudget(t) > 0 && levenshtein(t, v, typoBudget(t)) <= typoBudget(t)));
   }
 
   match(query: string): MatchResult<Customer> {
