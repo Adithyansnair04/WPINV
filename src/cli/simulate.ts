@@ -72,7 +72,7 @@ async function send(text: string, quote: boolean) {
 
 console.log(`WPINV simulator | model=${cfg.LLM_MODEL} | zoho=${cfg.ZOHO_MODE}${isDryRun(cfg) ? ' (dry run)' : ''}`);
 if (values.dashboard) {
-  const info = { transport: 'simulator', model: cfg.LLM_MODEL, zoho: cfg.ZOHO_MODE, dryRun: isDryRun(cfg) };
+  const info = { transport: 'simulator', model: cfg.LLM_MODEL, fallback: cfg.LLM_FALLBACK_MODEL || 'none', zoho: cfg.ZOHO_MODE, dryRun: isDryRun(cfg) };
   await startDashboard({ port: cfg.DASHBOARD_PORT || 3001, host: cfg.DASHBOARD_HOST, activity, store, info, log });
   console.log(`Dashboard: http://${cfg.DASHBOARD_HOST}:${cfg.DASHBOARD_PORT || 3001}`);
 }

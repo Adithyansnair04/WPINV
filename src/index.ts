@@ -39,7 +39,7 @@ const enqueue = (msg: IncomingMessage) => {
   queues.set(msg.chatId, next);
 };
 
-const info = { transport: cfg.CHAT_TRANSPORT, model: cfg.LLM_MODEL, zoho: cfg.ZOHO_MODE, dryRun: isDryRun(cfg) };
+const info = { transport: cfg.CHAT_TRANSPORT, model: cfg.LLM_MODEL, fallback: cfg.LLM_FALLBACK_MODEL || 'none', zoho: cfg.ZOHO_MODE, dryRun: isDryRun(cfg) };
 log.info('startup', info);
 
 if (cfg.DASHBOARD_PORT > 0) {
