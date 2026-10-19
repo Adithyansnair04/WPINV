@@ -11,7 +11,7 @@ rate 5200
 and creates a **draft** invoice in Zoho Books. It resolves `VK` to *VK Enterprises* and the product to *Lenzo Alloy Wheel 18" Red*, then replies in the group with the invoice number, lines, totals/tax and the PDF. If a request is ambiguous (`VK red wheel 4`), it asks a short question with **tap-to-choose buttons** instead of guessing.
 
 - An LLM interprets the language. Deterministic code with transparent scores matches against the **real** Zoho customer and item records.
-- Interchangeable LLM providers: Gemini (Flash-Lite is the evaluated default: 98% correct actions, 0 wrong invoices; the larger Flash tier is limited to 20 free requests/day), Mistral, Groq, OpenRouter, or any OpenAI-compatible endpoint such as local Ollama. A regex baseline (`rules`) needs no key.
+- LLMs: **Gemini Flash-Lite** (primary) with automatic fallback to **Groq gpt-oss-20b** when Gemini is overloaded or failing. Both score 95.8% on the held-out set with 0 wrong invoices. Mistral, OpenRouter and any OpenAI-compatible endpoint (e.g. Ollama) plug in the same way. A regex baseline (`rules`) needs no key.
 - **"Rate same as last time"** looks up the customer's last invoice for that item and asks you to confirm the rate and its source invoice.
 - **Edits:** reply to the bot's invoice message with "make it 6 pcs" or "rate 5000" to update that draft (drafts only).
 - **Add customers from chat** (`add customer <name>`, or ➕ when a name is unknown) with a mandatory Yes/Cancel confirmation.
@@ -63,7 +63,7 @@ All configuration is in `.env`, validated with Zod at startup ([src/config.ts](s
 - `TELEGRAM_BOT_TOKEN`, `TELEGRAM_ALLOWED_CHATS`: bot token and the group/chat ids the bot acts in. Every other chat is ignored.
 - `RATE_POLICY`: `ask` (default: missing rate → clarify) or `item_default` (use the item's Zoho selling rate).
 - `DEFAULT_TAX_PERCENT`: e.g. `18` to tax lines whose item has no tax. Needs a GST-registered Zoho org; see [docs/ZOHO_SETUP.md](docs/ZOHO_SETUP.md#tax-18-gst).
-- `LLM_FALLBACK_MODEL`: backup model used when `LLM_MODEL` fails, e.g. `groq:openai/gpt-oss-120b`.
+- `LLM_FALLBACK_MODEL`: backup model used when `LLM_MODEL` fails, e.g. `groq:openai/gpt-oss-20b`.
 
 ## Quick demo without any credentials
 
