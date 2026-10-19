@@ -53,7 +53,7 @@ cp .env.example .env      # then fill in keys as needed
 
 ## Configuration
 
-All configuration is in environment variables, validated with Zod at startup ([src/config.ts](src/config.ts)). See [.env.example](.env.example) for every option. Key ones:
+All configuration is in `.env`, validated with Zod at startup ([src/config.ts](src/config.ts)). Values in `.env` take precedence over variables already in the shell, so stale copies (e.g. from VS Code's `useEnvFile`) never win. See [.env.example](.env.example) for every option. Key ones:
 
 - `LLM_MODEL`: `provider:model`, e.g. `gemini:gemini-3.1-flash-lite`, `gemini:gemini-2.5-flash`, `mistral:<model>`, `groq:<model>`, `openrouter:<model>`, `compat:<model>` (any OpenAI-compatible endpoint via `COMPAT_BASE_URL`, e.g. Ollama), or `rules`.
 - `ZOHO_MODE`: `mock` (default) or `live`.
