@@ -17,7 +17,7 @@ The design principle: **the LLM reads language; deterministic code decides.** Th
 | **Chat** | Telegram groups (official Bot API) by default; WhatsApp via Baileys (groups, unofficial) or the WhatsApp Cloud API (1:1) as options |
 | **LLMs** | Gemini 3.1 Flash-Lite (primary), Groq gpt-oss-20b (automatic fallback) |
 | **Books** | Zoho Books REST API (India data centre), OAuth refresh tokens, draft invoices only |
-| **Stack** | Node.js 24 + TypeScript, Zod validation, no web framework; 62 offline tests |
+| **Stack** | Node.js 24 + TypeScript, Zod validation, no web framework; 66 offline tests |
 | **Result** | 98% correct actions (95.8% on a held-out set) and **0 wrong invoices across every model tested** |
 
 ---
@@ -42,7 +42,7 @@ The design principle: **the LLM reads language; deterministic code decides.** Th
 
 | A user sends | WPINV does |
 |---|---|
-| `VK` / `red lenzo alloy 18 inch x 4` / `rate 5200` | Creates a **draft** invoice and replies with lines, tax, total, status and the PDF |
+| `VK` / `red lenzo alloy 18 inch x 4` / `rate 5200` | Posts a **preview** (customer, lines, estimated total) with **✅ Create invoice / ❌ Cancel**. Only after ✅ does it create the **draft** in Zoho and reply with lines, tax, total, status and the PDF. |
 | `VK red wheel 4` | Asks which of the four red wheels (tap-to-choose buttons) and the missing rate. Any member may answer by replying to the question. |
 | `Metro - 4 lenzo 18 red, 2 neo 16 red, rate 5200` | Asks: one rate was written for two different products |
 | `VK lenzo 18 red x 4 rate same as last time` | Looks up the customer's last invoice for that item and asks: *"Use ₹5,100 (invoice INV-000101, 28 Sep, paid)?"* with a Yes button |
@@ -101,7 +101,7 @@ A read-only **dashboard** (`http://127.0.0.1:3001`) shows every decision with it
 | Is the quantity/rate/currency valid? | Deterministic | Positive integer quantity, positive rate, INR only; otherwise ask |
 | "Rate same as last time" | Deterministic + **user** | Zoho lookup of the last non-void invoice for that customer and item; the user confirms the rate and its source invoice |
 | Tax and totals | **Zoho** | Zoho calculates tax from its own tax setup; the bot never computes tax in live mode |
-| Creating customers, editing invoices | Deterministic + **user** | Explicit confirmation or reply-to-invoice; drafts only; single-use, expiring confirmations |
+| Creating invoices, creating customers, editing invoices | Deterministic + **user** | Every invoice is previewed and created only after an explicit ✅ (`INVOICE_CONFIRM=always`; optional `INVOICE_APPROVERS`). Customers need a Yes; edits are a reply to the invoice. Drafts only; single-use, expiring confirmations. |
 | Duplicates and retries | Deterministic | Message-id dedupe plus an idempotency key stored as Zoho `reference_number` |
 
 Every decision carries a trace (query, candidates, scores, problems), which is logged and shown on the dashboard.
@@ -218,7 +218,7 @@ The full write-up, including model-selection rationale, safety mechanisms and th
 | Primary model | **Gemini 3.1 Flash-Lite** | Highest accuracy on both sets (98% / 95.8%), fastest, generous free quota |
 | Fallback | **Groq gpt-oss-20b** | Different vendor (independent outages), equal held-out accuracy; covers Gemini's 503 overloads seen in practice |
 | Larger models | **Not needed** | They cannot improve safety, which is already enforced deterministically. The measured large model was worse. Re-evaluate only if the client's real messages show a gap. |
-| Automation level | **Create drafts automatically; humans send them** | Every invoice stays reviewable in Zoho. Ambiguity, missing data, new customers, previous rates and edits always go through the user. |
+| Automation level | **Preview → confirm → draft; humans send** | Nothing is written to Zoho until someone taps ✅, so mistakes cost no Zoho calls; drafts stay reviewable in Zoho. Use `INVOICE_APPROVERS` for manager approval. |
 | Rates | Keep `RATE_POLICY=ask` | A missing rate is asked for, never filled from a price list, unless the client explicitly wants list prices |
 | Chat platform | **Telegram** for group workflows | Official API with groups and no ban risk. If WhatsApp is mandatory, use the **WhatsApp Cloud API** (official, 1:1) rather than Baileys (unofficial, ban risk). |
 | Before production | Label 100–200 real client messages and run `npm run eval` on them | The synthetic sets prove the mechanism; only real messages prove fit |
@@ -255,7 +255,7 @@ cp .env.example .env     # real values go in .env only; .env.example holds place
 **Try it offline, with no keys:**
 
 ```bash
-npm test                                            # 62 tests, no network
+npm test                                            # 66 tests, no network
 npm run simulate -- --model rules --dashboard -m "VK\nred lenzo alloy 18 inch x 4\nrate 5200"
 npm run eval -- --models oracle,rules
 ```
@@ -277,6 +277,7 @@ npm run eval -- --models oracle,rules
 | `LLM_MODEL` / `LLM_FALLBACK_MODEL` | `gemini:gemini-3.1-flash-lite` / – | `provider:model` for `gemini`, `groq`, `mistral`, `openrouter`, `compat` (any OpenAI-compatible URL), or `rules` |
 | `CHAT_TRANSPORT` | `telegram` | `telegram`, `whatsapp_cloud` or `baileys` |
 | `ZOHO_MODE`, `INVOICE_ALLOW_LIVE_CREATE` | `mock`, `false` | Live Zoho, and whether drafts may be created |
+| `INVOICE_CONFIRM`, `INVOICE_APPROVERS` | `always`, – | Preview with ✅/❌ before every invoice; optionally only listed ids may confirm |
 | `RATE_POLICY` | `ask` | `item_default` uses the Zoho selling rate when none is given |
 | `DEFAULT_TAX_PERCENT` | – | Tax on lines whose item has none (needs a GST-registered org) |
 | `CUSTOMER_CREATE`, `CUSTOMER_CREATORS` | `confirm`, – | Add-customer from chat, and an optional allowlist (`/whoami` shows ids) |
@@ -312,7 +313,7 @@ src/
 data/seed/                          synthetic customers, items, invoice history (JSON + Zoho-importable CSV)
 data/aliases.json                   business-approved customer shorthand
 eval/                               cases.json (50), holdout.json (24), gold.json, results/
-test/                               62 node:test tests
+test/                               66 node:test tests
 docs/                               DESIGN, TELEGRAM_SETUP, ZOHO_SETUP, WHATSAPP_CLOUD_SETUP, DEMO
 ```
 

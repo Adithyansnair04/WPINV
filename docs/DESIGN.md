@@ -163,7 +163,7 @@ The regex baseline scores 45.8% on the held-out set (0 wrong invoices). The raw 
 
 | Situation | Policy in this prototype | Suggested production policy |
 |---|---|---|
-| All fields present, customer/items matched above thresholds, quantity and rate valid | Create **draft** automatically | Same; drafts are reviewed and *sent* by accounts staff (or auto-send only for trusted customers with amount < limit). |
+| All fields present, customer/items matched above thresholds, quantity and rate valid | Post a **preview**; create the **draft** only after ✅ (`INVOICE_CONFIRM=always`, optionally `INVOICE_APPROVERS`) | Same; drafts are reviewed and *sent* by accounts staff (or auto-send only for trusted customers with amount < limit). |
 | Any ambiguity, missing field, unknown record, foreign currency, invalid number | Ask in the group | Same. |
 | Rate deviates from the item's list rate by > X% (not implemented) | — | Ask for confirmation, or require approval. |
 | Large amount (> limit) or new customer | — | Draft + approval from a named approver. |

@@ -66,6 +66,10 @@ const EnvSchema = z.object({
   CUSTOMER_CREATE: z.enum(['confirm', 'off']).default('confirm'),
   // Optional allowlist of sender ids who may add customers (empty = any member of an allowed chat).
   CUSTOMER_CREATORS: list,
+  // 'always' = show a preview and create the invoice in Zoho only after an explicit Yes; 'off' = create immediately.
+  INVOICE_CONFIRM: z.enum(['always', 'off']).default('always'),
+  // Optional: only these sender ids may confirm invoices (empty = the person who asked).
+  INVOICE_APPROVERS: list,
 
   CLARIFY_TTL_MINUTES: z.coerce.number().positive().default(15),
   RATE_POLICY: z.enum(['ask', 'item_default']).default('ask'),

@@ -43,6 +43,8 @@ export function createProcessor(cfg: Config, log: Logger, send: SendFn, opts: { 
       logMessageText: cfg.LOG_MESSAGE_TEXT,
       customerCreate: cfg.CUSTOMER_CREATE,
       defaultTaxPercent: cfg.DEFAULT_TAX_PERCENT,
+      invoiceConfirm: cfg.INVOICE_CONFIRM === 'always',
+      invoiceApprovers: cfg.INVOICE_APPROVERS,
       customerCreators: cfg.CUSTOMER_CREATORS,
     },
   });

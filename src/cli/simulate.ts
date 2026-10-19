@@ -47,7 +47,8 @@ const processor = createProcessor(
       console.log(`\n[bot] 📎 ${out.document.fileName} saved to ${file}`);
     } else {
       console.log(`\n[bot]\n${out.text}\n`);
-      if (/^Before I create the invoice/.test(out.text)) lastQuestionId = id;
+      // ">" in the simulator replies to the latest question, preview or confirmation.
+      if (out.buttons?.length || /^(Before I create the invoice|Create this draft invoice|Add new customer)/.test(out.text)) lastQuestionId = id;
     }
     return id;
   },

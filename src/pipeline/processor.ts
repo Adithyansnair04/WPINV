@@ -6,7 +6,7 @@ import type { Logger } from '../logger.js';
 import { CustomerMatcher, ItemMatcher } from '../matching/matcher.js';
 import type { BooksApi, IncomingMessage, Invoice, InvoiceLineInput, Outgoing, PreviousRate, SendFn } from '../types.js';
 import { decide, fmtMoney, type Decision } from './decide.js';
-import { dryRunSummary, invoiceSummary } from './format.js';
+import { confirmPreview, dryRunSummary, invoiceSummary } from './format.js';
 import { numbersIn } from './grounding.js';
 import type { InvoiceRecord, PendingClarification, PendingConfirmation, StateStore } from './state.js';
 
@@ -24,6 +24,10 @@ export interface ProcessorOptions {
   customerCreators?: string[];
   /** Tax % applied to lines whose item has no tax in Zoho. */
   defaultTaxPercent?: number;
+  /** Show a preview and create in Zoho only after an explicit Yes. */
+  invoiceConfirm?: boolean;
+  /** If non-empty, only these sender ids may confirm invoices (otherwise the requester). */
+  invoiceApprovers?: string[];
 }
 
 export interface ProcessorDeps {
@@ -113,6 +117,10 @@ export class InvoiceProcessor {
     }
     let createdCustomer: string | undefined;
     let confirmation: PendingConfirmation | undefined;
+    if (msg.quotedId && store.getConfirmation(msg.quotedId)?.kind === 'invoice') {
+      const r = await this.handleInvoiceConfirmation(msg, text, msg.quotedId, log, timings);
+      return result(r.action, r);
+    }
     if (msg.quotedId && store.getConfirmation(msg.quotedId)) {
       const r = await this.handleConfirmation(msg, text, msg.quotedId, log);
       confirmation = r.confirmation;
@@ -267,18 +275,59 @@ export class InvoiceProcessor {
 
     if (pending && associated) store.clearPending(pending.chatId, pending.senderId);
     const reference = idempotencyKey(msg.chatId, associated ? pending!.sourceMsgId : msg.id);
+    let existing: Invoice | null;
+    try {
+      existing = await this.deps.books.findInvoiceByReference(reference);
+    } catch (e) {
+      log.error('invoice.lookup_failed', { error: e });
+      await this.reply(msg, 'Sorry, I could not reach Zoho Books. Nothing was created; please retry shortly.');
+      return result('error', { ...base, reason: 'zoho_unreachable', error: (e as Error).message });
+    }
+    if (existing) {
+      const sid = await this.reply(msg, invoiceSummary(existing, 'This request was already invoiced:'));
+      if (sid) store.setInvoiceMessage(sid, this.record(existing, decision, msg.chatId));
+      return result('existing', { ...base, invoice: existing, reason: 'idempotent_hit' });
+    }
+    if (this.deps.options.dryRun) {
+      await this.reply(msg, dryRunSummary(decision.customer.name, decision.lines, this.deps.options.defaultTaxPercent));
+      return result('dry_run', { ...base, reason: 'dry_run' });
+    }
+    if (this.deps.options.invoiceConfirm) {
+      // Nothing is written to Zoho until someone confirms this preview.
+      const buttons = [[{ text: '✅ Create invoice', data: 'opt:1' }], [{ text: '❌ Cancel', data: 'opt:2' }]];
+      const id = await this.safeSend(msg.chatId, { text: confirmPreview(decision.customer.name, decision.lines, this.deps.options.defaultTaxPercent), buttons }, msg.id);
+      if (!id) return result('error', { ...base, reason: 'confirmation_not_sent' });
+      store.setConfirmation(id, {
+        kind: 'invoice',
+        chatId: msg.chatId,
+        requesterId: associated ? pending!.senderId : msg.senderId,
+        name: decision.customer.name,
+        invoice: {
+          customerId: decision.customer.id,
+          lines: decision.lines.map((l) => ({ itemId: l.item.id, quantity: l.quantity, rate: l.rate, rateSource: l.rateSource })),
+          notes: decision.notes,
+          reference,
+        },
+        createdAt: this.now(),
+        expiresAt: this.now() + this.deps.options.clarifyTtlMs,
+      });
+      return result('clarify', { ...base, reason: 'confirm_invoice' });
+    }
+    const r = await this.createAndReply(msg, decision, reference, log, timings);
+    return result(r.action, { ...base, ...r });
+  }
+
+  /** Creates the draft in Zoho, fetches the PDF and replies. Used directly, or after an invoice confirmation. */
+  private async createAndReply(
+    msg: IncomingMessage,
+    decision: Extract<Decision, { kind: 'create' }>,
+    reference: string,
+    log: ReturnType<Logger['child']>,
+    timings: Record<string, number>,
+  ): Promise<{ action: Action; reason?: string; invoice?: Invoice; error?: string }> {
+    const { store } = this.deps;
     const t2 = performance.now();
     try {
-      const existing = await this.deps.books.findInvoiceByReference(reference);
-      if (existing) {
-        const sid = await this.reply(msg, invoiceSummary(existing, 'This request was already invoiced:'));
-        if (sid) store.setInvoiceMessage(sid, this.record(existing, decision, msg.chatId));
-        return result('existing', { ...base, invoice: existing, reason: 'idempotent_hit' });
-      }
-      if (this.deps.options.dryRun) {
-        await this.reply(msg, dryRunSummary(decision.customer.name, decision.lines, this.deps.options.defaultTaxPercent));
-        return result('dry_run', { ...base, reason: 'dry_run' });
-      }
       const invoice = await this.createOnce(reference, decision, log);
       timings.zoho = Math.round(performance.now() - t2);
       log.info('invoice.created', { invoiceId: invoice.id, number: invoice.number, status: invoice.status, reference });
@@ -292,7 +341,7 @@ export class InvoiceProcessor {
       const sid = await this.reply(msg, summary);
       if (sid) store.setInvoiceMessage(sid, this.record(invoice, decision, msg.chatId));
       if (pdf) await this.safeSend(msg.chatId, { text: '', document: { data: pdf, fileName: `${invoice.number}.pdf`, mimetype: 'application/pdf' } });
-      return result('created', { ...base, invoice });
+      return { action: 'created', invoice };
     } catch (e) {
       const category = e instanceof HttpError ? e.category : 'unknown';
       log.error('invoice.create_failed', { category, error: e, reference });
@@ -303,8 +352,70 @@ export class InvoiceProcessor {
           ? `Zoho did not confirm the invoice (${category}). Please check Zoho Books for reference ${reference} before resending.`
           : `Zoho Books rejected the invoice (${category}): ${(e as Error).message.slice(0, 160)}. Nothing was created.`,
       );
-      return result('error', { ...base, reason: `create_${category}`, error: (e as Error).message });
+      return { action: 'error', reason: `create_${category}`, error: (e as Error).message };
     }
+  }
+
+  /** Yes creates the previewed invoice (once); Cancel discards. Requester, or only INVOICE_APPROVERS when that list is set. */
+  private async handleInvoiceConfirmation(
+    msg: IncomingMessage,
+    text: string,
+    confirmationId: string,
+    log: ReturnType<Logger['child']>,
+    timings: Record<string, number>,
+  ): Promise<{ action: Action; reason?: string; invoice?: Invoice; error?: string }> {
+    const { store, books } = this.deps;
+    const respond = async (reason: string, reply: string) => {
+      await this.reply(msg, reply);
+      return { action: 'respond' as Action, reason };
+    };
+    const conf = store.getConfirmation(confirmationId)!;
+    if (conf.chatId !== msg.chatId || !conf.invoice) return { action: 'ignore', reason: 'confirmation_other_chat' };
+    if (conf.expiresAt <= this.now()) {
+      store.takeConfirmation(confirmationId);
+      return respond('confirmation_expired', 'This invoice confirmation has expired. Nothing was created; please send the request again.');
+    }
+    const approvers = this.deps.options.invoiceApprovers ?? [];
+    if (approvers.length ? !approvers.includes(msg.senderId) : msg.senderId !== conf.requesterId) {
+      return respond('confirmation_forbidden', approvers.length ? 'Only an approver can confirm this invoice.' : 'Only the person who asked can confirm this invoice.');
+    }
+    const yes = CONFIRM_YES.test(text);
+    if (!yes && !CONFIRM_NO.test(text)) {
+      await this.reply(msg, 'Please tap ✅ Create invoice or ❌ Cancel (or reply 1 / 2).');
+      return { action: 'clarify', reason: 'confirmation_unclear' };
+    }
+    const taken = store.takeConfirmation(confirmationId);
+    if (!taken?.invoice) return { action: 'ignore', reason: 'confirmation_already_used' };
+    if (!yes) return respond('invoice_cancelled', 'Cancelled. No invoice was created.');
+
+    const inv = taken.invoice;
+    let decision: Extract<Decision, { kind: 'create' }>;
+    try {
+      const [customers, items] = await Promise.all([books.listCustomers(), books.listItems()]);
+      const customer = customers.find((c) => c.id === inv.customerId && c.active);
+      const lines = inv.lines.map((l) => ({ ...l, item: items.find((i) => i.id === l.itemId && i.active) }));
+      if (!customer || lines.some((l) => !l.item)) {
+        return respond('invoice_records_changed', 'The customer or an item no longer exists in Zoho Books. Nothing was created; please send the request again.');
+      }
+      decision = {
+        kind: 'create',
+        customer,
+        lines: lines.map((l) => ({ description: l.item!.name, item: l.item!, quantity: l.quantity, rate: l.rate, rateSource: l.rateSource })),
+        notes: inv.notes,
+        trace: { lines: [], problems: [] },
+      };
+      const existing = await books.findInvoiceByReference(inv.reference);
+      if (existing) {
+        const sid = await this.reply(msg, invoiceSummary(existing, 'This request was already invoiced:'));
+        if (sid) store.setInvoiceMessage(sid, this.record(existing, decision, msg.chatId));
+        return { action: 'existing', reason: 'idempotent_hit', invoice: existing };
+      }
+    } catch (e) {
+      log.error('invoice.confirm_lookup_failed', { error: e });
+      return respond('zoho_unreachable', 'Sorry, I could not reach Zoho Books. Nothing was created; please send the request again shortly.');
+    }
+    log.info('invoice.confirmed', { reference: inv.reference });
+    return this.createAndReply(msg, decision, inv.reference, log, timings);
   }
 
   private record(inv: Invoice, d: Extract<Decision, { kind: 'create' }>, chatId: string): InvoiceRecord {
