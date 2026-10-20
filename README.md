@@ -217,7 +217,8 @@ Run **only one copy** of the bot per Telegram token. Two copies interrupt each o
 
 | Setting | Default | Meaning |
 |---|---|---|
-| `LLM_MODEL`, `LLM_FALLBACK_MODEL` | Gemini Flash-Lite, none | Main and backup AI model |
+| `LLM_MODEL` | `gemini:gemini-3.1-flash-lite` | Main AI model |
+| `LLM_FALLBACK_MODEL` | `groq:openai/gpt-oss-20b` in `.env.example` | Backup AI model, used when the main one fails. Needs `GROQ_API_KEY`; leave empty for no backup. |
 | `ZOHO_MODE` | `mock` | `live` uses real Zoho; `mock` uses demo data |
 | `INVOICE_ALLOW_LIVE_CREATE` | `false` | `false` = previews only; `true` = create drafts |
 | `INVOICE_CONFIRM`, `INVOICE_APPROVERS` | `always`, anyone | Tap ✅ before every invoice; optionally only listed people |
