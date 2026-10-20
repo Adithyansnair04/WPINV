@@ -3,13 +3,13 @@
 ## 1. Architecture
 
 ```
-Telegram group ──Bot API long polling──▶ telegram/bot.ts   (alternatives: whatsapp/cloud.ts 1:1, whatsapp/baileys.ts)
+Telegram group ──Bot API long polling──▶ telegram/bot.ts
                               │ chat allowlist, ignore bots, text/captions only, stale filtering, ids namespaced per chat
                               ▼ (serialized per chat)
                          pipeline/processor.ts
    1 dedupe (message id) ──▶ state.ts (file-backed, 7-day TTL)
    2 associate pending clarification (quoted question id, or same sender within TTL)
-   3 extract ──▶ extraction/extract.ts ──▶ llm/provider.ts (Mistral | Groq | Gemini | OpenRouter | compat)   [LLM]
+   3 extract ──▶ extraction/extract.ts ──▶ llm/provider.ts (Gemini | Groq)   [LLM]
               └▶ Zod validation (schema.ts), one corrective retry on invalid JSON
    4 load master data ──▶ zoho/cached.ts ──▶ zoho/client.ts (or zoho/mock.ts)
    5 decide ──▶ pipeline/decide.ts + matching/matcher.ts                                        [deterministic]
@@ -29,8 +29,6 @@ Telegram group ──Bot API long polling──▶ telegram/bot.ts   (alternativ
 | `pipeline/processor.ts` | Orchestration, dedupe, clarification state, idempotent creation, replies, structured logs with per-stage latency. |
 | `zoho/client.ts` | OAuth refresh (cached, single-flight), paginated lists, invoice lookup/create/PDF, 401 → refresh once, 429 backoff (not for the daily-limit code 45), no blind retries of POST. |
 | `telegram/bot.ts` | Default transport: Bot API `getUpdates` long polling (no public URL), chat allowlist, Zod-validated updates, per-chat message ids, quoted replies, PDF documents, 429 `retry_after` handling. |
-| `whatsapp/cloud.ts` | Optional WhatsApp Cloud API transport (1:1): webhook verification handshake, `X-Hub-Signature-256` check, payload parsing (Zod), sender allowlist, sending quoted text and uploaded PDFs via the Graph API. |
-| `whatsapp/baileys.ts` | Optional unofficial WhatsApp group transport (`CHAT_TRANSPORT=baileys`). |
 | `eval/` | Labeled-case runner, metrics, markdown report. |
 
 ## 2. LLM vs deterministic logic
@@ -52,19 +50,19 @@ Every decision carries a `trace`: query, status, scores, candidates and problems
 
 | Risk | Mechanism |
 |---|---|
-| Duplicate WhatsApp delivery / reconnect replay | Message-ID dedupe (persisted), stale-message cutoff. |
+| Duplicate delivery / reconnect replay | Message-ID dedupe (persisted), stale-message cutoff. |
 | Retry after crash or lost state | Idempotency key `WA-<sha256(chat\|msg)[:16]>` stored as `reference_number`. Before creating, the bot looks it up with `GET /invoices?reference_number=`. |
 | Timeout during create (unknown outcome) | Look up the reference first, then retry at most once. If it's still unknown, the reply asks the user to check Zoho for that reference. |
 | Wrong association of a clarification answer | Pending state is per (chat, sender), with a 15-minute TTL and at most 3 rounds. A quoted reply must quote *our* question. Another member can only answer by quoting it. A reply to an expired question gets "please resend". The LLM must classify the reply as `clarification_response`, otherwise it is treated as a new message. |
 | Concurrent messages | Processing is serialized per chat. |
-| Messages from unknown chats or bots | Telegram: chat-id allowlist, bot senders dropped. WhatsApp Cloud: HMAC-SHA256 webhook signature check plus sender allowlist. |
+| Messages from unknown chats or bots | Chat-id allowlist; messages from bots dropped. |
 | Accidental live writes | `ZOHO_MODE=mock` by default. Live mode is dry-run unless `INVOICE_ALLOW_LIVE_CREATE=true`. Invoices are created as drafts with `send=false`. |
 | Secrets / PII in logs | Key-based redaction, `Zoho-oauthtoken`/`Bearer` scrubbing, hashed chat/sender/message IDs, message text off by default. |
 | Model outage | Primary fails fast (1 retry, ≤15 s), then the **fallback model** (another vendor) answers the same message. If both fail: an error reply ("nothing was created"), never a guess. |
 | Model invents or spreads numbers | **Grounding check:** every quantity and rate must appear in the message (`5.2k`, `₹5,200` and number words are understood). One value written once cannot silently apply to several items unless the message says "both"/"all". Added after Flash-Lite copied one rate onto two items in case B05. |
 | Model supplies a "previous" rate | Ignored unless the number is in the message. Previous rates come only from a Zoho lookup the user confirms. |
 
-**Prototype vs production.** These are prototype safeguards. State is a local JSON file, not a transactional store. Idempotency relies on Zoho's `reference_number` search. Authorization is only a chat allowlist (any member of an allowed group may request), with no roles or approvals. There is no audit UI. A crash between confirming an update and finishing processing can lose that message. A production system needs a database with unique constraints on the idempotency key, an outbox for replies, per-user authorization, monitoring and alerting, and the official WhatsApp API.
+**Prototype vs production.** These are prototype safeguards. State is a local JSON file, not a transactional store. Idempotency relies on Zoho's `reference_number` search. Authorization is only a chat allowlist (any member of an allowed group may request), with no roles or approvals. There is no audit UI. A crash between confirming an update and finishing processing can lose that message. A production system needs a database with unique constraints on the idempotency key, an outbox for replies, per-user authorization, and monitoring and alerting.
 
 ## 4. Model selection
 
@@ -75,7 +73,7 @@ Every decision carries a `trace`: query, status, scores, candidates and problems
 | Also evaluated | `groq:openai/gpt-oss-120b` | The larger model was **worse** here (92% main / 70.8% held-out). It tends to drop the customer when merging a clarification answer (H20–H22) and to treat the customer name as a product line (H01). All its misses were safe questions. |
 | Baseline | `rules` | No LLM: regex extraction plus the same matcher and checks. Shows what the LLM adds. |
 | Upper bound | `oracle` | Labeled ideal extraction. Measures matching and decisions on their own. |
-| Not usable on free tiers | `gemini-2.5-flash`, `gemini-3-flash-preview` (20 requests/day per model); Mistral (429 on every call for this account) | Wired through the same interface; finish with `npm run eval -- --models <model> --retry-errors` once a day, or with a billed key. |
+| Not usable on free tiers | `gemini-2.5-flash`, `gemini-3-flash-preview` (20 requests/day per model); Mistral (429 on every call for this account; its provider has since been removed) | Wired through the same interface; finish with `npm run eval -- --models <model> --retry-errors` once a day, or with a billed key. |
 
 **Findings:**
 - **Small vs large:** on this task, **bigger was not better.** `gpt-oss-20b` beat `gpt-oss-120b` on both sets. The task is short, structured extraction, where instruction-following on the JSON contract matters more than model size.
@@ -90,7 +88,7 @@ Models are configured as `provider:model` strings; switching needs no code chang
 
 - **Dataset:** [eval/cases.json](../eval/cases.json) has 50 labeled cases. The categories: straightforward (5), aliases (5), word order (3), informal/Hinglish/Tamil-English (2), typos (4), confusable variants (4), missing fields (5), ambiguous (5), invalid quantity/currency/unknown records (4), non-invoice (4), previous-invoice follow-ups (4), and multi-turn clarification flows (5). The flows include a numeric option reply, a free-text answer, an unquoted answer and a different sender trying to complete someone else's request.
 - **Ground truth per case:** expected action (`create`/`clarify`/`respond`/`ignore`, with explicitly acceptable alternatives for borderline cases, e.g. "rate same as last time" may be refused *or* clarified, never invoiced). Where defined, it also records the expected customer (or `null` = must not resolve), the expected items by SKU (or `null` = must not resolve), and quantity and rate.
-- **Isolation:** every case runs against a fresh in-memory `MockBooks` built from the same seed data as the Zoho trial org. There is no WhatsApp and no real Zoho.
+- **Isolation:** every case runs against a fresh in-memory `MockBooks` built from the same seed data as the Zoho trial org. There is no chat and no real Zoho.
 - **Stage separation:**
   - *Extraction quality:* intent, line count, quantity and rate, compared against the labels from the model's validated output.
   - *Record matching:* customer/item resolution against the mock master data.
@@ -163,7 +161,7 @@ The regex baseline scores 45.8% on the held-out set (0 wrong invoices). The raw 
 
 | Situation | Policy in this prototype | Suggested production policy |
 |---|---|---|
-| All fields present, customer/items matched above thresholds, quantity and rate valid | Create **draft** automatically | Same; drafts are reviewed and *sent* by accounts staff (or auto-send only for trusted customers with amount < limit). |
+| All fields present, customer/items matched above thresholds, quantity and rate valid | Post a **preview**; create the **draft** only after ✅ (`INVOICE_CONFIRM=always`, optionally `INVOICE_APPROVERS`) | Same; drafts are reviewed and *sent* by accounts staff (or auto-send only for trusted customers with amount < limit). |
 | Any ambiguity, missing field, unknown record, foreign currency, invalid number | Ask in the group | Same. |
 | Rate deviates from the item's list rate by > X% (not implemented) | — | Ask for confirmation, or require approval. |
 | Large amount (> limit) or new customer | — | Draft + approval from a named approver. |
@@ -195,7 +193,7 @@ The regex baseline scores 45.8% on the held-out set (0 wrong invoices). The raw 
 
 ## 9. Transport choice
 
-| | Telegram Bot API (**default**) | WhatsApp Cloud API | Baileys (WhatsApp Web) |
+| | Telegram Bot API (**chosen**) | WhatsApp Cloud API (removed) | Baileys (removed) |
 |---|---|---|---|
 | Official | Yes | Yes | No (reverse-engineered) |
 | Group chats | Yes | Only with an Official Business Account (invite-only, max 8) | Yes |
@@ -206,7 +204,7 @@ The regex baseline scores 45.8% on the held-out set (0 wrong invoices). The raw 
 
 **Decision:** the workflow needs a shared group chat, and that rules out the WhatsApp Cloud API for most businesses. Baileys meets the group requirement only by accepting ban risk and fragility. Telegram meets every functional requirement on an official, free API. The cost is a product one: the client's team must use Telegram.
 
-All three transports implement the same small contract (`IncomingMessage` in, `SendFn` out), so the matching, clarification, idempotency and Zoho logic is identical across them, and switching is one setting (`CHAT_TRANSPORT`).
+WhatsApp transports (Baileys and the Cloud API) were prototyped against the same small contract (`IncomingMessage` in, `SendFn` out) and then **removed**, to keep the codebase to the one platform in use. WhatsApp is listed as future scope; adding it back is a new transport module, and switching is one setting (`CHAT_TRANSPORT`).
 
 **Telegram specifics:**
 - **Privacy mode.** Bots only see all group messages after `/setprivacy` → Disable (then re-add the bot), or when made an admin.
@@ -214,7 +212,7 @@ All three transports implement the same small contract (`IncomingMessage` in, `S
 - **Rate limits.** Roughly 20 messages/minute per group.
 - **One instance per token.** A second poller with the same token gets 409.
 
-**Baileys risks (if `CHAT_TRANSPORT=baileys`):** unofficial, can get the number banned, breaks on protocol changes, and the session folder is equivalent to account access.
+**Baileys risks (why it was not kept):** unofficial, can get the number banned, breaks on protocol changes, and its session folder is equivalent to account access.
 
 ## 10. Known limitations
 

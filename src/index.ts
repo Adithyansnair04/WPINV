@@ -39,7 +39,7 @@ const enqueue = (msg: IncomingMessage) => {
   queues.set(msg.chatId, next);
 };
 
-const info = { transport: cfg.CHAT_TRANSPORT, model: cfg.LLM_MODEL, fallback: cfg.LLM_FALLBACK_MODEL || 'none', zoho: cfg.ZOHO_MODE, dryRun: isDryRun(cfg) };
+const info = { transport: 'telegram', model: cfg.LLM_MODEL, fallback: cfg.LLM_FALLBACK_MODEL || 'none', zoho: cfg.ZOHO_MODE, dryRun: isDryRun(cfg) };
 log.info('startup', info);
 
 if (cfg.DASHBOARD_PORT > 0) {
@@ -48,55 +48,21 @@ if (cfg.DASHBOARD_PORT > 0) {
     .catch((e) => log.warn('dashboard.failed', { error: e }));
 }
 
-if (cfg.CHAT_TRANSPORT === 'telegram') {
-  if (!cfg.TELEGRAM_BOT_TOKEN) fail('TELEGRAM_BOT_TOKEN is not set (create a bot with @BotFather)');
-  const api = createTelegramApi({ token: cfg.TELEGRAM_BOT_TOKEN });
-  send = api.send;
-  if (!cfg.TELEGRAM_ALLOWED_CHATS.length) log.warn('startup.no_chats', { hint: 'Set TELEGRAM_ALLOWED_CHATS; chat ids are logged as messages arrive' });
-  try {
-    const bot = await startTelegramPolling({
-      api,
-      allowedChats: cfg.TELEGRAM_ALLOWED_CHATS,
-      maxMessageAgeSec: cfg.MAX_MESSAGE_AGE_SEC,
-      log: log.child({ component: 'telegram' }),
-      onMessage: enqueue,
-    });
-    const shutdown = () => void bot.stop().then(() => process.exit(0));
-    process.once('SIGINT', shutdown);
-    process.once('SIGTERM', shutdown);
-  } catch (e) {
-    fail(`Could not connect to Telegram: ${(e as Error).message}`);
-  }
-} else if (cfg.CHAT_TRANSPORT === 'whatsapp_cloud') {
-  const { createCloudSender, startCloudWebhook } = await import('./whatsapp/cloud.js');
-  const missing = (['WA_PHONE_NUMBER_ID', 'WA_ACCESS_TOKEN', 'WA_APP_SECRET', 'WA_VERIFY_TOKEN'] as const).filter((k) => !cfg[k]);
-  if (missing.length) fail(`Missing WhatsApp Cloud API settings: ${missing.join(', ')}`);
-  const cloud = {
-    phoneNumberId: cfg.WA_PHONE_NUMBER_ID!,
-    accessToken: cfg.WA_ACCESS_TOKEN!,
-    appSecret: cfg.WA_APP_SECRET!,
-    verifyToken: cfg.WA_VERIFY_TOKEN!,
-    graphVersion: cfg.WA_GRAPH_VERSION,
-  };
-  send = createCloudSender(cloud);
-  await startCloudWebhook({
-    cfg: cloud,
-    port: cfg.PORT,
-    allowedSenders: cfg.WA_ALLOWED_SENDERS,
+if (!cfg.TELEGRAM_BOT_TOKEN) fail('TELEGRAM_BOT_TOKEN is not set (create a bot with @BotFather)');
+const api = createTelegramApi({ token: cfg.TELEGRAM_BOT_TOKEN });
+send = api.send;
+if (!cfg.TELEGRAM_ALLOWED_CHATS.length) log.warn('startup.no_chats', { hint: 'Set TELEGRAM_ALLOWED_CHATS; chat ids are logged as messages arrive' });
+try {
+  const bot = await startTelegramPolling({
+    api,
+    allowedChats: cfg.TELEGRAM_ALLOWED_CHATS,
     maxMessageAgeSec: cfg.MAX_MESSAGE_AGE_SEC,
-    log: log.child({ component: 'cloud' }),
+    log: log.child({ component: 'telegram' }),
     onMessage: enqueue,
   });
-  log.info('cloud.listening', { port: cfg.PORT, webhook: `http://localhost:${cfg.PORT}/webhook` });
-} else {
-  // Unofficial WhatsApp group transport (ban risk). Loaded lazily so other transports never touch Baileys.
-  const { startWhatsApp } = await import('./whatsapp/baileys.js');
-  const wa = await startWhatsApp({
-    authDir: cfg.WA_AUTH_DIR,
-    allowedGroups: cfg.WA_ALLOWED_GROUPS,
-    maxMessageAgeSec: cfg.MAX_MESSAGE_AGE_SEC,
-    log: log.child({ component: 'whatsapp' }),
-    onMessage: async (msg) => enqueue(msg),
-  });
-  send = wa.send;
+  const shutdown = () => void bot.stop().then(() => process.exit(0));
+  process.once('SIGINT', shutdown);
+  process.once('SIGTERM', shutdown);
+} catch (e) {
+  fail(`Could not connect to Telegram: ${(e as Error).message}`);
 }

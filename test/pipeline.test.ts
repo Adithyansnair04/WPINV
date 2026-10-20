@@ -135,7 +135,7 @@ test('processor: other sender without quote does not hijack a pending clarificat
     }),
   );
   await processor.handle(msg('VK lenzo 18 red x 4'));
-  const r = await processor.handle(msg('5200', { senderId: 'bob@s.whatsapp.net' }));
+  const r = await processor.handle(msg('5200', { senderId: 'bob' }));
   assert.equal(r.associatedPending, false);
   assert.equal(books.createCalls, 0);
 });
@@ -157,7 +157,7 @@ test('processor: model failure is reported, nothing created', async () => {
 test('processor: a failed reply does not turn a created invoice into an error', async () => {
   const { processor, books } = setup(scripted({ [VK_REQUEST]: VK_EX }));
   (processor as unknown as { deps: { send: () => Promise<never> } }).deps.send = async () => {
-    throw new Error('WhatsApp send failed (HTTP 401)');
+    throw new Error('Chat send failed (HTTP 401)');
   };
   const r = await processor.handle(msg(VK_REQUEST));
   assert.equal(r.action, 'created');
@@ -197,7 +197,7 @@ test('processor: clarification with options carries tap-to-choose buttons; tappi
   await processor.handle(msg('Royal Alloys neo 16 x 4 rate 4000'));
   const q = sent[0]!;
   assert.deepEqual(q.out.buttons, [[{ text: '1) Neo Alloy Wheel 16" Red', data: 'opt:1' }], [{ text: '2) Neo Alloy Wheel 16" Silver', data: 'opt:2' }]]);
-  const r = await processor.handle(msg('2', { quotedId: q.id, senderId: 'bob@s.whatsapp.net' }));
+  const r = await processor.handle(msg('2', { quotedId: q.id, senderId: 'bob' }));
   assert.equal(r.action, 'created');
   assert.equal(books.created[0]!.lines[0]!.name, 'Neo Alloy Wheel 16" Silver');
 });

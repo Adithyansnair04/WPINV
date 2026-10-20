@@ -35,3 +35,23 @@ test('dashboard: serves activity, pending clarifications and info; hides message
   }
   assert.equal(toActivity(m, r, true).text, 'VK red wheel 4');
 });
+
+test('dashboard: each activity row records which LLM read the message, and why the backup was used', () => {
+  const base = { messageId: 'm', associatedPending: false, timings: { total: 5 } };
+  const meta = { latencyMs: 1, attempts: 1, retries: 0, rateLimited: 0, invalidOutputs: 0 };
+  const m = msg('VK lenzo 18 red x 4 rate 5200');
+  const primary = toActivity(m, { ...base, action: 'clarify', extractMeta: { ...meta, model: 'gemini:gemini-3.1-flash-lite' } }, false);
+  assert.equal(primary.model, 'gemini:gemini-3.1-flash-lite');
+  assert.equal(primary.fallbackFrom, undefined);
+
+  const backup = toActivity(
+    m,
+    { ...base, action: 'clarify', extractMeta: { ...meta, model: 'groq:openai/gpt-oss-20b', fallbackFrom: 'gemini:gemini-3.1-flash-lite', primaryError: 'transient: LLM HTTP 503' } },
+    false,
+  );
+  assert.equal(backup.model, 'groq:openai/gpt-oss-20b');
+  assert.equal(backup.fallbackFrom, 'gemini:gemini-3.1-flash-lite');
+  assert.match(backup.primaryError!, /503/);
+
+  assert.equal(toActivity(m, { ...base, action: 'created' }, false).model, undefined, 'button taps / confirmations use no LLM');
+});

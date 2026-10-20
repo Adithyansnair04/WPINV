@@ -35,8 +35,8 @@ export function scripted(responses: Record<string, Record<string, unknown>>): Ex
 let seq = 0;
 export const msg = (text: string, o: Partial<IncomingMessage> = {}): IncomingMessage => ({
   id: `m${++seq}`,
-  chatId: 'group@g.us',
-  senderId: 'alice@s.whatsapp.net',
+  chatId: 'test-group',
+  senderId: 'alice',
   text,
   timestamp: Date.now(),
   fromMe: false,

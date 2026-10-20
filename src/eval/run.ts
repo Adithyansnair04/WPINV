@@ -14,7 +14,7 @@ import { computeMetrics, type CaseResult, type EvalCase, type TurnResult, toEval
 import { renderSummary } from './report.js';
 
 /**
- * Runs the labeled cases through each model against mocked Zoho data (no network to Zoho, no WhatsApp).
+ * Runs the labeled cases through each model against mocked Zoho data (no network to Zoho, no chat).
  * Usage: npm run eval -- [--models rules,gemini:gemini-3.1-flash-lite] [--cases S01,B01] [--set main|holdout] [--retry-errors]
  *   --set holdout   runs eval/holdout.json (written before tuning; no gold, so no oracle) into eval/results/holdout/
  *   --retry-errors  keeps earlier results and re-runs only cases that were blocked by provider quota/rate limits
@@ -92,8 +92,8 @@ async function runCase(extractor: Extractor, c: EvalCase, delayMs: number): Prom
     const started = performance.now();
     last = await processor.handle({
       id: `${c.id}-${i}`,
-      chatId: 'eval@g.us',
-      senderId: `${turn.sender ?? 'alice'}@s.whatsapp.net`,
+      chatId: 'eval-chat',
+      senderId: `${turn.sender ?? 'alice'}`,
       text: turn.text,
       timestamp: Date.now(),
       fromMe: false,

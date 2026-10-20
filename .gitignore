@@ -8,10 +8,8 @@ dist/
 .envrc
 !.env.example
 
-# Runtime state: dedupe/pending state, activity log, bot log, simulator PDFs, Baileys session
+# Runtime state: dedupe/pending state, activity log, bot log, simulator PDFs
 .data/
-auth_info*/
-baileys_auth*/
 
 # Generated / local files
 *.log

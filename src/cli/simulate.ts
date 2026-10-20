@@ -27,10 +27,11 @@ const { values } = parseArgs({
 const cfg = loadConfig();
 if (values.model) cfg.LLM_MODEL = values.model;
 const log = createLogger(values.verbose ? 'debug' : 'warn', { app: 'simulate' });
-const chatId = 'simulated-group@g.us';
+const chatId = 'simulated-chat';
 let sender = 'alice';
 let seq = 0;
 let lastQuestionId: string | undefined;
+let lastInvoiceId: string | undefined;
 const store = new StateStore();
 const activity = new ActivityLog();
 
@@ -47,22 +48,25 @@ const processor = createProcessor(
       console.log(`\n[bot] 📎 ${out.document.fileName} saved to ${file}`);
     } else {
       console.log(`\n[bot]\n${out.text}\n`);
-      if (/^Before I create the invoice/.test(out.text)) lastQuestionId = id;
+      // ">" in the simulator replies to the latest question, preview or confirmation.
+      if (out.buttons?.length || /^(Before I create the invoice|Create this draft invoice|Add new customer)/.test(out.text)) lastQuestionId = id;
+      // "^" replies to the latest invoice message (for edits like "make it 6 pcs").
+      if (/^(Draft invoice created|Invoice created|Changed )/.test(out.text)) lastInvoiceId = id;
     }
     return id;
   },
   { store },
 );
 
-async function send(text: string, quote: boolean) {
+async function send(text: string, quote: boolean | 'invoice') {
   const msg: IncomingMessage = {
     id: `sim-${Date.now()}-${++seq}`,
     chatId,
-    senderId: `${sender}@s.whatsapp.net`,
+    senderId: `${sender}`,
     text,
     timestamp: Date.now(),
     fromMe: false,
-    quotedId: quote ? lastQuestionId : undefined,
+    quotedId: quote === 'invoice' ? lastInvoiceId : quote ? lastQuestionId : undefined,
   };
   const r = await processor.handle(msg);
   activity.add(toActivity(msg, r, true));
@@ -79,13 +83,13 @@ if (values.dashboard) {
 
 if (values.message?.length) {
   for (const m of values.message) {
-    const quote = m.startsWith('>');
+    const quote = m.startsWith('>') ? true : m.startsWith('^') ? ('invoice' as const) : false;
     console.log(`\n[${sender}] ${m}`);
-    await send(quote ? m.slice(1).trim() : m.replace(/\\n/g, '\n'), quote);
+    await send(quote !== false ? m.slice(1).trim() : m.replace(/\\n/g, '\n'), quote);
   }
   if (values.dashboard) console.log('\nDashboard still running; press Ctrl+C to stop.');
 } else {
-  console.log('Type a message; finish with an empty line. Start with ">" to reply to the last question. /as <name> switches sender, /quit exits.');
+  console.log('Type a message; finish with an empty line. Start with ">" to reply to the last question/preview, "^" to reply to the last invoice. /as <name> switches sender, /quit exits.');
   const rl = createInterface({ input: process.stdin, output: process.stdout });
   let buffer: string[] = [];
   for await (const line of rl) {
@@ -102,8 +106,8 @@ if (values.message?.length) {
     if (!buffer.length) continue;
     const text = buffer.join('\n');
     buffer = [];
-    const quote = text.startsWith('>');
-    await send(quote ? text.slice(1).trim() : text, quote);
+    const quote = text.startsWith('>') ? true : text.startsWith('^') ? ('invoice' as const) : false;
+    await send(quote !== false ? text.slice(1).trim() : text, quote);
   }
   rl.close();
 }

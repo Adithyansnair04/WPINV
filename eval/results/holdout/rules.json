@@ -1,7 +1,7 @@
 {
   "model": "rules",
   "status": "ok",
-  "timestamp": "2026-10-18T20:23:35.269Z",
+  "timestamp": "2026-10-20T17:11:09.489Z",
   "caseCount": 24,
   "casesScored": 24,
   "blocked": [],
@@ -91,11 +91,11 @@
     },
     "latency_ms": {
       "model_turns": 27,
-      "mean": 1,
-      "p50": 0,
+      "mean": 2,
+      "p50": 1,
       "p95": 6,
-      "max": 11,
-      "total": 28
+      "max": 14,
+      "total": 41
     },
     "reliability": {
       "model_failures": 0,
@@ -163,7 +163,7 @@
           "usedModel": true,
           "meta": {
             "model": "rules:baseline",
-            "latencyMs": 1.634299999999996,
+            "latencyMs": 1.8537000000000035,
             "attempts": 1,
             "retries": 0,
             "rateLimited": 0,
@@ -209,11 +209,11 @@
         {
           "action": "clarify",
           "reason": "missing_rate,unknown_item,missing_quantity,missing_rate",
-          "latencyMs": 11,
+          "latencyMs": 14,
           "usedModel": true,
           "meta": {
             "model": "rules:baseline",
-            "latencyMs": 0.22110000000000696,
+            "latencyMs": 0.22920000000002005,
             "attempts": 1,
             "retries": 0,
             "rateLimited": 0,
@@ -258,11 +258,11 @@
       "turns": [
         {
           "action": "create",
-          "latencyMs": 1,
+          "latencyMs": 2,
           "usedModel": true,
           "meta": {
             "model": "rules:baseline",
-            "latencyMs": 0.07089999999999463,
+            "latencyMs": 0.10190000000000055,
             "attempts": 1,
             "retries": 0,
             "rateLimited": 0,
@@ -307,7 +307,7 @@
           "usedModel": true,
           "meta": {
             "model": "rules:baseline",
-            "latencyMs": 0.08440000000001646,
+            "latencyMs": 0.13169999999999504,
             "attempts": 1,
             "retries": 0,
             "rateLimited": 0,
@@ -367,7 +367,7 @@
           "usedModel": true,
           "meta": {
             "model": "rules:baseline",
-            "latencyMs": 0.07699999999999818,
+            "latencyMs": 0.10060000000001423,
             "attempts": 1,
             "retries": 0,
             "rateLimited": 0,
@@ -401,11 +401,11 @@
         {
           "action": "clarify",
           "reason": "unknown_item,missing_quantity,missing_rate",
-          "latencyMs": 0,
+          "latencyMs": 1,
           "usedModel": true,
           "meta": {
             "model": "rules:baseline",
-            "latencyMs": 0.0747000000000071,
+            "latencyMs": 0.102800000000002,
             "attempts": 1,
             "retries": 0,
             "rateLimited": 0,
@@ -441,11 +441,11 @@
         {
           "action": "clarify",
           "reason": "unknown_item,missing_quantity,missing_rate",
-          "latencyMs": 0,
+          "latencyMs": 1,
           "usedModel": true,
           "meta": {
             "model": "rules:baseline",
-            "latencyMs": 0.057799999999986085,
+            "latencyMs": 0.09100000000000819,
             "attempts": 1,
             "retries": 0,
             "rateLimited": 0,
@@ -485,7 +485,7 @@
           "usedModel": true,
           "meta": {
             "model": "rules:baseline",
-            "latencyMs": 0.06280000000000996,
+            "latencyMs": 0.09399999999999409,
             "attempts": 1,
             "retries": 0,
             "rateLimited": 0,
@@ -534,7 +534,7 @@
           "usedModel": true,
           "meta": {
             "model": "rules:baseline",
-            "latencyMs": 0.061900000000008504,
+            "latencyMs": 0.08080000000001064,
             "attempts": 1,
             "retries": 0,
             "rateLimited": 0,
@@ -573,7 +573,7 @@
           "usedModel": true,
           "meta": {
             "model": "rules:baseline",
-            "latencyMs": 0.051400000000001,
+            "latencyMs": 0.07849999999996271,
             "attempts": 1,
             "retries": 0,
             "rateLimited": 0,
@@ -609,11 +609,11 @@
         {
           "action": "clarify",
           "reason": "missing_quantity",
-          "latencyMs": 0,
+          "latencyMs": 1,
           "usedModel": true,
           "meta": {
             "model": "rules:baseline",
-            "latencyMs": 0.04650000000000887,
+            "latencyMs": 0.08949999999998681,
             "attempts": 1,
             "retries": 0,
             "rateLimited": 0,
@@ -647,11 +647,11 @@
         {
           "action": "clarify",
           "reason": "unknown_item,missing_quantity,missing_rate",
-          "latencyMs": 0,
+          "latencyMs": 1,
           "usedModel": true,
           "meta": {
             "model": "rules:baseline",
-            "latencyMs": 0.03640000000001464,
+            "latencyMs": 0.0473999999999819,
             "attempts": 1,
             "retries": 0,
             "rateLimited": 0,
@@ -687,11 +687,11 @@
         {
           "action": "clarify",
           "reason": "unknown_item,missing_quantity,missing_rate",
-          "latencyMs": 0,
+          "latencyMs": 1,
           "usedModel": true,
           "meta": {
             "model": "rules:baseline",
-            "latencyMs": 0.028400000000004866,
+            "latencyMs": 0.04279999999999973,
             "attempts": 1,
             "retries": 0,
             "rateLimited": 0,
@@ -727,11 +727,11 @@
         {
           "action": "clarify",
           "reason": "ambiguous_item,missing_quantity",
-          "latencyMs": 0,
+          "latencyMs": 1,
           "usedModel": true,
           "meta": {
             "model": "rules:baseline",
-            "latencyMs": 0.03249999999999886,
+            "latencyMs": 0.05189999999998918,
             "attempts": 1,
             "retries": 0,
             "rateLimited": 0,
@@ -770,7 +770,7 @@
           "usedModel": true,
           "meta": {
             "model": "rules:baseline",
-            "latencyMs": 0.08230000000000359,
+            "latencyMs": 0.1016999999999939,
             "attempts": 1,
             "retries": 0,
             "rateLimited": 0,
@@ -795,7 +795,7 @@
           "usedModel": true,
           "meta": {
             "model": "rules:baseline",
-            "latencyMs": 0.02960000000001628,
+            "latencyMs": 0.05639999999999645,
             "attempts": 1,
             "retries": 0,
             "rateLimited": 0,
@@ -832,11 +832,11 @@
         {
           "action": "clarify",
           "reason": "missing_customer,unknown_item,missing_quantity,missing_rate",
-          "latencyMs": 0,
+          "latencyMs": 1,
           "usedModel": true,
           "meta": {
             "model": "rules:baseline",
-            "latencyMs": 0.034199999999998454,
+            "latencyMs": 0.05639999999999645,
             "attempts": 1,
             "retries": 0,
             "rateLimited": 0,
@@ -877,7 +877,7 @@
           "usedModel": true,
           "meta": {
             "model": "rules:baseline",
-            "latencyMs": 0.017899999999997362,
+            "latencyMs": 0.03839999999996735,
             "attempts": 1,
             "retries": 0,
             "rateLimited": 0,
@@ -902,7 +902,7 @@
           "usedModel": true,
           "meta": {
             "model": "rules:baseline",
-            "latencyMs": 0.013199999999983447,
+            "latencyMs": 0.028099999999994907,
             "attempts": 1,
             "retries": 0,
             "rateLimited": 0,
@@ -923,11 +923,11 @@
         {
           "action": "clarify",
           "reason": "missing_rate",
-          "latencyMs": 0,
+          "latencyMs": 2,
           "usedModel": true,
           "meta": {
             "model": "rules:baseline",
-            "latencyMs": 0.02950000000001296,
+            "latencyMs": 0.06049999999999045,
             "attempts": 1,
             "retries": 0,
             "rateLimited": 0,
@@ -941,7 +941,7 @@
           "usedModel": true,
           "meta": {
             "model": "rules:baseline",
-            "latencyMs": 0.05299999999999727,
+            "latencyMs": 0.17660000000000764,
             "attempts": 1,
             "retries": 0,
             "rateLimited": 0,
@@ -979,7 +979,7 @@
           "usedModel": true,
           "meta": {
             "model": "rules:baseline",
-            "latencyMs": 0.030500000000017735,
+            "latencyMs": 0.05880000000001928,
             "attempts": 1,
             "retries": 0,
             "rateLimited": 0,
@@ -993,7 +993,7 @@
           "usedModel": true,
           "meta": {
             "model": "rules:baseline",
-            "latencyMs": 0.016199999999997772,
+            "latencyMs": 0.022499999999979536,
             "attempts": 1,
             "retries": 0,
             "rateLimited": 0,
@@ -1018,7 +1018,7 @@
           "usedModel": true,
           "meta": {
             "model": "rules:baseline",
-            "latencyMs": 0.032199999999988904,
+            "latencyMs": 0.044499999999970896,
             "attempts": 1,
             "retries": 0,
             "rateLimited": 0,
@@ -1032,7 +1032,7 @@
           "usedModel": true,
           "meta": {
             "model": "rules:baseline",
-            "latencyMs": 0.010900000000020782,
+            "latencyMs": 0.01650000000000773,
             "attempts": 1,
             "retries": 0,
             "rateLimited": 0,
@@ -1057,7 +1057,7 @@
           "usedModel": true,
           "meta": {
             "model": "rules:baseline",
-            "latencyMs": 0.06620000000000914,
+            "latencyMs": 0.04990000000003647,
             "attempts": 1,
             "retries": 0,
             "rateLimited": 0,
@@ -1109,7 +1109,7 @@
           "usedModel": true,
           "meta": {
             "model": "rules:baseline",
-            "latencyMs": 0.29990000000000805,
+            "latencyMs": 0.5509000000000128,
             "attempts": 1,
             "retries": 0,
             "rateLimited": 0,

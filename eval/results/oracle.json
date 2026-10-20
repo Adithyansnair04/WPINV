@@ -1,7 +1,7 @@
 {
   "model": "oracle",
   "status": "ok",
-  "timestamp": "2026-10-18T20:17:53.706Z",
+  "timestamp": "2026-10-20T17:11:08.310Z",
   "caseCount": 50,
   "casesScored": 50,
   "blocked": [],
@@ -92,10 +92,10 @@
     "latency_ms": {
       "model_turns": 54,
       "mean": 1,
-      "p50": 0,
+      "p50": 1,
       "p95": 1,
-      "max": 14,
-      "total": 37
+      "max": 19,
+      "total": 46
     },
     "reliability": {
       "model_failures": 0,
@@ -162,7 +162,7 @@
       "turns": [
         {
           "action": "create",
-          "latencyMs": 14,
+          "latencyMs": 19,
           "usedModel": true,
           "meta": {
             "model": "oracle",
@@ -356,7 +356,7 @@
       "turns": [
         {
           "action": "create",
-          "latencyMs": 0,
+          "latencyMs": 1,
           "usedModel": true,
           "meta": {
             "model": "oracle",
@@ -626,7 +626,7 @@
       "turns": [
         {
           "action": "create",
-          "latencyMs": 0,
+          "latencyMs": 1,
           "usedModel": true,
           "meta": {
             "model": "oracle",
@@ -1076,7 +1076,7 @@
       "turns": [
         {
           "action": "create",
-          "latencyMs": 0,
+          "latencyMs": 1,
           "usedModel": true,
           "meta": {
             "model": "oracle",
@@ -1121,7 +1121,7 @@
       "turns": [
         {
           "action": "create",
-          "latencyMs": 0,
+          "latencyMs": 1,
           "usedModel": true,
           "meta": {
             "model": "oracle",
@@ -1166,7 +1166,7 @@
       "turns": [
         {
           "action": "create",
-          "latencyMs": 0,
+          "latencyMs": 1,
           "usedModel": true,
           "meta": {
             "model": "oracle",
@@ -1315,7 +1315,7 @@
         {
           "action": "clarify",
           "reason": "missing_rate",
-          "latencyMs": 1,
+          "latencyMs": 0,
           "usedModel": true,
           "meta": {
             "model": "oracle",
@@ -1392,7 +1392,7 @@
         {
           "action": "clarify",
           "reason": "ambiguous_item,missing_rate",
-          "latencyMs": 0,
+          "latencyMs": 1,
           "usedModel": true,
           "meta": {
             "model": "oracle",
@@ -1632,7 +1632,7 @@
         {
           "action": "clarify",
           "reason": "currency_mismatch",
-          "latencyMs": 0,
+          "latencyMs": 1,
           "usedModel": true,
           "meta": {
             "model": "oracle",
@@ -1708,7 +1708,7 @@
         {
           "action": "clarify",
           "reason": "unknown_customer",
-          "latencyMs": 0,
+          "latencyMs": 1,
           "usedModel": true,
           "meta": {
             "model": "oracle",
@@ -1952,7 +1952,7 @@
         {
           "action": "clarify",
           "reason": "ambiguous_item,missing_rate",
-          "latencyMs": 1,
+          "latencyMs": 0,
           "usedModel": true,
           "meta": {
             "model": "oracle",
@@ -2070,7 +2070,7 @@
         {
           "action": "clarify",
           "reason": "ambiguous_item",
-          "latencyMs": 2,
+          "latencyMs": 0,
           "usedModel": true,
           "meta": {
             "model": "oracle",

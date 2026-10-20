@@ -23,8 +23,7 @@ By default, bots in groups only see commands and replies to their own messages (
 
 ## 3. Add the bot to your group
 
-1. Create a group (e.g. *Sales – Invoices*) or open an existing one. Tap the group name → **Add members** → search for your bot's username → add.
-2. In `.env`, keep `CHAT_TRANSPORT=telegram` (the default).
+Create a group (e.g. *Sales – Invoices*) or open an existing one. Tap the group name → **Add members** → search for your bot's username → add.
 
 ## 4. Allow the group
 

@@ -1,4 +1,4 @@
-export const SYSTEM_PROMPT = `You read WhatsApp messages sent to an Indian auto-parts (alloy wheels, tyres, accessories) business and extract invoice requests as JSON.
+export const SYSTEM_PROMPT = `You read chat messages sent to an Indian auto-parts (alloy wheels, tyres, accessories) business and extract invoice requests as JSON.
 You do NOT know the customer or product database. Copy names and product words as written (you may fix obvious typos). Never invent values.
 
 Return ONLY a JSON object with exactly these keys:

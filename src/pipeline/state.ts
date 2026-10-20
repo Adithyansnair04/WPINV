@@ -29,9 +29,19 @@ export interface InvoiceRecord {
 
 /** A "create customer?" question waiting for Yes/Cancel, keyed by the id of the confirmation message. */
 export interface PendingConfirmation {
+  /** 'customer' (add-customer) when absent, for state saved by older versions. */
+  kind?: 'customer' | 'invoice';
   chatId: string;
   requesterId: string;
+  /** Customer name (to add, or the invoice's customer). */
   name: string;
+  /** For kind 'invoice': exactly what will be sent to Zoho on Yes (ids re-checked against Zoho first). */
+  invoice?: {
+    customerId: string;
+    lines: { itemId: string; quantity: number; rate: number; rateSource: 'message' | 'item_default' | 'previous_invoice' }[];
+    notes?: string;
+    reference: string;
+  };
   /** Set when the request came from an invoice clarification that should continue after creation. */
   resumeSourceMsgId?: string;
   /** Whose pending invoice request to continue (may differ from the person adding the customer). */

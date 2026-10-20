@@ -26,12 +26,8 @@ const EnvSchema = z.object({
   EVAL_MODELS: list,
   EVAL_DELAY_MS: z.coerce.number().int().min(0).default(0),
   LLM_TIMEOUT_MS: z.coerce.number().int().positive().default(30000),
-  MISTRAL_API_KEY: z.string().optional(),
   GROQ_API_KEY: z.string().optional(),
   GEMINI_API_KEY: z.string().optional(),
-  OPENROUTER_API_KEY: z.string().optional(),
-  COMPAT_BASE_URL: z.string().url().optional(),
-  COMPAT_API_KEY: z.string().optional(),
 
   ZOHO_MODE: z.enum(['mock', 'live']).default('mock'),
   ZOHO_CLIENT_ID: z.string().optional(),
@@ -43,21 +39,9 @@ const EnvSchema = z.object({
   ZOHO_TIMEOUT_MS: z.coerce.number().int().positive().default(20000),
   INVOICE_ALLOW_LIVE_CREATE: bool(false),
 
-  CHAT_TRANSPORT: z.enum(['telegram', 'whatsapp_cloud', 'baileys']).default('telegram'),
   MAX_MESSAGE_AGE_SEC: z.coerce.number().int().positive().default(600),
   TELEGRAM_BOT_TOKEN: z.string().optional(),
   TELEGRAM_ALLOWED_CHATS: list,
-
-  WA_PHONE_NUMBER_ID: z.string().optional(),
-  WA_ACCESS_TOKEN: z.string().optional(),
-  WA_APP_SECRET: z.string().optional(),
-  WA_VERIFY_TOKEN: z.string().optional(),
-  WA_GRAPH_VERSION: z.string().default('v25.0'),
-  WA_ALLOWED_SENDERS: list,
-  PORT: z.coerce.number().int().positive().default(3000),
-
-  WA_AUTH_DIR: z.string().default('.data/wa-auth'),
-  WA_ALLOWED_GROUPS: list,
 
   DASHBOARD_PORT: z.coerce.number().int().min(0).default(3001),
   DASHBOARD_HOST: z.string().default('127.0.0.1'),
@@ -66,6 +50,10 @@ const EnvSchema = z.object({
   CUSTOMER_CREATE: z.enum(['confirm', 'off']).default('confirm'),
   // Optional allowlist of sender ids who may add customers (empty = any member of an allowed chat).
   CUSTOMER_CREATORS: list,
+  // 'always' = show a preview and create the invoice in Zoho only after an explicit Yes; 'off' = create immediately.
+  INVOICE_CONFIRM: z.enum(['always', 'off']).default('always'),
+  // Optional: only these sender ids may confirm invoices (empty = the person who asked).
+  INVOICE_APPROVERS: list,
 
   CLARIFY_TTL_MINUTES: z.coerce.number().positive().default(15),
   RATE_POLICY: z.enum(['ask', 'item_default']).default('ask'),
