@@ -6,6 +6,8 @@ import type { IncomingMessage } from '../types.js';
 
 export interface ActivityEntry {
   at: number;
+  /** Client name, set when more than one client is configured. */
+  client?: string;
   chat: string;
   sender: string;
   action: ProcessResult['action'];
@@ -27,10 +29,11 @@ export interface ActivityEntry {
 const shortHash = (s: string) => createHash('sha256').update(s).digest('hex').slice(0, 8);
 
 /** Converts a processing result into a dashboard row. Ids are hashed; message text only when explicitly enabled. */
-export function toActivity(msg: IncomingMessage, r: ProcessResult, includeText: boolean): ActivityEntry {
+export function toActivity(msg: IncomingMessage, r: ProcessResult, includeText: boolean, client?: string): ActivityEntry {
   const trace = r.decision?.trace;
   return {
     at: Date.now(),
+    ...(client ? { client } : {}),
     chat: shortHash(msg.chatId),
     sender: shortHash(msg.senderId),
     action: r.action,

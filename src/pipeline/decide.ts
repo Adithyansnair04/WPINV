@@ -1,5 +1,6 @@
 import type { Extraction } from '../extraction/schema.js';
 import { CustomerMatcher, ItemMatcher, type MatchResult } from '../matching/matcher.js';
+import type { Normalizer } from '../matching/normalize.js';
 import type { Customer, Item, PreviousRate } from '../types.js';
 import { checkGrounding } from './grounding.js';
 
@@ -52,6 +53,8 @@ export interface DecideOptions {
   sourceText?: string;
   /** Previous-invoice rates looked up for lines that asked for "rate same as last time" (by line index). Present = lookup was done. */
   previousRates?: Map<number, PreviousRate | null>;
+  /** The client's text rules (generic when absent). */
+  normalizer?: Normalizer;
   /** Offer "add new customer" when the customer is not found. */
   allowCustomerCreate?: boolean;
 }
@@ -110,7 +113,7 @@ export function decide(input: Extraction, customers: Customer[], items: Item[], 
   const options: ClarifyOption[] = [];
 
   let customer: Customer | undefined;
-  const customerMatcher = new CustomerMatcher(customers);
+  const customerMatcher = new CustomerMatcher(customers, opts.normalizer);
   if (ex.intent === 'invoice_request' || ex.intent === 'clarification_response') {
     const first = ex.customer ? customerMatcher.match(ex.customer) : null;
     // Ambiguous means real alternatives exist: never repair, always ask.
@@ -159,7 +162,7 @@ export function decide(input: Extraction, customers: Customer[], items: Item[], 
     trace.problems.push('missing_item');
   }
 
-  const itemMatcher = new ItemMatcher(items);
+  const itemMatcher = new ItemMatcher(items, opts.normalizer);
   const lines: ResolvedLine[] = [];
   ex.items.forEach((li, idx) => {
     const r: MatchResult<Item> = li.description ? itemMatcher.match(li.description) : { status: 'not_found', candidates: [] };

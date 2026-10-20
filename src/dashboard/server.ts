@@ -10,7 +10,8 @@ export interface DashboardOptions {
   port: number;
   host: string;
   activity: ActivityLog;
-  store: StateStore;
+  /** One state store per client; open clarifications from all of them are listed. */
+  stores: StateStore[];
   info: Record<string, unknown>;
   log: Logger;
   evalDir?: string;
@@ -39,7 +40,7 @@ export function startDashboard(o: DashboardOptions): Promise<Server> {
       else if (path === '/') out = [200, { 'content-type': 'text/html; charset=utf-8', 'content-security-policy': "default-src 'self' 'unsafe-inline'" }, DASHBOARD_HTML];
       else if (path === '/api/activity') out = json(o.activity.list());
       else if (path === '/api/pending')
-        out = json(o.store.listPending().map((p) => ({ question: p.question, options: p.options.map((x) => x.name), attempts: p.attempts, createdAt: p.createdAt, expiresAt: p.expiresAt })));
+        out = json(o.stores.flatMap((st) => st.listPending()).map((p) => ({ question: p.question, options: p.options.map((x) => x.name), attempts: p.attempts, createdAt: p.createdAt, expiresAt: p.expiresAt })));
       else if (path === '/api/info') out = json(o.info);
       else if (path === '/api/eval') out = json(evalSummary(o.evalDir ?? 'eval/results'));
       else out = [404, {}, 'not found'];

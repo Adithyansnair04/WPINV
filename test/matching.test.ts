@@ -1,11 +1,13 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { CustomerMatcher, ItemMatcher } from '../src/matching/matcher.js';
-import { normalizeText } from '../src/matching/normalize.js';
+import { AUTO_PARTS_NORMALIZER, GENERIC_NORMALIZER } from '../src/matching/normalize.js';
+
+const normalizeText = (s: string) => AUTO_PARTS_NORMALIZER.normalizeText(s);
 import { seedCustomers, seedItems } from '../src/zoho/mock.js';
 
-const customers = new CustomerMatcher(seedCustomers());
-const items = new ItemMatcher(seedItems());
+const customers = new CustomerMatcher(seedCustomers(), AUTO_PARTS_NORMALIZER);
+const items = new ItemMatcher(seedItems(), AUTO_PARTS_NORMALIZER);
 
 const itemName = (q: string) => {
   const r = items.match(q);
@@ -58,4 +60,13 @@ test('items: ambiguity and non-existent variants', () => {
   assert.equal(itemName('195/55 r16 tyre'), 'ambiguous');
   assert.notEqual(itemName('blue lenzo 18'), 'LNZ-18-RED');
   assert.notEqual(itemName('momo red 18 alloy'), 'LNZ-18-RED');
+});
+
+test('normalizer packs: auto-parts rules only apply to clients that enable them', () => {
+  assert.equal(GENERIC_NORMALIZER.normalizeText('neo 16 red'), 'neo 16 red');
+  assert.equal(GENERIC_NORMALIZER.normalizeText('12 bottles of 500 ml'), '12 bottles of 500 ml');
+  assert.equal(GENERIC_NORMALIZER.normalizeText('195/55 R16'), '195/55 r16');
+  assert.equal(AUTO_PARTS_NORMALIZER.normalizeText('12 bottles'), '12in bottles');
+  assert.deepEqual(GENERIC_NORMALIZER.tokenize('rims'), ['rims']);
+  assert.deepEqual(AUTO_PARTS_NORMALIZER.tokenize('rims'), ['wheel']);
 });

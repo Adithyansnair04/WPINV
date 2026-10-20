@@ -22,3 +22,7 @@ Thumbs.db
 # Editor settings (personal)
 .vscode/
 .idea/
+
+# Per-client setup: Zoho credentials and client profiles (customer aliases) are private
+/clients.json
+/clients/

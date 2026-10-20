@@ -13,7 +13,7 @@ test('dashboard: serves activity, pending clarifications and info; hides message
   const activity = new ActivityLog();
   activity.add(toActivity(m, r, false));
 
-  const server = await startDashboard({ port: 0, host: '127.0.0.1', activity, store, info: { transport: 'test' }, log: silentLogger, evalDir: 'eval/results' });
+  const server = await startDashboard({ port: 0, host: '127.0.0.1', activity, stores: [store], info: { transport: 'test' }, log: silentLogger, evalDir: 'eval/results' });
   const base = `http://127.0.0.1:${(server.address() as AddressInfo).port}`;
   try {
     const acts = (await (await fetch(`${base}/api/activity`)).json()) as { action: string; text?: string; customer: { name: string }; sender: string }[];

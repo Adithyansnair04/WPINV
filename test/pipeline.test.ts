@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { parseExtraction } from '../src/extraction/extract.js';
+import { AUTO_PARTS_NORMALIZER } from '../src/matching/normalize.js';
 import { decide } from '../src/pipeline/decide.js';
 import { idempotencyKey } from '../src/pipeline/processor.js';
 import { seedCustomers, seedItems } from '../src/zoho/mock.js';
@@ -8,7 +9,7 @@ import { ex, msg, scripted, setup } from './helpers.js';
 
 const VK_REQUEST = 'VK\nred lenzo alloy 18 inch x 4\nrate 5200';
 const VK_EX = ex({ customer: 'VK', items: [{ description: 'red lenzo alloy 18 inch', quantity: 4, rate: 5200 }] });
-const opts = { ratePolicy: 'ask' as const, baseCurrency: 'INR' };
+const opts = { ratePolicy: 'ask' as const, baseCurrency: 'INR', normalizer: AUTO_PARTS_NORMALIZER };
 
 test('schema: coerces numeric strings, rejects junk', () => {
   const ok = parseExtraction('```json\n{"intent":"invoice_request","customer":"VK","items":[{"description":"x","quantity":"4","rate":"₹5,200"}]}\n```');

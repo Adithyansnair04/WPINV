@@ -1,0 +1,40 @@
+{
+  "clients": [
+    {
+      "id": "demo",
+      "name": "Demo Wheels & Tyres",
+      "telegramChats": ["-1001111111111"],
+      "profile": "data/profile.json",
+      "settings": {
+        "ZOHO_MODE": "live",
+        "ZOHO_CLIENT_ID": "1000.XXXXXXXXXXXXXXXXXXXX",
+        "ZOHO_CLIENT_SECRET": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+        "ZOHO_REFRESH_TOKEN": "1000.xxxxxxxx.xxxxxxxx",
+        "ZOHO_ORG_ID": "60000000000",
+        "ZOHO_API_BASE": "https://www.zohoapis.in/books/v3",
+        "ZOHO_ACCOUNTS_URL": "https://accounts.zoho.in",
+        "INVOICE_ALLOW_LIVE_CREATE": true,
+        "DEFAULT_TAX_PERCENT": 18
+      }
+    },
+    {
+      "id": "acme",
+      "name": "Acme Stationery",
+      "telegramChats": ["-1002222222222"],
+      "profile": "clients/acme/profile.json",
+      "settings": {
+        "ZOHO_MODE": "live",
+        "ZOHO_CLIENT_ID": "",
+        "ZOHO_CLIENT_SECRET": "",
+        "ZOHO_REFRESH_TOKEN": "",
+        "ZOHO_ORG_ID": "",
+        "ZOHO_API_BASE": "https://www.zohoapis.in/books/v3",
+        "ZOHO_ACCOUNTS_URL": "https://accounts.zoho.in",
+        "INVOICE_ALLOW_LIVE_CREATE": false,
+        "INVOICE_CONFIRM": "always",
+        "CUSTOMER_CREATE": "confirm",
+        "RATE_POLICY": "ask"
+      }
+    }
+  ]
+}

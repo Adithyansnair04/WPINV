@@ -12,6 +12,8 @@
     "zoho:token": "tsx src/cli/zohoToken.ts",
     "zoho:check": "tsx src/cli/zohoCheck.ts",
     "zoho:seed": "tsx src/cli/seedZoho.ts",
+    "client:add": "tsx src/cli/clientAdd.ts",
+    "client:profile": "tsx src/cli/clientProfile.ts",
     "seed:csv": "tsx src/cli/seedCsv.ts"
   },
   "repository": {
