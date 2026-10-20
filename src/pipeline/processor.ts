@@ -4,6 +4,7 @@ import type { Extraction } from '../extraction/schema.js';
 import { HttpError } from '../http.js';
 import type { Logger } from '../logger.js';
 import { CustomerMatcher, ItemMatcher } from '../matching/matcher.js';
+import type { Normalizer } from '../matching/normalize.js';
 import type { BooksApi, IncomingMessage, Invoice, InvoiceLineInput, Outgoing, PreviousRate, SendFn } from '../types.js';
 import { decide, fmtMoney, type Decision } from './decide.js';
 import { confirmPreview, dryRunSummary, invoiceSummary } from './format.js';
@@ -24,6 +25,8 @@ export interface ProcessorOptions {
   customerCreators?: string[];
   /** Tax % applied to lines whose item has no tax in Zoho. */
   defaultTaxPercent?: number;
+  /** The client's text rules (generic when absent). */
+  normalizer?: Normalizer;
   /** Show a preview and create in Zoho only after an explicit Yes. */
   invoiceConfirm?: boolean;
   /** If non-empty, only these sender ids may confirm invoices (otherwise the requester). */
@@ -445,7 +448,7 @@ export class InvoiceProcessor {
 
     let idx = target.lines.length === 1 ? 0 : -1;
     if (idx < 0 && ch.description) {
-      const r = new ItemMatcher(target.lines.map((l) => ({ id: l.itemId, name: l.name, rate: l.rate, active: true }))).match(ch.description);
+      const r = new ItemMatcher(target.lines.map((l) => ({ id: l.itemId, name: l.name, rate: l.rate, active: true })), this.deps.options.normalizer).match(ch.description);
       if (r.status === 'matched') idx = target.lines.findIndex((l) => l.itemId === r.record.id);
     }
     if (idx < 0) return respond('edit_unclear', `Which line should change? ${target.lines.map((l) => l.name).join(' / ')}`);
@@ -500,7 +503,7 @@ export class InvoiceProcessor {
     const name = cleanCustomerName(rawName);
     if (!name) return respond('customer_create_invalid', 'That does not look like a customer name (2–60 characters, no links). Please send: add customer <full name>');
 
-    const r = new CustomerMatcher(await this.deps.books.listCustomers()).match(name);
+    const r = new CustomerMatcher(await this.deps.books.listCustomers(), this.deps.options.normalizer).match(name);
     if (r.status === 'matched') return respond('customer_exists', `"${r.record.name}" already exists, so there is no need to add it.`);
     const similar = r.candidates.filter((c) => c.score >= 0.5).slice(0, 3).map((c) => c.record.name);
     const text = [
@@ -562,7 +565,7 @@ export class InvoiceProcessor {
     }
 
     try {
-      const existing = new CustomerMatcher(await books.listCustomers()).match(taken.name);
+      const existing = new CustomerMatcher(await books.listCustomers(), this.deps.options.normalizer).match(taken.name);
       if (existing.status === 'matched') {
         await this.reply(msg, `"${existing.record.name}" already exists, so nothing new was added.`);
         return { action: 'respond', reason: 'customer_exists', created: existing.record.name, confirmation: taken };

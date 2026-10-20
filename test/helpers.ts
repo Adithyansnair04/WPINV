@@ -5,6 +5,7 @@ import { silentLogger } from '../src/logger.js';
 import { InvoiceProcessor, type ProcessorOptions } from '../src/pipeline/processor.js';
 import { StateStore } from '../src/pipeline/state.js';
 import type { IncomingMessage, Outgoing } from '../src/types.js';
+import { AUTO_PARTS_NORMALIZER } from '../src/matching/normalize.js';
 import { MockBooks } from '../src/zoho/mock.js';
 
 export const ex = (o: Record<string, unknown>) => ({
@@ -58,7 +59,7 @@ export function setup(extractor: Extractor, opts: { dryRun?: boolean; now?: () =
       sent.push({ chatId, out, quoteId, id });
       return id;
     },
-    options: { ratePolicy: 'ask', baseCurrency: 'INR', clarifyTtlMs: 15 * 60_000, dryRun: opts.dryRun ?? false, ...opts.options },
+    options: { ratePolicy: 'ask', baseCurrency: 'INR', clarifyTtlMs: 15 * 60_000, dryRun: opts.dryRun ?? false, normalizer: AUTO_PARTS_NORMALIZER, ...opts.options },
   });
   return { books, sent, store, processor };
 }

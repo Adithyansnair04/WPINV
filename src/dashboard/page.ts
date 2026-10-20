@@ -93,7 +93,7 @@ function detailsCell(a) {
   const lines = a.lines
     .map((l) => '<span title="' + esc(l.item ? 'match score ' + (l.score ?? '') : l.status) + '">' + esc(l.item || (l.description ? l.description + '?' : 'item?')) + '</span>' + ' × ' + esc(l.quantity ?? '?') + ' @ ' + (l.rate == null ? '?' : money(l.rate)))
     .join('; ');
-  const text = [cust, lines].filter(Boolean).join(' · ');
+  const text = (a.client ? '<span class="tag">' + esc(a.client) + '</span> ' : '') + [cust, lines].filter(Boolean).join(' · ');
   return (text || '<span class="muted">–</span>') + (a.text ? '<div class="muted small">“' + esc(a.text.slice(0, 120)) + '”</div>' : '');
 }
 

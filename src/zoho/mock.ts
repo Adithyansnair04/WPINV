@@ -1,5 +1,6 @@
 import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
+import { loadProfile } from '../clients/profile.js';
 import type { BooksApi, Customer, Invoice, InvoiceInput, InvoiceLineInput, Item, PreviousRate } from '../types.js';
 
 const dataPath = (p: string) => fileURLToPath(new URL(`../../data/${p}`, import.meta.url));
@@ -9,9 +10,11 @@ interface SeedCustomer { name: string; company?: string }
 interface SeedItem { name: string; sku: string; rate: number; tax_percentage?: number }
 interface SeedInvoice { number: string; date: string; customer: string; status: string; lines: { sku: string; quantity: number; rate: number }[] }
 
+/** The demo client profile (data/profile.json): its aliases give the seed customers their shorthand. */
+export const DEMO_PROFILE_PATH = fileURLToPath(new URL('../../data/profile.json', import.meta.url));
+
 export function loadAliases(): Record<string, string[]> {
-  const raw = readJson<Record<string, unknown>>('aliases.json');
-  return Object.fromEntries(Object.entries(raw).filter(([k, v]) => !k.startsWith('_') && Array.isArray(v))) as Record<string, string[]>;
+  return loadProfile(DEMO_PROFILE_PATH).aliases;
 }
 
 export function seedCustomers(): Customer[] {

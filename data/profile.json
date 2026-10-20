@@ -1,0 +1,68 @@
+{
+  "_comment": "Client profile for the wheels-and-tyres demo client (the default client). See docs/ONBOARDING.md.",
+  "business": "an Indian auto-parts (alloy wheels, tyres, accessories) business",
+  "descriptionExample": "red lenzo alloy 18 inch",
+  "quantityExample": "lenzo",
+  "notQuantity": "A size like \"18 inch\" or a tyre size \"195/55 R16\" is NOT a quantity.",
+  "previousRateExample": "VK lenzo 18 x 4, rate same as last time",
+  "keepWords": [
+    "set",
+    "nut",
+    "cap",
+    "valve",
+    "tyre",
+    "alloy",
+    "matte"
+  ],
+  "normalizer": {
+    "packs": [
+      "auto_parts"
+    ],
+    "synonyms": {},
+    "stopwords": []
+  },
+  "aliases": {
+    "VK Enterprises": [
+      "vk",
+      "vk ent",
+      "vke"
+    ],
+    "VKS Auto Spares": [
+      "vks"
+    ],
+    "Vijay Kumar Tyres": [
+      "vkt",
+      "vijay tyres"
+    ],
+    "Sri Ganesh Motors": [
+      "sgm",
+      "sri ganesh"
+    ],
+    "Ganesh Wheel Care": [
+      "gwc"
+    ],
+    "Sharma Auto Parts": [
+      "sap"
+    ],
+    "Sharma Wheels & Tyres": [
+      "swt"
+    ],
+    "Al Ameen Tyre House": [
+      "al ameen",
+      "ameen"
+    ],
+    "Kerala Wheel Hub": [
+      "kwh"
+    ],
+    "Royal Alloys": [
+      "royal"
+    ],
+    "Metro Car Accessories": [
+      "metro",
+      "mca"
+    ],
+    "Bismi Auto World": [
+      "bismi"
+    ]
+  }
+}

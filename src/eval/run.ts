@@ -2,6 +2,8 @@ import { existsSync, mkdirSync, readdirSync, readFileSync, writeFileSync } from 
 import { join } from 'node:path';
 import { parseArgs } from 'node:util';
 import { createExtractor } from '../app.js';
+import { loadProfile, normalizerFor } from '../clients/profile.js';
+import { DEMO_PROFILE } from '../clients/registry.js';
 import { loadConfig } from '../config.js';
 import type { Extractor } from '../extraction/extract.js';
 import { Extraction } from '../extraction/schema.js';
@@ -29,6 +31,9 @@ const { values } = parseArgs({
   },
 });
 const cfg = loadConfig();
+// The evaluation sets are written for the wheels-and-tyres demo client.
+const demoProfile = loadProfile(DEMO_PROFILE);
+const demoNormalizer = normalizerFor(demoProfile);
 const SET = values.set === 'holdout' ? 'holdout' : 'main';
 const RESULTS = SET === 'holdout' ? 'eval/results/holdout' : 'eval/results';
 const DEFAULT_MODELS = ['oracle', 'rules', 'gemini:gemini-3.1-flash-lite', 'gemini:gemini-3-flash-preview'];
@@ -82,7 +87,7 @@ async function runCase(extractor: Extractor, c: EvalCase, delayMs: number): Prom
       if (out.text.startsWith('Before I create the invoice')) lastQuestion = id;
       return id;
     },
-    options: { ratePolicy: 'ask', baseCurrency: cfg.BASE_CURRENCY, clarifyTtlMs: 15 * 60_000, dryRun: false },
+    options: { ratePolicy: 'ask', baseCurrency: cfg.BASE_CURRENCY, clarifyTtlMs: 15 * 60_000, dryRun: false, normalizer: demoNormalizer },
   });
 
   const turns: TurnResult[] = [];
@@ -133,7 +138,7 @@ for (const spec of models) {
   const file = join(RESULTS, `${spec.replace(/[^a-z0-9.-]+/gi, '_')}.json`);
   let extractor: Extractor | undefined;
   try {
-    if (spec !== 'oracle') extractor = createExtractor(spec, cfg);
+    if (spec !== 'oracle') extractor = createExtractor(spec, cfg, { profile: demoProfile });
   } catch (e) {
     const reason = (e as Error).message;
     console.log(`\n[${spec}] NOT RUN: ${reason}`);

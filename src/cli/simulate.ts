@@ -3,7 +3,7 @@ import { join } from 'node:path';
 import { createInterface } from 'node:readline/promises';
 import { parseArgs } from 'node:util';
 import { createProcessor, isDryRun } from '../app.js';
-import { loadConfig } from '../config.js';
+import { loadClients } from '../clients/registry.js';
 import { ActivityLog, toActivity } from '../dashboard/activity.js';
 import { startDashboard } from '../dashboard/server.js';
 import { createLogger } from '../logger.js';
@@ -12,7 +12,7 @@ import type { IncomingMessage } from '../types.js';
 
 /**
  * Local chat simulator: same processor as the bot, but messages come from the terminal.
- * Uses ZOHO_MODE (mock by default) and LLM_MODEL (override with --model, e.g. --model rules).
+ * Uses the client's ZOHO_MODE and LLM_MODEL (override with --model, e.g. --model rules); --client picks a client from clients.json.
  * --dashboard also serves the dashboard (DASHBOARD_PORT) and keeps running after -m messages.
  */
 const { values } = parseArgs({
@@ -21,13 +21,18 @@ const { values } = parseArgs({
     message: { type: 'string', multiple: true, short: 'm' },
     verbose: { type: 'boolean', short: 'v' },
     dashboard: { type: 'boolean' },
+    client: { type: 'string' },
   },
 });
 
-const cfg = loadConfig();
+const clients = loadClients();
+const client = values.client ? clients.find((c) => c.id === values.client) : clients[0];
+if (!client) throw new Error(`Unknown client "${values.client}". Known: ${clients.map((c) => c.id).join(', ')}`);
+if (client.error) throw new Error(`Client "${client.id}" is misconfigured: ${client.error}`);
+const cfg = client.cfg;
 if (values.model) cfg.LLM_MODEL = values.model;
 const log = createLogger(values.verbose ? 'debug' : 'warn', { app: 'simulate' });
-const chatId = 'simulated-chat';
+const chatId = client.chats[0] ?? 'simulated-chat';
 let sender = 'alice';
 let seq = 0;
 let lastQuestionId: string | undefined;
@@ -55,7 +60,7 @@ const processor = createProcessor(
     }
     return id;
   },
-  { store },
+  { store, profile: client.profile },
 );
 
 async function send(text: string, quote: boolean | 'invoice') {
@@ -74,10 +79,10 @@ async function send(text: string, quote: boolean | 'invoice') {
   if (values.verbose && r.decision) console.log(JSON.stringify(r.decision.trace, null, 2));
 }
 
-console.log(`WPINV simulator | model=${cfg.LLM_MODEL} | zoho=${cfg.ZOHO_MODE}${isDryRun(cfg) ? ' (dry run)' : ''}`);
+console.log(`WPINV simulator | client=${client.name} | model=${cfg.LLM_MODEL} | zoho=${cfg.ZOHO_MODE}${isDryRun(cfg) ? ' (dry run)' : ''}`);
 if (values.dashboard) {
-  const info = { transport: 'simulator', model: cfg.LLM_MODEL, fallback: cfg.LLM_FALLBACK_MODEL || 'none', zoho: cfg.ZOHO_MODE, dryRun: isDryRun(cfg) };
-  await startDashboard({ port: cfg.DASHBOARD_PORT || 3001, host: cfg.DASHBOARD_HOST, activity, store, info, log });
+  const info = { transport: 'simulator', client: client.name, model: cfg.LLM_MODEL, fallback: cfg.LLM_FALLBACK_MODEL || 'none', zoho: cfg.ZOHO_MODE, dryRun: isDryRun(cfg) };
+  await startDashboard({ port: cfg.DASHBOARD_PORT || 3001, host: cfg.DASHBOARD_HOST, activity, stores: [store], info, log });
   console.log(`Dashboard: http://${cfg.DASHBOARD_HOST}:${cfg.DASHBOARD_PORT || 3001}`);
 }
 

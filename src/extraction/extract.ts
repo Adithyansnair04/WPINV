@@ -1,6 +1,7 @@
 import { HttpError } from '../http.js';
 import type { LlmProvider } from '../llm/provider.js';
-import { buildUserPrompt, SYSTEM_PROMPT } from './prompt.js';
+import { GENERIC_PROFILE } from '../clients/profile.js';
+import { buildSystemPrompt, buildUserPrompt } from './prompt.js';
 import { Extraction } from './schema.js';
 
 export interface PendingContext {
@@ -67,7 +68,7 @@ export function withFallback(primary: Extractor, fallback: Extractor): Extractor
 }
 
 /** LLM-backed extractor: one corrective retry when the output is not valid JSON for the schema. */
-export function llmExtractor(llm: LlmProvider, maxAttempts = 2): Extractor {
+export function llmExtractor(llm: LlmProvider, maxAttempts = 2, systemPrompt = buildSystemPrompt(GENERIC_PROFILE)): Extractor {
   return {
     id: llm.id,
     async extract(text, pending) {
@@ -77,7 +78,7 @@ export function llmExtractor(llm: LlmProvider, maxAttempts = 2): Extractor {
       while (meta.attempts < maxAttempts) {
         meta.attempts++;
         try {
-          const r = await llm.complete(SYSTEM_PROMPT, user);
+          const r = await llm.complete(systemPrompt, user);
           meta.latencyMs += r.latencyMs;
           meta.retries += r.retries;
           meta.rateLimited += r.rateLimited;
