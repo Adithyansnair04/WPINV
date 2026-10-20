@@ -17,7 +17,7 @@ The design principle: **the LLM reads language; deterministic code decides.** Th
 | **Chat** | Telegram groups (official Bot API). WhatsApp is future scope. |
 | **LLMs** | Gemini 3.1 Flash-Lite (primary), Groq gpt-oss-20b (automatic fallback) |
 | **Books** | Zoho Books REST API (India data centre), OAuth refresh tokens, draft invoices only |
-| **Stack** | Node.js 24 + TypeScript, Zod validation, no web framework; 62 offline tests |
+| **Stack** | Node.js 24 + TypeScript, Zod validation, no web framework; 75 offline tests |
 | **Result** | 98% correct actions (95.8% on a held-out set) and **0 wrong invoices across every model tested** |
 
 ---
@@ -32,9 +32,10 @@ The design principle: **the LLM reads language; deterministic code decides.** Th
 6. [Recommendation](#recommendation)
 7. [Current status](#current-status)
 8. [Getting started](#getting-started)
-9. [Project layout](#project-layout)
-10. [Security, privacy and limitations](#security-privacy-and-limitations)
-11. [Future scope](#future-scope)
+9. [Multiple clients](#multiple-clients)
+10. [Project layout](#project-layout)
+11. [Security, privacy and limitations](#security-privacy-and-limitations)
+12. [Future scope](#future-scope)
 
 ---
 
@@ -235,6 +236,7 @@ The full write-up, including model-selection rationale, safety mechanisms and th
 | Zoho Books (India DC) | ✅ Verified live: OAuth refresh, customer/item reads, seeding, draft creation, PDF download, add-customer from chat, previous-rate lookup |
 | Edits ("make it 6 pcs") | ✅ Tested offline; ⏳ not yet run against live Zoho |
 | 18% tax | ⏳ Implemented (`DEFAULT_TAX_PERCENT`); Zoho requires the org to be **registered for GST** before it accepts tax invoices |
+| Multiple clients (one Telegram group → one Zoho org) | ✅ Tested offline (routing, isolation, skipped clients); ⏳ second live Zoho org not yet connected |
 | Larger Gemini models | ⏳ Free tier allows 20 requests/day; resumable with `--retry-errors` |
 
 ---
@@ -255,7 +257,7 @@ cp .env.example .env     # real values go in .env only; .env.example holds place
 **Try it offline, with no keys:**
 
 ```bash
-npm test                                            # 62 tests, no network
+npm test                                            # 75 tests, no network
 npm run simulate -- --model rules --dashboard -m "VK\nred lenzo alloy 18 inch x 4\nrate 5200"
 npm run eval -- --models oracle,rules
 ```
@@ -290,10 +292,40 @@ npm run eval -- --models oracle,rules
 | `npm test` / `npm run typecheck` | Offline tests / type check |
 | `npm run simulate [-- --dashboard]` | Chat with the same pipeline in the terminal |
 | `npm run eval [-- --set holdout --models … --retry-errors]` | Evaluation |
-| `npm run zoho:token`, `zoho:check`, `zoho:seed` | Zoho setup |
+| `npm run zoho:token`, `zoho:check`, `zoho:seed` | Zoho setup (`-- --client <id>` for one client) |
+| `npm run client:add`, `client:profile` | Register a client; profile its Zoho catalogue ([docs/ONBOARDING.md](docs/ONBOARDING.md)) |
 
 **Deploying:** run a single instance per bot token on any always-on host. It only makes outbound connections.
 - pm2: `pm2 start "npm start" --name wpinv`
+
+---
+
+## Multiple clients
+
+One bot can serve several businesses. Each **client** is one or more Telegram groups mapped to one Zoho Books organization, with its own profile and settings.
+
+```
+Telegram group A ─┐                    ┌─ client "demo": Zoho org 1, data/profile.json (wheels & tyres)
+Telegram group B ─┼─ one bot, routed ──┤
+Telegram group C ─┘   by chat id       └─ client "acme": Zoho org 2, clients/acme/profile.json (stationery)
+```
+
+- **Shared** (`.env`): bot token, LLM keys and models, dashboard.
+- **Per client** (`clients.json`, git-ignored): chat ids, all `ZOHO_*`, `INVOICE_*` and `CUSTOMER_*` settings, rate policy, tax. These are never inherited from `.env`, so a client can't fall back to another client's Zoho organization.
+- Each client has separate state. A misconfigured client is skipped at startup; the others keep running.
+- The **client profile** holds what used to be hard-coded for the demo business: the business line and examples in the LLM prompt, which numbers are sizes rather than quantities, domain matching rules (the `auto_parts` pack), and approved aliases. The matching safety rules are identical for every client.
+
+For a client whose customers and items you don't know yet:
+
+```bash
+npm run client:add -- --id acme --name "Acme Stationery" --chat -1002222222222   # starts in preview mode
+npm run zoho:token -- --client acme <grant_code>
+npm run client:profile -- --client acme --write    # report of look-alike items, shared customer names, units; draft profile
+```
+
+Then review the profile with the client, run in preview mode, evaluate on their real messages, and only then allow drafts. Full process: [docs/ONBOARDING.md](docs/ONBOARDING.md).
+
+Without `clients.json`, the bot runs as a single client configured from `.env`, exactly as before.
 
 ---
 
@@ -304,16 +336,18 @@ src/
   index.ts, app.ts, config.ts       entry point, wiring, Zod-validated settings
   telegram/                         chat transport (Telegram Bot API)
   llm/, extraction/                 providers, prompt, schema, fallback, regex baseline
-  matching/, pipeline/              normalisation and scoring; decide, grounding, processor, state, format
+  matching/, pipeline/              normalisation (with optional domain packs) and scoring; decide, grounding, processor, state, format
+  clients/                          client registry, per-client profile and runtime, catalogue profiler
   zoho/                             Zoho Books client, cache, offline mock
   dashboard/                        read-only web dashboard
-  cli/                              simulator, Zoho token/check/seed, CSV export
+  cli/                              simulator, client add/profile, Zoho token/check/seed, CSV export
   eval/                             evaluation runner, metrics, reports
 data/seed/                          synthetic customers, items, invoice history (JSON + Zoho-importable CSV)
-data/aliases.json                   business-approved customer shorthand
+data/profile.json                   demo client profile: prompt wording, matching pack, approved aliases
+clients.example.json                multi-client registry format (real clients.json and clients/ are git-ignored)
 eval/                               cases.json (50), holdout.json (24), gold.json, results/
-test/                               62 node:test tests
-docs/                               DESIGN, TELEGRAM_SETUP, ZOHO_SETUP, DEMO
+test/                               75 node:test tests
+docs/                               DESIGN, ONBOARDING, TELEGRAM_SETUP, ZOHO_SETUP, DEMO
 ```
 
 ---

@@ -3,9 +3,10 @@
 ## 1. Architecture
 
 ```
-Telegram group ──Bot API long polling──▶ telegram/bot.ts
+Telegram groups ──Bot API long polling──▶ telegram/bot.ts
                               │ chat allowlist, ignore bots, text/captions only, stale filtering, ids namespaced per chat
-                              ▼ (serialized per chat)
+                              ▼ route by chat id → client (clients/runtime.ts); serialized per chat
+                              │ each client: own Zoho org, profile, settings, state
                          pipeline/processor.ts
    1 dedupe (message id) ──▶ state.ts (file-backed, 7-day TTL)
    2 associate pending clarification (quoted question id, or same sender within TTL)
@@ -24,7 +25,8 @@ Telegram group ──Bot API long polling──▶ telegram/bot.ts
 | `http.ts` | `fetch` with timeout, exponential backoff + jitter, `Retry-After`, error categories (`auth`, `rate_limit`, `transient`, `timeout`, `client`, `validation`). |
 | `llm/provider.ts` | Two provider families behind one `complete(system, user)` interface; JSON mode; temperature 0. |
 | `extraction/` | Prompt, Zod schema (numeric strings coerced, anything else rejected), corrective retry, regex baseline. |
-| `matching/` | Text normalization (rim sizes `18"`/`18 inch`/`R18` → `18in`, tyre specs `195 55 16` → `195/55r16`, pack counts, colour/shorthand synonyms) and scored matching. |
+| `clients/` | Client registry (`clients.json`, per-client settings never inherited from `.env`), client profile (prompt wording, normaliser packs, aliases), one processor per client, catalogue profiler for onboarding. |
+| `matching/` | Text normalization (generic rules, plus the `auto_parts` pack: rim sizes `18"`/`18 inch`/`R18` → `18in`, tyre specs `195 55 16` → `195/55r16`, pack counts, colour/shorthand synonyms) and scored matching. |
 | `pipeline/decide.ts` | Turns an extraction plus master data into a decision. Every problem becomes a question; it never fills gaps by guessing. |
 | `pipeline/processor.ts` | Orchestration, dedupe, clarification state, idempotent creation, replies, structured logs with per-stage latency. |
 | `zoho/client.ts` | OAuth refresh (cached, single-flight), paginated lists, invoice lookup/create/PDF, 401 → refresh once, 429 backoff (not for the daily-limit code 45), no blind retries of POST. |
@@ -38,7 +40,7 @@ The LLM does what it is good at: reading language. It classifies intent and pull
 Everything that touches money or records is deterministic and explainable:
 
 - **Validation.** LLM output is parsed with Zod. Only finite numbers, or strings like `"5,200"`, are accepted. Zero and negative values are kept so they can be rejected with a question instead of silently dropped.
-- **Customer matching.** The order is: exact name or business-approved alias (`data/aliases.json`, keyed by name, never IDs), then initials, then token overlap with typo tolerance. A score of ≥ 0.9 with a margin of ≥ 0.15 over the runner-up is required. Otherwise the bot asks.
+- **Customer matching.** The order is: exact name or business-approved alias (from the client profile, keyed by name, never IDs), then initials, then token overlap with typo tolerance. A score of ≥ 0.9 with a margin of ≥ 0.15 over the runner-up is required. Otherwise the bot asks.
 - **Item matching.** Each query token is scored against each item's tokens: exact = 1, typo = 0.85. Unmatched tokens count against the item, so `blue lenzo 18` or `momo …` never silently becomes a red Lenzo. A query word that exists exactly in the catalogue is *never* typo-matched to a different word, so `lenzo` cannot drift to `lenza`. Typo tolerance is off for numbers and words under 4 characters. The same ≥ 0.9 / 0.15 thresholds apply. Ties (`red wheel` → 4 items) become a numbered question listing only the close candidates.
 - **Field checks.** Quantity must be a positive integer ≤ 10,000. Rate must be > 0. A foreign currency triggers a question. A missing rate triggers a question (or uses the Zoho selling rate if `RATE_POLICY=item_default`). A rate taken from a previous invoice is refused.
 - **Tax and totals.** These come from Zoho's response; the mock uses each item's tax percentage. Live mode never computes tax client-side.
@@ -173,7 +175,7 @@ The regex baseline scores 45.8% on the held-out set (0 wrong invoices). The raw 
 
 ## 7. Learning aliases and shorthand safely
 
-- **Today:** aliases come from `data/aliases.json`, keyed by the exact Zoho customer *name* (resolved to an ID at runtime). Initials and typos are handled generically.
+- **Today:** aliases come from the client profile (`data/profile.json` for the demo client), keyed by the exact Zoho customer *name* (resolved to an ID at runtime). Initials and typos are handled generically.
 - **Proposed loop:** when a clarification is resolved (e.g. user says `kwh` → picks *Kerala Wheel Hub*), record a *candidate* alias with its count and the user who confirmed it. Promote it to an active alias only after N consistent confirmations from authorized users, or after an admin approves it. Never promote an alias that collides with another customer's name, alias or initials. Store aliases with provenance and allow revocation. Apply the same idea to product shorthand (`lnz red 18`) via a synonym table that feeds the deterministic matcher, never by letting the LLM "remember" IDs.
 - Optionally store the aliases in a Zoho custom field (`cf_aliases`) so accounts staff can edit them in the Zoho UI.
 
@@ -220,4 +222,5 @@ WhatsApp transports (Baileys and the Cloud API) were prototyped against the same
 - Only text messages are handled (captions included). Voice notes and images of handwritten orders are not.
 - Quantities must be integers. There are no discounts, shipping lines or price lists.
 - Edits change one line per message and only drafts this bot created (tracked for 7 days). Cancellation and repeat orders are refused.
-- The matcher's thresholds were tuned on this synthetic catalogue. A real catalogue needs its own labeled set.
+- The matcher's thresholds were tuned on this synthetic catalogue. A real catalogue needs its own labeled set; see [ONBOARDING.md](ONBOARDING.md).
+- With several clients, one process and one bot token serve all of them, so a crash or an LLM quota limit affects every client. The dashboard shows all clients to anyone who can open it.

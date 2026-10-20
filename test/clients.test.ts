@@ -3,7 +3,7 @@ import { existsSync, mkdtempSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { test } from 'node:test';
-import { loadClients } from '../src/clients/registry.js';
+import { loadClients, pickClient, saveClientSetting } from '../src/clients/registry.js';
 import { startClients } from '../src/clients/runtime.js';
 import { silentLogger } from '../src/logger.js';
 
@@ -90,4 +90,18 @@ test('clients: routing by chat, separate state per client, and a broken client i
   assert.equal(byChat.get('-3001'), undefined, 'a skipped client gets no messages');
   assert.ok(existsSync(join(dir, 'clients', 'demo', 'state.json')));
   assert.ok(!existsSync(join(dir, 'clients', 'shop', 'state.json')), 'shop has not processed anything');
+});
+
+test('clients: CLI helpers pick a client and save one setting without touching the others', () => {
+  const dir = tmp();
+  const file = writeClients(dir, [
+    { id: 'demo', name: 'Demo', telegramChats: ['-1001'], settings: { ZOHO_MODE: 'mock' } },
+    { id: 'acme', name: 'Acme', telegramChats: ['-1002'], settings: { ZOHO_MODE: 'live', ZOHO_ORG_ID: '' } },
+  ]);
+  saveClientSetting('acme', 'ZOHO_ORG_ID', '222', file);
+  const clients = loadClients(baseEnv(dir), file);
+  assert.equal(pickClient('acme', clients).cfg.ZOHO_ORG_ID, '222');
+  assert.equal(pickClient('demo', clients).cfg.ZOHO_ORG_ID, undefined);
+  assert.throws(() => pickClient(undefined, clients), /Pick a client with --client \(demo, acme\)/);
+  assert.throws(() => saveClientSetting('nope', 'ZOHO_ORG_ID', '1', file), /not in/);
 });

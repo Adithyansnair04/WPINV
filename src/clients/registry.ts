@@ -1,4 +1,4 @@
-import { existsSync, readFileSync } from 'node:fs';
+import { existsSync, readFileSync, writeFileSync } from 'node:fs';
 import { z } from 'zod';
 import { loadConfig, type Config } from '../config.js';
 import { GENERIC_PROFILE, loadProfile, type ClientProfile } from './profile.js';
@@ -39,6 +39,22 @@ export function readClientsFile(file = CLIENTS_FILE): { clients: ClientEntry[] }
   const parsed = ClientsFile.safeParse(JSON.parse(readFileSync(file, 'utf8')));
   if (!parsed.success) throw new Error(`Invalid ${file}: ${parsed.error.issues.map((i) => `${i.path.join('.')}: ${i.message}`).join('; ')}`);
   return parsed.data;
+}
+
+/** Sets one per-client setting in the clients file, leaving everything else as it is. */
+export function saveClientSetting(id: string, key: string, value: string, file = CLIENTS_FILE) {
+  const registry = readClientsFile(file);
+  const client = registry?.clients.find((c) => c.id === id);
+  if (!registry || !client) throw new Error(`Client "${id}" is not in ${file}`);
+  client.settings[key] = value;
+  writeFileSync(file, JSON.stringify(registry, null, 2) + '\n');
+}
+
+/** The client a CLI command works on: --client <id>, or the only client there is. */
+export function pickClient(id: string | undefined, clients = loadClients()): ResolvedClient {
+  const client = id ? clients.find((c) => c.id === id) : clients.length === 1 ? clients[0] : undefined;
+  if (!client) throw new Error(id ? `Unknown client "${id}" (${clients.map((c) => c.id).join(', ')})` : `Pick a client with --client (${clients.map((c) => c.id).join(', ')})`);
+  return client;
 }
 
 /**
