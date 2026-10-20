@@ -9,7 +9,7 @@ Telegram group ──Bot API long polling──▶ telegram/bot.ts
                          pipeline/processor.ts
    1 dedupe (message id) ──▶ state.ts (file-backed, 7-day TTL)
    2 associate pending clarification (quoted question id, or same sender within TTL)
-   3 extract ──▶ extraction/extract.ts ──▶ llm/provider.ts (Mistral | Groq | Gemini | OpenRouter | compat)   [LLM]
+   3 extract ──▶ extraction/extract.ts ──▶ llm/provider.ts (Gemini | Groq)   [LLM]
               └▶ Zod validation (schema.ts), one corrective retry on invalid JSON
    4 load master data ──▶ zoho/cached.ts ──▶ zoho/client.ts (or zoho/mock.ts)
    5 decide ──▶ pipeline/decide.ts + matching/matcher.ts                                        [deterministic]
@@ -73,7 +73,7 @@ Every decision carries a `trace`: query, status, scores, candidates and problems
 | Also evaluated | `groq:openai/gpt-oss-120b` | The larger model was **worse** here (92% main / 70.8% held-out). It tends to drop the customer when merging a clarification answer (H20–H22) and to treat the customer name as a product line (H01). All its misses were safe questions. |
 | Baseline | `rules` | No LLM: regex extraction plus the same matcher and checks. Shows what the LLM adds. |
 | Upper bound | `oracle` | Labeled ideal extraction. Measures matching and decisions on their own. |
-| Not usable on free tiers | `gemini-2.5-flash`, `gemini-3-flash-preview` (20 requests/day per model); Mistral (429 on every call for this account) | Wired through the same interface; finish with `npm run eval -- --models <model> --retry-errors` once a day, or with a billed key. |
+| Not usable on free tiers | `gemini-2.5-flash`, `gemini-3-flash-preview` (20 requests/day per model); Mistral (429 on every call for this account; its provider has since been removed) | Wired through the same interface; finish with `npm run eval -- --models <model> --retry-errors` once a day, or with a billed key. |
 
 **Findings:**
 - **Small vs large:** on this task, **bigger was not better.** `gpt-oss-20b` beat `gpt-oss-120b` on both sets. The task is short, structured extraction, where instruction-following on the JSON contract matters more than model size.

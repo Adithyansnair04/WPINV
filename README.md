@@ -77,7 +77,7 @@ A read-only **dashboard** (`http://127.0.0.1:3001`) shows every decision with **
 |---|---|
 | `telegram/` | Chat transport: turns Telegram updates into `IncomingMessage` and implements `send()`. The pipeline is platform-agnostic, so another chat platform is a new transport, not a rewrite. |
 | `extraction/` | Prompt, Zod schema, LLM extractor with corrective retry, primary→fallback wrapper, regex baseline |
-| `llm/provider.ts` | Gemini and OpenAI-compatible providers (Groq, Mistral, OpenRouter, Ollama…), JSON mode, timeouts, backoff |
+| `llm/provider.ts` | Gemini and Groq (OpenAI-compatible API) providers, JSON mode, timeouts, backoff |
 | `matching/` | Text normalisation (rim sizes, tyre specs, pack counts, synonyms, typos incl. swapped letters) and scored customer/item matching |
 | `pipeline/decide.ts` | Turns an extraction plus master data into a decision; every problem becomes a question |
 | `pipeline/grounding.ts` | Every quantity and rate must appear in the message; one value cannot silently cover several items |
@@ -274,7 +274,7 @@ npm run eval -- --models oracle,rules
 
 | Setting | Default | Meaning |
 |---|---|---|
-| `LLM_MODEL` / `LLM_FALLBACK_MODEL` | `gemini:gemini-3.1-flash-lite` / – | `provider:model` for `gemini`, `groq`, `mistral`, `openrouter`, `compat` (any OpenAI-compatible URL), or `rules` |
+| `LLM_MODEL` / `LLM_FALLBACK_MODEL` | `gemini:gemini-3.1-flash-lite` / – | `provider:model` for `gemini` or `groq`, or `rules` (no LLM) |
 | `ZOHO_MODE`, `INVOICE_ALLOW_LIVE_CREATE` | `mock`, `false` | Live Zoho, and whether drafts may be created |
 | `INVOICE_CONFIRM`, `INVOICE_APPROVERS` | `always`, – | Preview with ✅/❌ before every invoice; optionally only listed ids may confirm |
 | `RATE_POLICY` | `ask` | `item_default` uses the Zoho selling rate when none is given |

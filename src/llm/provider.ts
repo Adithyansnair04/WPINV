@@ -35,7 +35,7 @@ async function postJson(url: string, headers: Record<string, string>, body: unkn
   return { json, stats, latencyMs: performance.now() - started };
 }
 
-/** Mistral, Groq, OpenRouter and any other OpenAI-compatible /chat/completions endpoint. */
+/** OpenAI-compatible /chat/completions endpoint (used for Groq). */
 function openAiCompatible(id: string, baseUrl: string, apiKey: string, model: string, timeoutMs: number, maxRetries = 3): LlmProvider {
   return {
     id,
@@ -96,7 +96,7 @@ export function fixture(responder: (user: string) => string | object): LlmProvid
   };
 }
 
-/** Builds a provider from "provider:model", e.g. "mistral:mistral-small-latest" or "gemini:gemini-2.5-flash-lite". */
+/** Builds a provider from "provider:model", e.g. "gemini:gemini-3.1-flash-lite" or "groq:openai/gpt-oss-20b". */
 /** tuning: a primary model with a fallback fails faster (fewer retries, shorter timeout) so the fallback can answer quickly. */
 export function createProvider(spec: string, cfg: Config, tuning: { timeoutMs?: number; maxRetries?: number } = {}): LlmProvider {
   const timeoutMs = tuning.timeoutMs ?? cfg.LLM_TIMEOUT_MS;
@@ -109,17 +109,11 @@ export function createProvider(spec: string, cfg: Config, tuning: { timeoutMs?: 
     return key;
   };
   switch (provider) {
-    case 'mistral':
-      return openAiCompatible(spec, 'https://api.mistral.ai/v1', need(cfg.MISTRAL_API_KEY, 'MISTRAL_API_KEY'), model, timeoutMs, maxRetries);
     case 'groq':
       return openAiCompatible(spec, 'https://api.groq.com/openai/v1', need(cfg.GROQ_API_KEY, 'GROQ_API_KEY'), model, timeoutMs, maxRetries);
-    case 'openrouter':
-      return openAiCompatible(spec, 'https://openrouter.ai/api/v1', need(cfg.OPENROUTER_API_KEY, 'OPENROUTER_API_KEY'), model, timeoutMs, maxRetries);
-    case 'compat':
-      return openAiCompatible(spec, need(cfg.COMPAT_BASE_URL, 'COMPAT_BASE_URL'), cfg.COMPAT_API_KEY ?? 'none', model, timeoutMs, maxRetries);
     case 'gemini':
       return gemini(spec, need(cfg.GEMINI_API_KEY, 'GEMINI_API_KEY'), model, timeoutMs, maxRetries);
     default:
-      throw new Error(`Unknown LLM provider "${provider}" in "${spec}" (use mistral:, groq:, gemini:, openrouter:, compat: or rules)`);
+      throw new Error(`Unknown LLM provider "${provider}" in "${spec}" (use gemini:, groq: or rules)`);
   }
 }

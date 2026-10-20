@@ -26,12 +26,8 @@ const EnvSchema = z.object({
   EVAL_MODELS: list,
   EVAL_DELAY_MS: z.coerce.number().int().min(0).default(0),
   LLM_TIMEOUT_MS: z.coerce.number().int().positive().default(30000),
-  MISTRAL_API_KEY: z.string().optional(),
   GROQ_API_KEY: z.string().optional(),
   GEMINI_API_KEY: z.string().optional(),
-  OPENROUTER_API_KEY: z.string().optional(),
-  COMPAT_BASE_URL: z.string().url().optional(),
-  COMPAT_API_KEY: z.string().optional(),
 
   ZOHO_MODE: z.enum(['mock', 'live']).default('mock'),
   ZOHO_CLIENT_ID: z.string().optional(),
