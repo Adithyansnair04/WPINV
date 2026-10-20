@@ -1,0 +1,12 @@
+[
+  { "name": "Mehta Traders", "company": "Mehta Traders", "city": "Ahmedabad" },
+  { "name": "Mehta Book Depot", "company": "Mehta Book Depot", "city": "Surat" },
+  { "name": "Vidya Kendra", "company": "Vidya Kendra", "city": "Pune" },
+  { "name": "Vasant Kumar Stores", "company": "Vasant Kumar Stores", "city": "Nashik" },
+  { "name": "Sunrise Public School", "company": "Sunrise Public School", "city": "Mumbai" },
+  { "name": "Sunrise Stationers", "company": "Sunrise Stationers", "city": "Thane" },
+  { "name": "Patel Office Supplies", "company": "Patel Office Supplies", "city": "Vadodara" },
+  { "name": "Gyan Mandir Bookstall", "company": "Gyan Mandir Bookstall", "city": "Nagpur" },
+  { "name": "Royal Copy Centre", "company": "Royal Copy Centre", "city": "Rajkot" },
+  { "name": "Little Scholars Academy", "company": "Little Scholars Academy", "city": "Indore" }
+]
