@@ -43,13 +43,12 @@ export const DASHBOARD_HTML = `<!doctype html>
   <div class="kpis" id="kpis"></div>
   <section><h2>Recent activity</h2><div class="scroll"><table id="activity"></table></div></section>
   <section><h2>Open clarifications</h2><div id="pending"></div></section>
-  <section><h2>Evaluation (mocked Zoho, measured)</h2><div class="scroll" id="eval"></div></section>
+  <section><h2>Model evaluation</h2><div class="scroll" id="eval"></div></section>
 </main>
 <script>
 const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' }[c]));
 const money = (n) => n == null ? '–' : '₹' + Number(n).toLocaleString('en-IN');
 const time = (t) => new Date(t).toLocaleTimeString();
-const pct = (r) => r && r.pct != null ? r.pct + '% <span class="muted">(' + r.num + '/' + r.den + ')</span>' : 'n/a';
 const label = { created:'Invoiced', existing:'Already invoiced', edited:'Edited', dry_run:'Dry run', clarify:'Asked', respond:'Replied', ignore:'Ignored', error:'Error' };
 
 async function get(p) { const r = await fetch(p, { cache: 'no-store' }); return r.json(); }
@@ -58,35 +57,67 @@ async function get(p) { const r = await fetch(p, { cache: 'no-store' }); return 
 const isBackup = (a) => Boolean(a.fallbackFrom) || (a.model || '').includes('(fallback)');
 const modelId = (a) => (a.model || '').replace(' (fallback)', '');
 const shortModel = (m) => (m && m.includes(':') ? m.slice(m.indexOf(':') + 1) : m || '–');
-const provider = (m) => (m && m.includes(':') ? m.slice(0, m.indexOf(':')) : '');
+
+// Reason codes in plain words (anything unknown falls back to the code with spaces).
+const REASONS = {
+  missing_customer: 'customer missing', ambiguous_customer: 'which customer?', unknown_customer: 'unknown customer',
+  missing_item: 'item missing', ambiguous_item: 'which item?', unknown_item: 'unknown item',
+  missing_quantity: 'quantity missing', invalid_quantity: 'invalid quantity', missing_rate: 'rate missing', invalid_rate: 'invalid rate',
+  currency_mismatch: 'other currency', shared_rate: 'one rate for several items', shared_quantity: 'one quantity for several items',
+  ungrounded_rate: 'rate not in message', ungrounded_quantity: 'quantity not in message',
+  rate_from_previous: 'rate needed', confirm_previous_rate: 'confirm last rate', confirm_invoice: 'waiting for ✅',
+  confirm_new_customer: 'confirm new customer', customer_created: 'customer added', invoice_cancelled: 'cancelled',
+  non_invoice: 'not an invoice', unsupported_followup: 'not supported', idempotent_hit: 'already invoiced',
+  edit_without_target: 'reply to an invoice to edit', confirmation_expired: 'confirmation expired',
+};
+const plain = (code) => REASONS[code] || String(code || '').replace(/_/g, ' ');
 
 function modelCell(a) {
-  if (!a.model) return '<span class="muted" title="Button tap, numbered option or confirmation: handled without an LLM call">no LLM</span>';
-  const m = modelId(a);
-  const name = '<span class="tag">' + esc(provider(m)) + '</span> ' + esc(shortModel(m));
+  if (!a.model) return '<span class="muted" title="Button tap, numbered option or confirmation: no LLM call">–</span>';
+  const name = esc(shortModel(modelId(a)).replace('openai/', ''));
   if (!isBackup(a)) return name;
-  const why = (a.primaryError || '').split(':').slice(0, 2).join(':').replace(/\{.*$/, '').trim();
-  return name + ' <span class="tag backup">backup</span>' + (why ? '<br><span class="muted small">main model failed: ' + esc(why) + '</span>' : '');
+  const why = (a.primaryError || '').split('{')[0].trim();
+  return '<span title="Main model failed: ' + esc(why) + '">' + name + ' <span class="tag backup">backup</span></span>';
+}
+
+function resultCell(a) {
+  const head = '<span class="a ' + esc(a.action) + '">' + esc(label[a.action] || a.action) + '</span>';
+  if (a.invoice) return head + ' <span class="small">' + esc(a.invoice.number) + ' · ' + money(a.invoice.total) + '</span>';
+  if (a.action === 'error') return head + '<br><span class="small muted">' + esc((a.error || plain(a.reason)).slice(0, 80)) + '</span>';
+  const why = [...new Set((a.problems && a.problems.length ? a.problems : [a.reason]).filter(Boolean).map(plain))].join(', ');
+  return head + (why ? '<br><span class="small muted">' + esc(why) + '</span>' : '');
+}
+
+function detailsCell(a) {
+  const cust = a.customer ? esc(a.customer.name || a.customer.query + '?') : a.invoice ? esc(a.invoice.customer) : '';
+  const lines = a.lines
+    .map((l) => '<span title="' + esc(l.item ? 'match score ' + (l.score ?? '') : l.status) + '">' + esc(l.item || (l.description ? l.description + '?' : 'item?')) + '</span>' + ' × ' + esc(l.quantity ?? '?') + ' @ ' + (l.rate == null ? '?' : money(l.rate)))
+    .join('; ');
+  const text = [cust, lines].filter(Boolean).join(' · ');
+  return (text || '<span class="muted">–</span>') + (a.text ? '<div class="muted small">“' + esc(a.text.slice(0, 120)) + '”</div>' : '');
 }
 
 function kpis(acts, info) {
   const n = (a) => acts.filter((x) => a.includes(x.action)).length;
   const lat = acts.filter((x) => x.model).map((x) => x.latencyMs).sort((a, b) => a - b);
   const p50 = lat.length ? lat[Math.floor(lat.length / 2)] : null;
-  const items = [['Messages', acts.length], ['Invoices', n(['created', 'existing'])], ['Questions asked', n(['clarify'])], ['Ignored / replied', n(['ignore', 'respond'])], ['Main model: ' + shortModel(info.model), acts.filter((x) => x.model && !isBackup(x)).length], ['Backup model: ' + shortModel(info.fallback), acts.filter((x) => x.model && isBackup(x)).length], ['No LLM needed', acts.filter((x) => !x.model).length], ['Errors', n(['error'])], ['Median latency', p50 == null ? '–' : (p50 / 1000).toFixed(1) + ' s']];
+  const items = [
+    ['Messages', acts.length],
+    ['Invoices', n(['created', 'existing', 'edited'])],
+    ['Questions asked', n(['clarify'])],
+    ['Answered by backup', acts.filter((x) => x.model && isBackup(x)).length],
+    ['Errors', n(['error'])],
+    ['Median response', p50 == null ? '–' : (p50 / 1000).toFixed(1) + ' s'],
+  ];
   document.getElementById('kpis').innerHTML = items.map(([l, v]) => '<div class="kpi"><div class="v">' + esc(v) + '</div><div class="l">' + esc(l) + '</div></div>').join('');
 }
 
 function activity(acts) {
   const el = document.getElementById('activity');
   if (!acts.length) { el.innerHTML = '<tr><td class="empty">No messages yet. Send one in an allowed chat.</td></tr>'; return; }
-  el.innerHTML = '<tr><th>Time</th><th>Result</th><th>Model</th><th>Customer</th><th>Items</th><th>Invoice</th><th>Why</th><th>Latency</th></tr>' + acts.map((a) => {
-    const cust = a.customer ? (a.customer.name ? esc(a.customer.name) : '<span class="clarify">' + esc(a.customer.query) + ' (' + esc(a.customer.status) + ')</span>') : '<span class="muted">–</span>';
-    const lines = a.lines.map((l) => (l.item ? esc(l.item) + (l.score != null ? ' <span class="muted small">' + l.score + '</span>' : '') : '<span class="clarify">' + esc(l.description ?? '?') + ' (' + esc(l.status) + ')</span>') + ' <span class="muted">× ' + esc(l.quantity ?? '?') + ' @ ' + (l.rate == null ? '?' : money(l.rate)) + '</span>').join('<br>') || '<span class="muted">–</span>';
-    const inv = a.invoice ? esc(a.invoice.number) + '<br><span class="small">' + money(a.invoice.total) + ' · ' + esc(a.invoice.status) + '</span>' : '<span class="muted">–</span>';
-    const why = [a.reason, ...(a.problems || [])].filter((v, i, s) => v && s.indexOf(v) === i).map(esc).join(', ') + (a.error ? '<br><span class="error small">' + esc(a.error) + '</span>' : '') + (a.text ? '<pre class="muted small">' + esc(a.text) + '</pre>' : '');
-    return '<tr><td class="muted">' + time(a.at) + '</td><td class="a ' + esc(a.action) + '">' + esc(label[a.action] || a.action) + '</td><td class="small">' + modelCell(a) + '</td><td>' + cust + '</td><td>' + lines + '</td><td>' + inv + '</td><td class="small">' + why + '</td><td class="muted">' + (a.latencyMs / 1000).toFixed(1) + ' s</td></tr>';
-  }).join('');
+  el.innerHTML = '<tr><th>Time</th><th>Result</th><th>Details</th><th>Model</th></tr>' + acts.slice(0, 50).map((a) =>
+    '<tr><td class="muted small">' + time(a.at) + '<br>' + (a.latencyMs / 1000).toFixed(1) + ' s</td><td>' + resultCell(a) + '</td><td>' + detailsCell(a) + '</td><td class="small">' + modelCell(a) + '</td></tr>',
+  ).join('');
 }
 
 function pending(ps) {
@@ -94,14 +125,22 @@ function pending(ps) {
   el.innerHTML = ps.length ? ps.map((p) => '<div style="padding:8px 0;border-bottom:1px solid var(--line)"><pre>' + esc(p.question) + '</pre><div class="muted small">round ' + p.attempts + ' · expires ' + time(p.expiresAt) + '</div></div>').join('') : '<div class="empty">None waiting.</div>';
 }
 
+// One row per model: the few numbers that matter. Full detail lives in eval/results/summary.md.
 function evaluation(ev) {
-  const block = (title, runs) => {
-    if (!runs.length) return '<p class="muted">' + esc(title) + ': not run yet (<code>npm run eval</code>).</p>';
-    runs.sort((a, b) => a.model.localeCompare(b.model));
-    const rows = [['Action accuracy', (r) => pct(r.headline.action_accuracy)], ['Customer match', (r) => pct(r.headline.customer_match_accuracy)], ['Item match', (r) => pct(r.headline.item_match_accuracy)], ['Clarification recall', (r) => pct(r.headline.clarification_recall)], ['Unnecessary clarifications', (r) => pct(r.headline.unnecessary_clarification_rate)], ['Confidently wrong invoices', (r) => '<b>' + r.headline.confidently_wrong_invoices + '</b>'], ['Non-invoice false positives', (r) => pct(r.headline.non_invoice_false_positives)], ['Latency p50 / p95', (r) => r.latency.p50 == null ? '–' : r.latency.p50 + ' / ' + r.latency.p95 + ' ms'], ['Cases scored', (r) => r.casesScored + '/' + r.caseCount]];
-    return '<h2 style="margin-top:6px">' + esc(title) + '</h2><table><tr><th>Metric</th>' + runs.map((r) => '<th>' + esc(r.model) + '</th>').join('') + '</tr>' + rows.map(([l, f]) => '<tr><td>' + l + '</td>' + runs.map((r) => '<td>' + f(r) + '</td>').join('') + '</tr>').join('') + '</table>';
-  };
-  document.getElementById('eval').innerHTML = block('Main set (50 cases)', ev.main) + block('Held-out set', ev.holdout);
+  const el = document.getElementById('eval');
+  const models = ev.main.filter((r) => r.model !== 'oracle');
+  if (!models.length) { el.innerHTML = '<p class="muted">Not run yet (<code>npm run eval</code>).</p>'; return; }
+  const held = Object.fromEntries(ev.holdout.map((r) => [r.model, r]));
+  const name = (m) => (m === 'rules' ? 'No AI (regex baseline)' : shortModel(m).replace('openai/', ''));
+  const p = (r) => (r && r.pct != null ? r.pct + '%' : '–');
+  models.sort((a, b) => (b.headline.action_accuracy.pct ?? 0) - (a.headline.action_accuracy.pct ?? 0));
+  el.innerHTML = '<table><tr><th>Model</th><th>Correct (50 tests)</th><th>Correct (24 unseen)</th><th>Wrong invoices</th><th>Unneeded questions</th><th>Median time</th></tr>' +
+    models.map((r) => {
+      const h = held[r.model];
+      const wrong = r.headline.confidently_wrong_invoices + (h ? h.headline.confidently_wrong_invoices : 0);
+      const t = r.model === 'rules' ? '–' : r.latency.p50 == null ? '–' : (r.latency.p50 / 1000).toFixed(1) + ' s';
+      return '<tr><td>' + esc(name(r.model)) + '</td><td><b>' + p(r.headline.action_accuracy) + '</b></td><td>' + (h ? p(h.headline.action_accuracy) : '–') + '</td><td class="' + (wrong ? 'error' : 'created') + '"><b>' + wrong + '</b></td><td>' + p(r.headline.unnecessary_clarification_rate) + '</td><td>' + t + '</td></tr>';
+    }).join('') + '</table><p class="muted small">Full per-field results: <code>eval/results/summary.md</code></p>';
 }
 
 async function refresh() {
