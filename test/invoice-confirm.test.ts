@@ -5,7 +5,7 @@ import { ex, msg, scripted, setup } from './helpers.js';
 const VK = 'VK\nred lenzo alloy 18 inch x 4\nrate 5200';
 const VK_EX = ex({ customer: 'VK', items: [{ description: 'red lenzo alloy 18 inch', quantity: 4, rate: 5200 }] });
 const CONFIRM = { options: { invoiceConfirm: true } };
-const BOB = 'bob@s.whatsapp.net';
+const BOB = 'bob';
 
 test('invoice confirm: preview first (nothing in Zoho), create only on Yes, exactly once', async () => {
   const { processor, books, sent } = setup(scripted({ [VK]: VK_EX }), CONFIRM);

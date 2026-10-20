@@ -43,21 +43,9 @@ const EnvSchema = z.object({
   ZOHO_TIMEOUT_MS: z.coerce.number().int().positive().default(20000),
   INVOICE_ALLOW_LIVE_CREATE: bool(false),
 
-  CHAT_TRANSPORT: z.enum(['telegram', 'whatsapp_cloud', 'baileys']).default('telegram'),
   MAX_MESSAGE_AGE_SEC: z.coerce.number().int().positive().default(600),
   TELEGRAM_BOT_TOKEN: z.string().optional(),
   TELEGRAM_ALLOWED_CHATS: list,
-
-  WA_PHONE_NUMBER_ID: z.string().optional(),
-  WA_ACCESS_TOKEN: z.string().optional(),
-  WA_APP_SECRET: z.string().optional(),
-  WA_VERIFY_TOKEN: z.string().optional(),
-  WA_GRAPH_VERSION: z.string().default('v25.0'),
-  WA_ALLOWED_SENDERS: list,
-  PORT: z.coerce.number().int().positive().default(3000),
-
-  WA_AUTH_DIR: z.string().default('.data/wa-auth'),
-  WA_ALLOWED_GROUPS: list,
 
   DASHBOARD_PORT: z.coerce.number().int().min(0).default(3001),
   DASHBOARD_HOST: z.string().default('127.0.0.1'),

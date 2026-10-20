@@ -76,7 +76,7 @@ export function cleanCustomerName(raw: string): string | null {
 }
 
 export const idempotencyKey = (chatId: string, messageId: string) =>
-  `WA-${createHash('sha256').update(`${chatId}|${messageId}`).digest('hex').slice(0, 16).toUpperCase()}`;
+  `CHAT-${createHash('sha256').update(`${chatId}|${messageId}`).digest('hex').slice(0, 16).toUpperCase()}`;
 
 const hashId = (s: string) => createHash('sha256').update(s).digest('hex').slice(0, 10);
 

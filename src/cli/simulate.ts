@@ -27,7 +27,7 @@ const { values } = parseArgs({
 const cfg = loadConfig();
 if (values.model) cfg.LLM_MODEL = values.model;
 const log = createLogger(values.verbose ? 'debug' : 'warn', { app: 'simulate' });
-const chatId = 'simulated-group@g.us';
+const chatId = 'simulated-chat';
 let sender = 'alice';
 let seq = 0;
 let lastQuestionId: string | undefined;
@@ -62,7 +62,7 @@ async function send(text: string, quote: boolean | 'invoice') {
   const msg: IncomingMessage = {
     id: `sim-${Date.now()}-${++seq}`,
     chatId,
-    senderId: `${sender}@s.whatsapp.net`,
+    senderId: `${sender}`,
     text,
     timestamp: Date.now(),
     fromMe: false,

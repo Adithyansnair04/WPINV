@@ -14,10 +14,10 @@ The design principle: **the LLM reads language; deterministic code decides.** Th
 
 | | |
 |---|---|
-| **Chat** | Telegram groups (official Bot API) by default; WhatsApp via Baileys (groups, unofficial) or the WhatsApp Cloud API (1:1) as options |
+| **Chat** | Telegram groups (official Bot API). WhatsApp is future scope. |
 | **LLMs** | Gemini 3.1 Flash-Lite (primary), Groq gpt-oss-20b (automatic fallback) |
 | **Books** | Zoho Books REST API (India data centre), OAuth refresh tokens, draft invoices only |
-| **Stack** | Node.js 24 + TypeScript, Zod validation, no web framework; 66 offline tests |
+| **Stack** | Node.js 24 + TypeScript, Zod validation, no web framework; 61 offline tests |
 | **Result** | 98% correct actions (95.8% on a held-out set) and **0 wrong invoices across every model tested** |
 
 ---
@@ -58,7 +58,7 @@ A read-only **dashboard** (`http://127.0.0.1:3001`) shows every decision with it
 ## Architecture
 
 ```
- Telegram group ──Bot API long polling──▶ telegram/bot.ts        (alt: whatsapp/baileys.ts, whatsapp/cloud.ts)
+ Telegram group ──Bot API long polling──▶ telegram/bot.ts
                                             │ chat allowlist · ignore bots · text/captions · stale & duplicate filter
                                             ▼  one message at a time per chat
                                      pipeline/processor.ts
@@ -75,7 +75,7 @@ A read-only **dashboard** (`http://127.0.0.1:3001`) shows every decision with it
 
 | Module | Responsibility |
 |---|---|
-| `telegram/`, `whatsapp/` | Transports. Each turns platform events into `IncomingMessage` and implements `send()`; the pipeline is platform-agnostic. |
+| `telegram/` | Chat transport: turns Telegram updates into `IncomingMessage` and implements `send()`. The pipeline is platform-agnostic, so another chat platform is a new transport, not a rewrite. |
 | `extraction/` | Prompt, Zod schema, LLM extractor with corrective retry, primary→fallback wrapper, regex baseline |
 | `llm/provider.ts` | Gemini and OpenAI-compatible providers (Groq, Mistral, OpenRouter, Ollama…), JSON mode, timeouts, backoff |
 | `matching/` | Text normalisation (rim sizes, tyre specs, pack counts, synonyms, typos incl. swapped letters) and scored customer/item matching |
@@ -255,7 +255,7 @@ cp .env.example .env     # real values go in .env only; .env.example holds place
 **Try it offline, with no keys:**
 
 ```bash
-npm test                                            # 66 tests, no network
+npm test                                            # 61 tests, no network
 npm run simulate -- --model rules --dashboard -m "VK\nred lenzo alloy 18 inch x 4\nrate 5200"
 npm run eval -- --models oracle,rules
 ```
@@ -275,7 +275,6 @@ npm run eval -- --models oracle,rules
 | Setting | Default | Meaning |
 |---|---|---|
 | `LLM_MODEL` / `LLM_FALLBACK_MODEL` | `gemini:gemini-3.1-flash-lite` / – | `provider:model` for `gemini`, `groq`, `mistral`, `openrouter`, `compat` (any OpenAI-compatible URL), or `rules` |
-| `CHAT_TRANSPORT` | `telegram` | `telegram`, `whatsapp_cloud` or `baileys` |
 | `ZOHO_MODE`, `INVOICE_ALLOW_LIVE_CREATE` | `mock`, `false` | Live Zoho, and whether drafts may be created |
 | `INVOICE_CONFIRM`, `INVOICE_APPROVERS` | `always`, – | Preview with ✅/❌ before every invoice; optionally only listed ids may confirm |
 | `RATE_POLICY` | `ask` | `item_default` uses the Zoho selling rate when none is given |
@@ -303,7 +302,7 @@ npm run eval -- --models oracle,rules
 ```
 src/
   index.ts, app.ts, config.ts       entry point, wiring, Zod-validated settings
-  telegram/, whatsapp/              chat transports
+  telegram/                         chat transport (Telegram Bot API)
   llm/, extraction/                 providers, prompt, schema, fallback, regex baseline
   matching/, pipeline/              normalisation and scoring; decide, grounding, processor, state, format
   zoho/                             Zoho Books client, cache, offline mock
@@ -313,8 +312,8 @@ src/
 data/seed/                          synthetic customers, items, invoice history (JSON + Zoho-importable CSV)
 data/aliases.json                   business-approved customer shorthand
 eval/                               cases.json (50), holdout.json (24), gold.json, results/
-test/                               66 node:test tests
-docs/                               DESIGN, TELEGRAM_SETUP, ZOHO_SETUP, WHATSAPP_CLOUD_SETUP, DEMO
+test/                               61 node:test tests
+docs/                               DESIGN, TELEGRAM_SETUP, ZOHO_SETUP, DEMO
 ```
 
 ---
@@ -341,6 +340,7 @@ The production hardening list is in [docs/DESIGN.md](docs/DESIGN.md#10-known-lim
 
 ## Future scope
 
+- **WhatsApp transport:** the official WhatsApp Cloud API (1:1 chats; groups need an Official Business Account) as a second transport behind the same `IncomingMessage`/`send()` contract. An unofficial Baileys prototype was built and removed because of its ban risk.
 - **Docker packaging:** a container image with the `.data/` state on a volume and the dashboard bound to localhost, for one-command deployment.
 - **Real-data evaluation:** a labelled set of the client's own messages, run through `npm run eval` before go-live.
 - **GST invoices:** once the Zoho org is GST-registered, per-customer place of supply and intra/inter-state tax.

@@ -4,7 +4,7 @@ import { cleanCustomerName, parseAddCustomer } from '../src/pipeline/processor.j
 import { ex, msg, scripted, setup } from './helpers.js';
 
 const ON = { options: { customerCreate: 'confirm' as const } };
-const BOB = 'bob@s.whatsapp.net';
+const BOB = 'bob';
 
 test('add customer: command parsing and name validation', () => {
   assert.equal(parseAddCustomer('add customer Zenith Motors'), 'Zenith Motors');

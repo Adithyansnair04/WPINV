@@ -100,10 +100,10 @@ test('zoho: create invoice payload and PDF retrieval', async () => {
     return json({ code: 0 });
   });
   const z = new ZohoBooks(creds, { fetchImpl: impl, sleep: noSleep });
-  const inv = await z.createInvoice({ customerId: 'c1', referenceNumber: 'WA-1', lines: [{ itemId: 'i1', quantity: 4, rate: 5200 }] });
+  const inv = await z.createInvoice({ customerId: 'c1', referenceNumber: 'CHAT-1', lines: [{ itemId: 'i1', quantity: 4, rate: 5200 }] });
   assert.equal(inv.number, 'INV-0009');
   assert.equal(sendParam, 'false');
-  assert.deepEqual(body, { customer_id: 'c1', reference_number: 'WA-1', line_items: [{ item_id: 'i1', quantity: 4, rate: 5200 }] });
+  assert.deepEqual(body, { customer_id: 'c1', reference_number: 'CHAT-1', line_items: [{ item_id: 'i1', quantity: 4, rate: 5200 }] });
   assert.equal((await z.getInvoicePdf('9'))?.toString(), '%PDF-1.4');
 });
 
