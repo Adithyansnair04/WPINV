@@ -11,7 +11,11 @@ export interface ActivityEntry {
   action: ProcessResult['action'];
   reason?: string;
   text?: string;
+  /** LLM that read this message (undefined: no LLM needed, e.g. a button tap or confirmation). */
   model?: string;
+  /** Set when the main model failed and `model` is the backup. */
+  fallbackFrom?: string;
+  primaryError?: string;
   latencyMs: number;
   customer?: { query: string; status: string; name?: string };
   lines: { description: string | null; status: string; item?: string; score?: number; quantity: number | null; rate: number | null }[];
@@ -32,7 +36,9 @@ export function toActivity(msg: IncomingMessage, r: ProcessResult, includeText: 
     action: r.action,
     reason: r.reason,
     ...(includeText ? { text: msg.text.slice(0, 500) } : {}),
-    model: r.extractMeta ? `${r.extractMeta.model}${r.extractMeta.fallbackFrom ? ' (fallback)' : ''}` : undefined,
+    model: r.extractMeta?.model,
+    fallbackFrom: r.extractMeta?.fallbackFrom,
+    primaryError: r.extractMeta?.primaryError?.slice(0, 120),
     latencyMs: r.timings.total ?? 0,
     customer: trace?.customer && { query: trace.customer.query, status: trace.customer.status, name: trace.customer.name },
     lines: (trace?.lines ?? []).map((l) => ({ description: l.description, status: l.match, item: l.itemName, score: l.score, quantity: l.quantity, rate: l.rate })),

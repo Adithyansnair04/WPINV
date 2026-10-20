@@ -26,6 +26,8 @@ export const DASHBOARD_HTML = `<!doctype html>
   .a { font-weight:600; white-space:nowrap; }
   .created,.existing,.edited { color:var(--ok); } .clarify { color:var(--warn); } .error { color:var(--bad); } .respond,.dry_run { color:var(--info); } .ignore { color:var(--muted); }
   .muted { color:var(--muted); } .small { font-size:12px; }
+  .tag { display:inline-block; font-size:11px; line-height:1.5; padding:0 7px; border-radius:999px; background:var(--chip); color:var(--muted); }
+  .tag.backup { background:var(--warn); color:var(--card); font-weight:600; }
   .empty { color:var(--muted); padding:12px 0; }
   pre { white-space:pre-wrap; margin:0; font:inherit; }
   @media (max-width:640px) { header, main { padding-left:16px; padding-right:16px; } }
@@ -52,23 +54,38 @@ const label = { created:'Invoiced', existing:'Already invoiced', edited:'Edited'
 
 async function get(p) { const r = await fetch(p, { cache: 'no-store' }); return r.json(); }
 
-function kpis(acts) {
+// Which LLM read each message. Older log rows marked the backup with a " (fallback)" suffix.
+const isBackup = (a) => Boolean(a.fallbackFrom) || (a.model || '').includes('(fallback)');
+const modelId = (a) => (a.model || '').replace(' (fallback)', '');
+const shortModel = (m) => (m && m.includes(':') ? m.slice(m.indexOf(':') + 1) : m || '–');
+const provider = (m) => (m && m.includes(':') ? m.slice(0, m.indexOf(':')) : '');
+
+function modelCell(a) {
+  if (!a.model) return '<span class="muted" title="Button tap, numbered option or confirmation: handled without an LLM call">no LLM</span>';
+  const m = modelId(a);
+  const name = '<span class="tag">' + esc(provider(m)) + '</span> ' + esc(shortModel(m));
+  if (!isBackup(a)) return name;
+  const why = (a.primaryError || '').split(':').slice(0, 2).join(':').replace(/\{.*$/, '').trim();
+  return name + ' <span class="tag backup">backup</span>' + (why ? '<br><span class="muted small">main model failed: ' + esc(why) + '</span>' : '');
+}
+
+function kpis(acts, info) {
   const n = (a) => acts.filter((x) => a.includes(x.action)).length;
   const lat = acts.filter((x) => x.model).map((x) => x.latencyMs).sort((a, b) => a - b);
   const p50 = lat.length ? lat[Math.floor(lat.length / 2)] : null;
-  const items = [['Messages', acts.length], ['Invoices', n(['created', 'existing'])], ['Questions asked', n(['clarify'])], ['Ignored / replied', n(['ignore', 'respond'])], ['Answered by backup model', acts.filter((x) => x.model && x.model.includes('(fallback)')).length], ['Errors', n(['error'])], ['Median latency', p50 == null ? '–' : (p50 / 1000).toFixed(1) + ' s']];
+  const items = [['Messages', acts.length], ['Invoices', n(['created', 'existing'])], ['Questions asked', n(['clarify'])], ['Ignored / replied', n(['ignore', 'respond'])], ['Main model: ' + shortModel(info.model), acts.filter((x) => x.model && !isBackup(x)).length], ['Backup model: ' + shortModel(info.fallback), acts.filter((x) => x.model && isBackup(x)).length], ['No LLM needed', acts.filter((x) => !x.model).length], ['Errors', n(['error'])], ['Median latency', p50 == null ? '–' : (p50 / 1000).toFixed(1) + ' s']];
   document.getElementById('kpis').innerHTML = items.map(([l, v]) => '<div class="kpi"><div class="v">' + esc(v) + '</div><div class="l">' + esc(l) + '</div></div>').join('');
 }
 
 function activity(acts) {
   const el = document.getElementById('activity');
   if (!acts.length) { el.innerHTML = '<tr><td class="empty">No messages yet. Send one in an allowed chat.</td></tr>'; return; }
-  el.innerHTML = '<tr><th>Time</th><th>Result</th><th>Customer</th><th>Items</th><th>Invoice</th><th>Why</th><th>Latency</th></tr>' + acts.map((a) => {
+  el.innerHTML = '<tr><th>Time</th><th>Result</th><th>Model</th><th>Customer</th><th>Items</th><th>Invoice</th><th>Why</th><th>Latency</th></tr>' + acts.map((a) => {
     const cust = a.customer ? (a.customer.name ? esc(a.customer.name) : '<span class="clarify">' + esc(a.customer.query) + ' (' + esc(a.customer.status) + ')</span>') : '<span class="muted">–</span>';
     const lines = a.lines.map((l) => (l.item ? esc(l.item) + (l.score != null ? ' <span class="muted small">' + l.score + '</span>' : '') : '<span class="clarify">' + esc(l.description ?? '?') + ' (' + esc(l.status) + ')</span>') + ' <span class="muted">× ' + esc(l.quantity ?? '?') + ' @ ' + (l.rate == null ? '?' : money(l.rate)) + '</span>').join('<br>') || '<span class="muted">–</span>';
     const inv = a.invoice ? esc(a.invoice.number) + '<br><span class="small">' + money(a.invoice.total) + ' · ' + esc(a.invoice.status) + '</span>' : '<span class="muted">–</span>';
     const why = [a.reason, ...(a.problems || [])].filter((v, i, s) => v && s.indexOf(v) === i).map(esc).join(', ') + (a.error ? '<br><span class="error small">' + esc(a.error) + '</span>' : '') + (a.text ? '<pre class="muted small">' + esc(a.text) + '</pre>' : '');
-    return '<tr><td class="muted">' + time(a.at) + '</td><td class="a ' + esc(a.action) + '">' + esc(label[a.action] || a.action) + '</td><td>' + cust + '</td><td>' + lines + '</td><td>' + inv + '</td><td class="small">' + why + '</td><td class="muted">' + (a.latencyMs / 1000).toFixed(1) + ' s</td></tr>';
+    return '<tr><td class="muted">' + time(a.at) + '</td><td class="a ' + esc(a.action) + '">' + esc(label[a.action] || a.action) + '</td><td class="small">' + modelCell(a) + '</td><td>' + cust + '</td><td>' + lines + '</td><td>' + inv + '</td><td class="small">' + why + '</td><td class="muted">' + (a.latencyMs / 1000).toFixed(1) + ' s</td></tr>';
   }).join('');
 }
 
@@ -91,7 +108,7 @@ async function refresh() {
   try {
     const [info, acts, ps] = await Promise.all([get('/api/info'), get('/api/activity'), get('/api/pending')]);
     document.getElementById('info').innerHTML = Object.entries(info).map(([k, v]) => '<span class="chip">' + esc(k) + ': <b>' + esc(v) + '</b></span>').join(' ');
-    kpis(acts); activity(acts); pending(ps);
+    kpis(acts, info); activity(acts); pending(ps);
     document.getElementById('updated').textContent = 'updated ' + new Date().toLocaleTimeString();
   } catch { document.getElementById('updated').textContent = 'bot not reachable'; }
 }

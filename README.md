@@ -17,7 +17,7 @@ The design principle: **the LLM reads language; deterministic code decides.** Th
 | **Chat** | Telegram groups (official Bot API). WhatsApp is future scope. |
 | **LLMs** | Gemini 3.1 Flash-Lite (primary), Groq gpt-oss-20b (automatic fallback) |
 | **Books** | Zoho Books REST API (India data centre), OAuth refresh tokens, draft invoices only |
-| **Stack** | Node.js 24 + TypeScript, Zod validation, no web framework; 61 offline tests |
+| **Stack** | Node.js 24 + TypeScript, Zod validation, no web framework; 62 offline tests |
 | **Result** | 98% correct actions (95.8% on a held-out set) and **0 wrong invoices across every model tested** |
 
 ---
@@ -51,7 +51,7 @@ The design principle: **the LLM reads language; deterministic code decides.** Th
 | `ok thanks`, `good morning` | Nothing |
 | `where is my invoice from yesterday?` | Explains what it can and cannot do; creates nothing |
 
-A read-only **dashboard** (`http://127.0.0.1:3001`) shows every decision with its match scores, open questions, latency, backup-model usage and the evaluation tables.
+A read-only **dashboard** (`http://127.0.0.1:3001`) shows every decision with **which LLM handled it** (main model, backup with the reason the main model failed, or no LLM for button taps), match scores, open questions, latency and the evaluation tables.
 
 ---
 
@@ -255,7 +255,7 @@ cp .env.example .env     # real values go in .env only; .env.example holds place
 **Try it offline, with no keys:**
 
 ```bash
-npm test                                            # 61 tests, no network
+npm test                                            # 62 tests, no network
 npm run simulate -- --model rules --dashboard -m "VK\nred lenzo alloy 18 inch x 4\nrate 5200"
 npm run eval -- --models oracle,rules
 ```
@@ -312,7 +312,7 @@ src/
 data/seed/                          synthetic customers, items, invoice history (JSON + Zoho-importable CSV)
 data/aliases.json                   business-approved customer shorthand
 eval/                               cases.json (50), holdout.json (24), gold.json, results/
-test/                               61 node:test tests
+test/                               62 node:test tests
 docs/                               DESIGN, TELEGRAM_SETUP, ZOHO_SETUP, DEMO
 ```
 
